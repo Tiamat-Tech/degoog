@@ -23,6 +23,9 @@ export const jellyfinSettingsSchema: SettingField[] = [
   },
 ];
 
+const JELLYFIN_LOGO =
+  "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons@refs/heads/main/svg/jellyfin.svg";
+
 function escHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -137,10 +140,12 @@ export const jellyfinCommand: BangCommand = {
             : "";
           const itemUrl = `${jellyfinUrl}/web/index.html#!/details?id=${item["Id"]}`;
           const imageTags = item["ImageTags"] as Record<string, unknown> | undefined;
-          const thumbnail = imageTags?.["Primary"]
-            ? `<img class="result-favicon" src="${jellyfinUrl}/Items/${item["Id"]}/Images/Primary?maxHeight=52&api_key=${apiKey}" alt="">`
-            : `<img class="result-favicon" src="" alt="">`;
-          return `<div class="result-item"><div class="result-url-row">${thumbnail}<cite class="result-cite">${escHtml(jellyfinUrl)}</cite></div><a class="result-title" href="${escHtml(itemUrl)}" target="_blank">${name}${year}</a><p class="result-snippet">${overview}</p><div class="result-engines">${typeBadge}${jellyfinTag}${personInfo}</div></div>`;
+          const hasThumb = !!imageTags?.["Primary"];
+          const favicon = `<img class="result-favicon" src="${JELLYFIN_LOGO}" alt="">`;
+          const thumbBlock = hasThumb
+            ? `<div class="result-thumbnail-wrap"><img class="result-thumbnail-img" src="${jellyfinUrl}/Items/${item["Id"]}/Images/Primary?maxHeight=120&api_key=${apiKey}" alt=""></div>`
+            : "";
+          return `<div class="result-item"><div class="result-item-inner"><div class="result-body"><div class="result-url-row">${favicon}<cite class="result-cite">${escHtml(jellyfinUrl)}</cite></div><a class="result-title" href="${escHtml(itemUrl)}" target="_blank">${name}${year}</a><p class="result-snippet">${overview}</p><div class="result-engines">${typeBadge}${jellyfinTag}${personInfo}</div></div>${thumbBlock}</div></div>`;
         })
         .join("");
 

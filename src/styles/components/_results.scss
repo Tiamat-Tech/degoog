@@ -230,6 +230,32 @@
   padding: 16px 0;
 }
 
+.result-item-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.result-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-thumbnail-wrap {
+  flex-shrink: 0;
+  width: 120px;
+  height: 90px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-light, #f0f0f0);
+
+  .result-thumbnail-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
 .result-url-row {
   display: flex;
   align-items: center;
@@ -241,6 +267,7 @@
   height: 26px;
   flex-shrink: 0;
   border-radius: 50%;
+  object-fit: cover;
 }
 
 .result-cite {

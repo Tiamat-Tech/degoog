@@ -63,6 +63,8 @@ function escHtml(s: string): string {
 }
 
 const PER_PAGE = 20;
+const MEILISEARCH_LOGO =
+  "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons@refs/heads/main/svg/meilisearch.svg";
 
 async function searchIndex(
   meiliUrl: string,
@@ -158,9 +160,10 @@ export const meilisearchCommand: BangCommand = {
 
           if (!title || !url) return "";
 
-          const thumbImg = thumbnail
-            ? `<img class="result-favicon" src="${escHtml(thumbnail)}" alt="" style="max-height:52px" onerror="this.style.display='none'">`
-            : `<img class="result-favicon" src="" alt="">`;
+          const favicon = `<img class="result-favicon" src="${MEILISEARCH_LOGO}" alt="">`;
+          const thumbBlock = thumbnail
+            ? `<div class="result-thumbnail-wrap"><img class="result-thumbnail-img" src="${escHtml(thumbnail)}" alt=""></div>`
+            : "";
 
           const indexLabel = index.replace(/_content$/, "");
           const tags = [
@@ -169,7 +172,7 @@ export const meilisearchCommand: BangCommand = {
             source ? `<span class="result-engine-tag">${escHtml(source)}</span>` : "",
           ].filter(Boolean).join("");
 
-          return `<div class="result-item"><div class="result-url-row">${thumbImg}<cite class="result-cite">${escHtml(url)}</cite></div><a class="result-title" href="${escHtml(url)}" target="_blank">${escHtml(title)}</a><p class="result-snippet">${escHtml(content)}</p><div class="result-engines">${tags}</div></div>`;
+          return `<div class="result-item"><div class="result-item-inner"><div class="result-body"><div class="result-url-row">${favicon}<cite class="result-cite">${escHtml(url)}</cite></div><a class="result-title" href="${escHtml(url)}" target="_blank">${escHtml(title)}</a><p class="result-snippet">${escHtml(content)}</p><div class="result-engines">${tags}</div></div>${thumbBlock}</div></div>`;
         })
         .filter(Boolean)
         .join("");
