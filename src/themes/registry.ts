@@ -195,3 +195,9 @@ export async function recompileTheme(id: string): Promise<void> {
     theme.compiledCss = await compileThemeCss(theme);
   }
 }
+
+export async function reloadThemes(): Promise<void> {
+  themes = [];
+  activeThemeId = null;
+  await initThemes();
+}

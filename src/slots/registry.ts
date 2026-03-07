@@ -94,3 +94,8 @@ export function getSlotPlugins(): SlotPlugin[] {
 export function getSlotPluginById(slotId: string): SlotPlugin | null {
   return slotPlugins.find((p) => p.id === slotId) ?? null;
 }
+
+export async function reloadSlotPlugins(): Promise<void> {
+  slotPlugins = [];
+  await initSlotPlugins();
+}

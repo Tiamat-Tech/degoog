@@ -4,11 +4,12 @@ import { initGeneralTab } from "./js/settings/general-tab.js";
 import { initEnginesTab } from "./js/settings/engines-tab.js";
 import { initPluginsTab } from "./js/settings/plugins-tab.js";
 import { initThemesTab } from "./js/settings/themes-tab.js";
+import { initStoreTab } from "./js/settings/store-tab.js";
 import "./js/settings/modal.js";
 
 const TOKEN_KEY = "degoog-settings-token";
 
-function getStoredToken() {
+export function getStoredToken() {
   return sessionStorage.getItem(TOKEN_KEY) || null;
 }
 
@@ -102,6 +103,8 @@ async function initSettings() {
     await initEnginesTab(allExtensions);
     initPluginsTab(allExtensions);
     await initThemesTab(themesData, allExtensions.themes ?? []);
+    const storeEl = document.getElementById("store-content");
+    if (storeEl) initStoreTab(storeEl, getStoredToken);
   } catch {
     document.getElementById("engines-content").innerHTML = "<p>Failed to load extensions.</p>";
     document.getElementById("plugins-content").innerHTML = "<p>Failed to load extensions.</p>";

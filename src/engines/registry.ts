@@ -301,6 +301,7 @@ function isSearchEngine(val: unknown): val is SearchEngine {
 }
 
 export async function initEngines(): Promise<void> {
+  pluginEntries = [];
   for (const def of BUILTIN_DEFINITIONS) {
     const instance = builtinMap[def.id];
     if (instance?.configure && instance.settingsSchema?.length) {
@@ -315,19 +316,40 @@ export async function initEngines(): Promise<void> {
   const pluginDir =
     process.env.DEGOOG_ENGINES_DIR ?? join(process.cwd(), "data", "engines");
   const seen = new Set<string>(BUILTIN_DEFINITIONS.map((d) => d.id));
-  pluginEntries = [];
 
+  const { stat } = await import("fs/promises");
   try {
-    const files = await readdir(pluginDir);
-    for (const file of files) {
-      if (!/\.(js|ts|mjs|cjs)$/.test(file)) continue;
-      const base = file.replace(/\.(js|ts|mjs|cjs)$/, "");
+    const entries = await readdir(pluginDir, { withFileTypes: true });
+    for (const entry of entries) {
+      let fullPath: string;
+      let base: string;
+      if (entry.isFile() && /\.(js|ts|mjs|cjs)$/.test(entry.name)) {
+        base = entry.name.replace(/\.(js|ts|mjs|cjs)$/, "");
+        fullPath = join(pluginDir, entry.name);
+      } else if (entry.isDirectory()) {
+        let indexFile: string | undefined;
+        for (const f of ["index.js", "index.ts", "index.mjs", "index.cjs"]) {
+          try {
+            const s = await stat(join(pluginDir, entry.name, f));
+            if (s.isFile()) {
+              indexFile = f;
+              break;
+            }
+          } catch {
+            //
+          }
+        }
+        if (!indexFile) continue;
+        base = entry.name;
+        fullPath = join(pluginDir, entry.name, indexFile);
+      } else {
+        continue;
+      }
       const id = `engine-${base}`;
       if (seen.has(id)) continue;
       seen.add(id);
 
       try {
-        const fullPath = join(pluginDir, file);
         const url = pathToFileURL(fullPath).href;
         const mod = await import(url);
         const Export = mod.default ?? mod.engine ?? mod.Engine;
@@ -349,10 +371,14 @@ export async function initEngines(): Promise<void> {
           instance,
         });
       } catch (err) {
-        debug("engines", `Failed to load plugin engine: ${file}`, err);
+        debug("engines", `Failed to load plugin engine: ${base}`, err);
       }
     }
   } catch (err) {
     debug("engines", `Failed to read engine plugin directory`, err);
   }
+}
+
+export async function reloadEngines(): Promise<void> {
+  await initEngines();
 }

@@ -44,6 +44,15 @@ export async function getAllSettings(): Promise<PluginSettingsStore> {
   return load();
 }
 
+export async function removeSettings(id: string): Promise<void> {
+  const store = await load();
+  if (id in store) {
+    delete store[id];
+    cache = store;
+    await persist(store);
+  }
+}
+
 export function maskSecrets(
   settings: Record<string, string>,
   schema: { key: string; secret?: boolean }[],

@@ -142,6 +142,11 @@ export async function initPlugins(): Promise<void> {
   }
 }
 
+export async function reloadCommands(): Promise<void> {
+  pluginCommands = [];
+  await initPlugins();
+}
+
 export function getCommandInstanceById(id: string): BangCommand | undefined {
   return [...BUILTIN_COMMANDS, ...pluginCommands].find((c) => c.id === id)?.instance;
 }

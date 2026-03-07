@@ -13,6 +13,7 @@ import extensionsRouter from "./routes/extensions";
 import settingsAuthRouter from "./routes/settings-auth";
 import proxyRouter from "./routes/proxy";
 import pluginAssetsRouter from "./routes/plugin-assets";
+import storeRouter from "./routes/store";
 import swRouter from "./routes/sw";
 import pkg from "../package.json";
 
@@ -32,6 +33,7 @@ app.route("/", settingsAuthRouter);
 app.route("/", proxyRouter);
 app.route("/", themesRouter);
 app.route("/", pluginAssetsRouter);
+app.route("/", storeRouter);
 app.route("/", swRouter);
 
 const port = Number(process.env.DEGOOG_PORT) || 4444;
