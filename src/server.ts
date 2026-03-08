@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
-import { initEngines } from "./engines/registry";
+import { initEngines, getOutgoingAllowlist } from "./engines/registry";
+import { setOutgoingAllowlist } from "./outgoing";
 import { initPlugins } from "./commands/registry";
 import { initSlotPlugins } from "./slots/registry";
 import { initSearchBarActions } from "./search-bar/registry";
@@ -54,6 +55,7 @@ Promise.all([
   initMiddlewareRegistry(),
   initThemes(),
 ]).then(() => {
+  setOutgoingAllowlist(getOutgoingAllowlist());
   Bun.serve({ port, fetch: app.fetch });
   console.log(`degoog v${pkg.version} running on http://localhost:${port}`);
 });

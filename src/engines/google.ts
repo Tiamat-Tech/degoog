@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import type { SearchEngine, SearchResult, TimeFilter } from "../types";
+import type { SearchEngine, SearchResult, TimeFilter, EngineContext } from "../types";
 
 const GSA_USER_AGENTS = [
   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) GSA/399.2.845414227 Mobile/15E148 Safari/604.1",
@@ -20,6 +20,7 @@ export class GoogleEngine implements SearchEngine {
     query: string,
     page: number = 1,
     timeFilter?: TimeFilter,
+    context?: EngineContext,
   ): Promise<SearchResult[]> {
     const start = (page - 1) * 10;
 
@@ -48,7 +49,8 @@ export class GoogleEngine implements SearchEngine {
     const ua =
       GSA_USER_AGENTS[Math.floor(Math.random() * GSA_USER_AGENTS.length)];
 
-    const response = await fetch(url, {
+    const doFetch = context?.fetch ?? fetch;
+    const response = await doFetch(url, {
       headers: {
         "User-Agent": ua,
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",

@@ -86,12 +86,16 @@ function renderItemCard(item, getToken) {
     <div class="store-card" data-repo-url="${escapeHtml(item.repoUrl)}" data-item-path="${escapeHtml(item.path)}" data-type="${escapeHtml(item.type)}">
       <div class="store-card-thumb-wrap${clickableClass}"${screenshotsData}${thumbA11y}>${thumb}</div>
       <div class="store-card-body">
-        <div class="store-card-name">${escapeHtml(item.name)}</div>
-        <div class="store-card-meta">by ${author || "—"} · ${escapeHtml(item.repoName)}</div>
-        <div class="store-card-desc">${escapeHtml(item.description || "")}</div>
-        <div class="store-card-version">v${escapeHtml(item.version)}</div>
-        <span class="store-type-badge store-type-${item.type}">${typeLabel}</span>
-        <div class="store-card-actions">${btn}</div>
+        <div class="store-card-main">
+          <div class="store-card-name">${escapeHtml(item.name)}</div>
+          <div class="store-card-meta">by ${author || "—"} · ${escapeHtml(item.repoName)}</div>
+          <div class="store-card-desc">${escapeHtml(item.description || "")}</div>
+          <div class="store-card-version">v${escapeHtml(item.version)}</div>
+        </div>
+        <div class="store-card-footer">
+          <span class="store-type-badge store-type-${item.type}">${typeLabel}</span>
+          <div class="store-card-actions">${btn}</div>
+        </div>
       </div>
     </div>`;
 }

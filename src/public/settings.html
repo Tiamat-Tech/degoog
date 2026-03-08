@@ -22,7 +22,18 @@
       <h1 class="settings-page-title">Settings</h1>
     </header>
 
-    <nav class="settings-tabs-nav" id="settings-tabs-nav">
+    <div class="settings-tab-select-wrap">
+      <label for="settings-tab-select" class="settings-tab-select-label">Section</label>
+      <select id="settings-tab-select" class="settings-tab-select" aria-label="Settings section">
+        <option value="general">General</option>
+        <option value="engines">Engines</option>
+        <option value="plugins">Plugins</option>
+        <option value="themes">Themes</option>
+        <option value="store">Store</option>
+      </select>
+    </div>
+
+    <nav class="settings-tabs-nav" id="settings-tabs-nav" aria-label="Settings sections">
       <button class="settings-tab-btn active" data-tab="general" type="button">General</button>
       <button class="settings-tab-btn" data-tab="engines" type="button">Engines</button>
       <button class="settings-tab-btn" data-tab="plugins" type="button">Plugins</button>
@@ -48,6 +59,20 @@
           <h2 class="settings-section-heading">Cache</h2>
           <p class="settings-desc">Clear stored search results.</p>
           <button class="settings-cache-clear" id="settings-cache-clear" type="button">Clear search cache</button>
+        </section>
+
+        <section class="settings-section" id="settings-section-proxy">
+          <h2 class="settings-section-heading">Proxy</h2>
+          <p class="settings-desc">Use proxies for server-side search requests. One URL per line; requests rotate through the list.</p>
+          <label class="settings-proxy-toggle-wrap">
+            <input type="checkbox" id="settings-proxy-enabled" class="settings-proxy-toggle" aria-label="Use proxy for search">
+            <span class="toggle-slider"></span>
+            <span class="settings-proxy-toggle-label">Use proxy for search</span>
+          </label>
+          <div class="settings-proxy-urls-wrap" id="settings-proxy-urls-wrap" style="display:none">
+            <label for="settings-proxy-urls" class="settings-proxy-urls-label">Proxy URLs (one per line)</label>
+            <textarea id="settings-proxy-urls" class="settings-proxy-urls" rows="4" placeholder="http://proxy1:8080&#10;socks5://proxy2:1080"></textarea>
+          </div>
         </section>
 
         <section class="settings-section">

@@ -33,19 +33,21 @@ function showAuthGate() {
       <h1 class="settings-page-title">Settings</h1>
     </header>
     <div class="settings-auth-gate">
-      <p class="settings-auth-desc">Enter the password to access settings.</p>
-      <form class="settings-auth-form" id="settings-auth-form" autocomplete="off">
-        <input
-          class="settings-auth-input"
-          type="password"
-          id="settings-auth-input"
-          placeholder="Password"
-          autocomplete="current-password"
-          autofocus
-        >
-        <button class="settings-save" type="submit">Unlock</button>
-      </form>
-      <p class="settings-auth-error" id="settings-auth-error"></p>
+      <div class="settings-auth-gate-inner">
+        <p class="settings-auth-desc">Enter the password to access settings.</p>
+        <form class="settings-auth-form" id="settings-auth-form" autocomplete="off">
+          <input
+            class="settings-auth-input"
+            type="password"
+            id="settings-auth-input"
+            placeholder="Password"
+            autocomplete="current-password"
+            autofocus
+          >
+          <button class="settings-auth-submit" type="submit">Unlock</button>
+        </form>
+        <p class="settings-auth-error" id="settings-auth-error"></p>
+      </div>
     </div>`;
 
   document.getElementById("settings-auth-form").addEventListener("submit", async (e) => {
@@ -72,24 +74,34 @@ function showAuthGate() {
   });
 }
 
-function initTabs() {
-  const nav = document.getElementById("settings-tabs-nav");
-  if (!nav) return;
-  nav.querySelectorAll(".settings-tab-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      nav.querySelectorAll(".settings-tab-btn").forEach((b) => b.classList.remove("active"));
-      document.querySelectorAll(".settings-tab-panel").forEach((p) => p.classList.remove("active"));
-      btn.classList.add("active");
-      document.getElementById(`tab-${btn.dataset.tab}`)?.classList.add("active");
-    });
+function switchSettingsTab(value) {
+  document.querySelectorAll(".settings-tab-panel").forEach((p) => p.classList.remove("active"));
+  document.getElementById(`tab-${value}`)?.classList.add("active");
+  document.querySelectorAll(".settings-tab-btn").forEach((b) => {
+    b.classList.toggle("active", b.dataset.tab === value);
   });
+  const select = document.getElementById("settings-tab-select");
+  if (select) select.value = value;
+}
+
+function initTabs() {
+  const select = document.getElementById("settings-tab-select");
+  const nav = document.getElementById("settings-tabs-nav");
+  if (select) {
+    select.addEventListener("change", () => switchSettingsTab(select.value));
+  }
+  if (nav) {
+    nav.querySelectorAll(".settings-tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => switchSettingsTab(btn.dataset.tab ?? "general"));
+    });
+  }
 }
 
 async function initSettings() {
   initTheme();
   initInstallPrompt();
   initTabs();
-  initGeneralTab();
+  initGeneralTab(getStoredToken);
 
   try {
     const [extRes, themesRes] = await Promise.all([

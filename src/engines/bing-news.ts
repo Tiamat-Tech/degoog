@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import type { SearchEngine, SearchResult, TimeFilter } from "../types";
+import type { SearchEngine, SearchResult, TimeFilter, EngineContext } from "../types";
 import { getRandomUserAgent } from "../user-agents";
 
 const TIME_RANGE_MAP: Record<string, string> = {
@@ -17,6 +17,7 @@ export class BingNewsEngine implements SearchEngine {
     query: string,
     page: number = 1,
     timeFilter?: TimeFilter,
+    context?: EngineContext,
   ): Promise<SearchResult[]> {
     if (!query.trim()) return [];
 
@@ -28,7 +29,8 @@ export class BingNewsEngine implements SearchEngine {
     }
 
     const url = `https://www.bing.com/news/search?${params}`;
-    const res = await fetch(url, {
+    const doFetch = context?.fetch ?? fetch;
+    const res = await doFetch(url, {
       headers: {
         "User-Agent": getRandomUserAgent(),
         Accept:

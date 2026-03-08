@@ -1,7 +1,13 @@
 import { Hono } from "hono";
 import { getSettings } from "../plugin-settings";
+import {
+  outgoingFetch,
+  isUrlAllowedForOutgoing,
+} from "../outgoing";
 
 const router = new Hono();
+
+const PROXY_FETCH_TIMEOUT_MS = 15_000;
 
 const PROXY_TIMEOUT_MS = 10_000;
 const MAX_CONTENT_LENGTH = 10 * 1024 * 1024;
@@ -79,6 +85,38 @@ router.get("/api/proxy/image", async (c) => {
   } catch {
     clearTimeout(timeout);
     return c.body("Proxy failed", 502);
+  }
+});
+
+router.post("/api/proxy/fetch", async (c) => {
+  let body: { url?: string; headers?: Record<string, string> };
+  try {
+    body = await c.req.json<{ url?: string; headers?: Record<string, string> }>();
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+  const url = body?.url?.trim();
+  if (!url) return c.json({ error: "Missing url" }, 400);
+  if (!isUrlAllowedForOutgoing(url)) {
+    return c.json({ error: "URL not allowed for outgoing fetch" }, 403);
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), PROXY_FETCH_TIMEOUT_MS);
+  try {
+    const res = await outgoingFetch(url, {
+      headers: body.headers ?? {},
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    const resBody = await res.arrayBuffer();
+    const contentType = res.headers.get("content-type") ?? "application/octet-stream";
+    return new Response(resBody, {
+      status: res.status,
+      headers: { "Content-Type": contentType },
+    });
+  } catch {
+    clearTimeout(timeout);
+    return c.json({ error: "Proxy fetch failed" }, 502);
   }
 });
 

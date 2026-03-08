@@ -34,7 +34,7 @@
       <p><strong>Required:</strong></p>
       <ul>
         <li><strong>name</strong> (string) — Display name in Settings → Engines.</li>
-        <li><strong>executeSearch(query, page?, timeFilter?)</strong> (async) — Returns <code>Promise&lt;SearchResult[]&gt;</code>.</li>
+        <li><strong>executeSearch(query, page?, timeFilter?, context?)</strong> (async) — Returns <code>Promise&lt;SearchResult[]&gt;</code>. The optional <code>context</code> provides <code>context.fetch</code>; use it for all outbound HTTP requests so the engine respects the user’s proxy setting (Settings → General).</li>
       </ul>
       <p><strong>SearchResult</strong> shape:</p>
       <pre><code>{
@@ -66,8 +66,34 @@
       <p>To export an images or video engine, add a named <code>type</code> export:</p>
       <pre><code>export const type = "images";  // or "videos" or "web" (default)</code></pre>
 
+      <h2>Proxies (proxy-friendly engines)</h2>
+      <p>When users enable a proxy for search (Settings → General), all engine requests can go through that proxy. For your engine to be proxy-correct:</p>
+      <ol>
+        <li><strong>Use the injected fetch.</strong> Implement <code>executeSearch(query, page?, timeFilter?, context)</code> and use <code>context.fetch</code> for every outbound HTTP request. If you use global <code>fetch</code>, your requests will not use the user’s proxy.</li>
+        <li><strong>Declare outgoing hostnames.</strong> Export a named <code>outgoingHosts</code> array of hostname strings (no protocol or path). Those hostnames are added to the proxy allowlist so your engine works when the proxy is on. Use <code>["*"]</code> only if your engine fetches from arbitrary user-configured URLs (e.g. RSS feeds).</li>
+      </ol>
+      <p>Example (semantically correct for proxies):</p>
+      <pre><code>export const outgoingHosts = ["www.example.com", "example.com"];
+
+export default class MyEngine {
+  name = "My Search";
+  async executeSearch(query, page = 1, _timeFilter, context) {
+    const url = `https://www.example.com/search?q=${encodeURIComponent(query)}`;
+    const doFetch = context?.fetch ?? fetch;
+    const response = await doFetch(url, {
+      headers: { "User-Agent": "my-engine/1.0" },
+    });
+    const html = await response.text();
+    // ... parse and return results
+  }
+}</code></pre>
+      <p>Always use <code>const doFetch = context?.fetch ?? fetch;</code> then <code>doFetch(url, opts)</code> so that when <code>context</code> is provided (it is when the app runs your engine), requests go through the user’s proxy when enabled.</p>
+
       <h2>Setup</h2>
       <p>Create <code>data/engines/</code> (or set <code>DEGOOG_ENGINES_DIR</code>). You can add either a single file (e.g. <code>my-engine.js</code>) or a folder with <code>index.js</code> (or .ts, .mjs, .cjs). The engine id is derived from the filename (without extension) or folder name, with an <code>engine-</code> prefix (e.g. <code>my-engine.js</code> or <code>my-engine/index.js</code> → id <code>engine-my-engine</code>).</p>
+
+      <h2>Distributing via Store</h2>
+      <p>When distributing an engine via a <a href="store.html">store repository</a>, add a <code>screenshots/</code> folder inside the engine folder for the Store card thumbnail and lightbox.</p>
 
       <h2>How settings work</h2>
       <ol>

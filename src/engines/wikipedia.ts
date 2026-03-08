@@ -1,13 +1,14 @@
-import type { SearchEngine, SearchResult, TimeFilter } from "../types";
+import type { SearchEngine, SearchResult, TimeFilter, EngineContext } from "../types";
 
 export class WikipediaEngine implements SearchEngine {
   name = "Wikipedia";
   bangShortcut = "w";
 
-  async executeSearch(query: string, page?: number, _timeFilter?: TimeFilter): Promise<SearchResult[]> {
+  async executeSearch(query: string, page?: number, _timeFilter?: TimeFilter, context?: EngineContext): Promise<SearchResult[]> {
     const offset = ((page || 1) - 1) * 15;
     const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&srlimit=15&sroffset=${offset}&utf8=1`;
-    const response = await fetch(url, {
+    const doFetch = context?.fetch ?? fetch;
+    const response = await doFetch(url, {
       headers: { "Api-User-Agent": "degoog/1.0" },
     });
     const data = (await response.json()) as {

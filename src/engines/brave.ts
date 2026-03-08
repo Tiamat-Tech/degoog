@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import type { SearchEngine, SearchResult, TimeFilter } from "../types";
+import type { SearchEngine, SearchResult, TimeFilter, EngineContext } from "../types";
 import { getRandomUserAgent } from "../user-agents";
 
 const BASE_URL = "https://search.brave.com/";
@@ -29,6 +29,7 @@ export class BraveEngine implements SearchEngine {
     query: string,
     page: number = 1,
     timeFilter?: TimeFilter,
+    context?: EngineContext,
   ): Promise<SearchResult[]> {
     const args: Record<string, string> = {
       q: query,
@@ -42,7 +43,8 @@ export class BraveEngine implements SearchEngine {
     }
     const url = `${BASE_URL}search?${new URLSearchParams(args).toString()}`;
 
-    const response = await fetch(url, {
+    const doFetch = context?.fetch ?? fetch;
+    const response = await doFetch(url, {
       headers: {
         "User-Agent": getRandomUserAgent(),
         "Accept-Encoding": "gzip, deflate",

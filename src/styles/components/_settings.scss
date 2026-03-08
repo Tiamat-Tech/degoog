@@ -6,6 +6,9 @@
   max-width: 640px;
   margin: 0 auto;
   padding: 24px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 
   @media (min-width: 768px) {
     min-width: 800px;
@@ -42,11 +45,56 @@
   margin: 0;
 }
 
+.settings-tab-select-wrap {
+  margin-bottom: 28px;
+
+  @media (min-width: 769px) {
+    display: none;
+  }
+}
+
+.settings-tab-select-label {
+  display: block;
+  font-size: $font-size-small;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.settings-tab-select {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-family: $font-family;
+  font-size: 1.0625rem;
+  padding: 14px 44px 14px 16px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 20px;
+
+  &:focus {
+    border-color: $blue;
+    box-shadow: 0 0 0 3px rgba($blue, 0.15);
+  }
+}
+
 .settings-tabs-nav {
-  display: flex;
+  display: none;
   gap: 4px;
   border-bottom: 1px solid var(--border-light);
   margin-bottom: 28px;
+
+  @media (min-width: 769px) {
+    display: flex;
+  }
 }
 
 .settings-tab-btn {
@@ -204,39 +252,103 @@
   }
 }
 
+.settings-proxy-toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  margin-top: 8px;
+
+  .settings-proxy-toggle {
+    display: none;
+  }
+}
+
+.settings-proxy-toggle-label {
+  font-size: $font-size-base;
+  color: var(--text-primary);
+}
+
+.settings-proxy-urls-wrap {
+  margin-top: 12px;
+}
+
+.settings-proxy-urls-label {
+  display: block;
+  font-size: $font-size-small;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.settings-proxy-urls {
+  display: block;
+  width: 100%;
+  min-height: 100px;
+  padding: 10px 12px;
+  font-family: $font-family;
+  font-size: $font-size-base;
+  color: var(--text-primary);
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  resize: vertical;
+  outline: none;
+
+  &:focus {
+    border-color: $blue;
+  }
+}
+
 .settings-auth-gate {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-top: 48px;
-  max-width: 340px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0 48px;
+}
+
+.settings-auth-gate-inner {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20px;
+
+  @media (min-width: 481px) {
+    max-width: 400px;
+  }
 }
 
 .settings-auth-desc {
   color: var(--text-secondary);
-  font-size: $font-size-base;
+  font-size: 1.0625rem;
+  text-align: center;
   margin: 0;
+  line-height: 1.4;
 }
 
 .settings-auth-form {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .settings-auth-input {
   background: var(--bg-light);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
   color: var(--text-primary);
-  flex: 1;
   font-family: $font-family;
-  font-size: $font-size-base;
-  min-width: 0;
+  font-size: 1.125rem;
   outline: none;
-  padding: 8px 12px;
+  padding: 18px 20px;
+  width: 100%;
+  box-sizing: border-box;
 
   &:focus {
     border-color: $blue;
+    box-shadow: 0 0 0 3px rgba($blue, 0.15);
   }
 
   &::placeholder {
@@ -247,8 +359,26 @@
 .settings-auth-error {
   color: $red;
   font-size: $font-size-small;
+  text-align: center;
   margin: 0;
-  min-height: 18px;
+  min-height: 20px;
+}
+
+.settings-auth-submit {
+  background: $blue;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 16px 24px;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: $font-family;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $blue-hover;
+  }
 }
 
 .settings-save {
@@ -261,7 +391,7 @@
   cursor: pointer;
   font-family: $font-family;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: $blue-hover;
   }
 

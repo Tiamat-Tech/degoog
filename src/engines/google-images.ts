@@ -1,4 +1,4 @@
-import type { SearchEngine, SearchResult, TimeFilter } from "../types";
+import type { SearchEngine, SearchResult, TimeFilter, EngineContext } from "../types";
 
 const GSA_USER_AGENTS = [
   "Mozilla/5.0 (iPhone; CPU iPhone OS 18_3_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) GSA/406.0.862495628 Mobile/15E148 Safari/604.1",
@@ -29,6 +29,7 @@ export class GoogleImagesEngine implements SearchEngine {
     query: string,
     page: number = 1,
     timeFilter?: TimeFilter,
+    context?: EngineContext,
   ): Promise<SearchResult[]> {
     const ijn = page - 1;
     const params = new URLSearchParams({
@@ -51,7 +52,8 @@ export class GoogleImagesEngine implements SearchEngine {
 
     const ua =
       GSA_USER_AGENTS[Math.floor(Math.random() * GSA_USER_AGENTS.length)];
-    const response = await fetch(
+    const doFetch = context?.fetch ?? fetch;
+    const response = await doFetch(
       `https://www.google.com/search?${params.toString()}`,
       {
         headers: {

@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import type { SearchEngine, SearchResult, TimeFilter } from "../types";
+import type { SearchEngine, SearchResult, TimeFilter, EngineContext } from "../types";
 import { getRandomUserAgent } from "../user-agents";
 
 export class BingEngine implements SearchEngine {
@@ -10,6 +10,7 @@ export class BingEngine implements SearchEngine {
     query: string,
     page: number = 1,
     timeFilter?: TimeFilter,
+    context?: EngineContext,
   ): Promise<SearchResult[]> {
     const first = (page - 1) * 50;
     let url = `https://www.bing.com/search?q=${encodeURIComponent(query)}&count=50&first=${first}`;
@@ -24,7 +25,8 @@ export class BingEngine implements SearchEngine {
       if (freshMap[timeFilter])
         url += `&filters=ex1%3a"ez5_${freshMap[timeFilter]}_TimeCustom"`;
     }
-    const response = await fetch(url, {
+    const doFetch = context?.fetch ?? fetch;
+    const response = await doFetch(url, {
       headers: {
         "User-Agent": getRandomUserAgent(),
         Accept:

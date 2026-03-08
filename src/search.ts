@@ -14,6 +14,7 @@ import {
   getActiveWebEngines,
   getEnginesForSearchType,
 } from "./engines/registry";
+import { outgoingFetch } from "./outgoing";
 
 const MAX_PAGE = 10;
 const ENGINE_TIMEOUT_MS = 10_000;
@@ -194,9 +195,10 @@ export async function searchSingleEngine(
   }
   const p = Math.max(1, Math.min(MAX_PAGE, Math.floor(page) || 1));
   const t0 = performance.now();
+  const engineContext = { fetch: outgoingFetch };
   try {
     const results = await withTimeout(
-      engine.executeSearch(query, p, timeFilter),
+      engine.executeSearch(query, p, timeFilter, engineContext),
       ENGINE_TIMEOUT_MS,
     );
     const elapsed = Math.round(performance.now() - t0);
@@ -243,11 +245,12 @@ export async function search(
 
   const engineStarts = activeEngines.map(() => performance.now());
 
+  const engineContext = { fetch: outgoingFetch };
   const settled = await Promise.allSettled(
     activeEngines.map(async (engine, i) => {
       engineStarts[i] = performance.now();
       const results = await withTimeout(
-        engine.executeSearch(query, p, timeFilter),
+        engine.executeSearch(query, p, timeFilter, engineContext),
         ENGINE_TIMEOUT_MS,
       );
       return results;

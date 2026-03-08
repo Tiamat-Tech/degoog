@@ -1,17 +1,49 @@
 import { Hono } from "hono";
-import { getSettings } from "../plugin-settings";
+import type { Context } from "hono";
+import { getSettings, setSettings } from "../plugin-settings";
 import { getMiddleware } from "../middleware/registry";
+
+const DEGOOG_SETTINGS_ID = "degoog-settings";
 
 const router = new Hono();
 
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+const COOKIE_NAME = "settings-token";
 const validTokens = new Map<string, number>();
 const MIDDLEWARE_SETTINGS_ID = "middleware";
 const SETTINGS_GATE_KEY = "settingsGate";
 
+function getTokenFromCookie(c: Context): string | undefined {
+  const raw = c.req.header("cookie");
+  if (!raw) return undefined;
+  const match = raw.split(";").find((s) => s.trim().startsWith(COOKIE_NAME + "="));
+  if (!match) return undefined;
+  const value = match.split("=")[1]?.trim();
+  return value || undefined;
+}
+
+export function getSettingsTokenFromRequest(c: Context): string | undefined {
+  return (
+    c.req.header("x-settings-token") ??
+    c.req.query("token") ??
+    getTokenFromCookie(c)
+  );
+}
+
+export async function shouldServeSettingsGate(c: Context): Promise<boolean> {
+  const required = await isAuthRequired();
+  if (!required) return false;
+  const token = getSettingsTokenFromRequest(c);
+  const valid = await validateSettingsToken(token);
+  return !valid;
+}
+
 function getPasswords(): string[] {
   const raw = process.env.DEGOOG_SETTINGS_PASSWORDS ?? "";
-  return raw.split(",").map((p) => p.trim()).filter(Boolean);
+  return raw
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
 }
 
 function isPasswordRequired(): boolean {
@@ -21,7 +53,9 @@ function isPasswordRequired(): boolean {
 function generateToken(): string {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
-  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function pruneExpired(): void {
@@ -31,7 +65,9 @@ function pruneExpired(): void {
   }
 }
 
-export async function validateSettingsToken(token: string | undefined): Promise<boolean> {
+export async function validateSettingsToken(
+  token: string | undefined,
+): Promise<boolean> {
   const required = await isAuthRequired();
   if (!required) return true;
   if (!token) return false;
@@ -43,7 +79,9 @@ export async function validateSettingsToken(token: string | undefined): Promise<
   return true;
 }
 
-async function getSelectedMiddlewareForSettingsGate(): Promise<ReturnType<typeof getMiddleware>> {
+async function getSelectedMiddlewareForSettingsGate(): Promise<
+  ReturnType<typeof getMiddleware>
+> {
   const settings = await getSettings(MIDDLEWARE_SETTINGS_ID);
   const value = settings[SETTINGS_GATE_KEY]?.trim();
   if (!value?.startsWith("plugin:")) return null;
@@ -62,12 +100,14 @@ router.get("/api/settings/auth", async (c) => {
   const m = await getSelectedMiddlewareForSettingsGate();
   if (!m) {
     if (!isPasswordRequired()) return c.json({ required: false, valid: true });
-    const token = c.req.header("x-settings-token") ?? c.req.query("token");
-    if (await validateSettingsToken(token)) return c.json({ required: true, valid: true });
+    const token = getSettingsTokenFromRequest(c);
+    if (await validateSettingsToken(token))
+      return c.json({ required: true, valid: true });
     return c.json({ required: true, valid: false });
   }
-  const token = c.req.header("x-settings-token") ?? c.req.query("token");
-  if (await validateSettingsToken(token)) return c.json({ required: true, valid: true });
+  const token = getSettingsTokenFromRequest(c);
+  if (await validateSettingsToken(token))
+    return c.json({ required: true, valid: true });
   const result = await m.handle(c.req.raw, { route: "settings-auth" });
   if (result instanceof Response) return result;
   if (result === null) {
@@ -81,7 +121,11 @@ router.get("/api/settings/auth/callback", async (c) => {
   const m = await getSelectedMiddlewareForSettingsGate();
   if (!m) return c.redirect("/settings");
   const result = await m.handle(c.req.raw, { route: "settings-auth-callback" });
-  if (result !== null && !(result instanceof Response) && "redirect" in result) {
+  if (
+    result !== null &&
+    !(result instanceof Response) &&
+    "redirect" in result
+  ) {
     pruneExpired();
     const sessionToken = generateToken();
     validTokens.set(sessionToken, Date.now() + TOKEN_TTL_MS);
@@ -108,7 +152,42 @@ router.post("/api/settings/auth", async (c) => {
   pruneExpired();
   const token = generateToken();
   validTokens.set(token, Date.now() + TOKEN_TTL_MS);
-  return c.json({ ok: true, token });
+  const cookie = `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${TOKEN_TTL_MS / 1000}`;
+  return c.json({ ok: true, token }, 200, {
+    "Set-Cookie": cookie,
+  });
+});
+
+router.get("/api/settings/general", async (c) => {
+  const token = getSettingsTokenFromRequest(c);
+  if (!(await validateSettingsToken(token))) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  return c.json(settings);
+});
+
+router.post("/api/settings/general", async (c) => {
+  const token = getSettingsTokenFromRequest(c);
+  if (!(await validateSettingsToken(token))) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  let body: Record<string, string>;
+  try {
+    body = await c.req.json<Record<string, string>>();
+  } catch {
+    return c.json({ error: "Invalid JSON" }, 400);
+  }
+  const existing = await getSettings(DEGOOG_SETTINGS_ID);
+  const allowed = ["proxyEnabled", "proxyUrls"];
+  const updates: Record<string, string> = {};
+  for (const key of allowed) {
+    if (key in body && typeof body[key] === "string") {
+      updates[key] = body[key];
+    }
+  }
+  await setSettings(DEGOOG_SETTINGS_ID, { ...existing, ...updates });
+  return c.json({ ok: true });
 });
 
 export default router;

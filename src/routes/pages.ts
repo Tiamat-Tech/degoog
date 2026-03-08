@@ -3,6 +3,7 @@ import * as cache from "../cache";
 import { getEngineRegistry, getDefaultEngineConfig } from "../engines/registry";
 import { getThemeHtml, getActiveTheme } from "../themes/registry";
 import { getAllPluginCss, getPluginScriptFolders } from "../plugin-assets";
+import { shouldServeSettingsGate } from "./settings-auth";
 import pkg from "../../package.json";
 
 const router = new Hono();
@@ -63,6 +64,13 @@ router.get("/search", async (c) => {
   return c.html(out);
 });
 router.get("/settings", async (c) => {
+  if (await shouldServeSettingsGate(c)) {
+    const html = await Bun.file("src/public/settings-gate.html").text();
+    const out = html
+      .replaceAll("__APP_VERSION__", pkg.version)
+      .replace("__THEME_CSS__", themeCssPlaceholder());
+    return c.html(out);
+  }
   const html = await Bun.file("src/public/settings.html").text();
   const out = html
     .replaceAll("__APP_VERSION__", pkg.version)

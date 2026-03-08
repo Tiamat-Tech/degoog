@@ -28,6 +28,15 @@ export interface ExtensionMeta {
   defaultEnabled?: boolean;
 }
 
+export type EngineFetch = (
+  url: string,
+  options?: { headers?: Record<string, string>; redirect?: RequestRedirect; signal?: AbortSignal },
+) => Promise<Response>;
+
+export interface EngineContext {
+  fetch: EngineFetch;
+}
+
 export interface SearchEngine {
   name: string;
   bangShortcut?: string;
@@ -37,6 +46,7 @@ export interface SearchEngine {
     query: string,
     page?: number,
     timeFilter?: TimeFilter,
+    context?: EngineContext,
   ): Promise<SearchResult[]>;
 }
 

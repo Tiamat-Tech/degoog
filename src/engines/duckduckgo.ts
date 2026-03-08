@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import type { SearchEngine, SearchResult, TimeFilter } from "../types";
+import type { SearchEngine, SearchResult, TimeFilter, EngineContext } from "../types";
 import { getRandomUserAgent } from "../user-agents";
 
 export class DuckDuckGoEngine implements SearchEngine {
@@ -10,6 +10,7 @@ export class DuckDuckGoEngine implements SearchEngine {
     query: string,
     page?: number,
     timeFilter?: TimeFilter,
+    context?: EngineContext,
   ): Promise<SearchResult[]> {
     const offset = ((page || 1) - 1) * 30;
     const params = new URLSearchParams({ q: query });
@@ -28,7 +29,8 @@ export class DuckDuckGoEngine implements SearchEngine {
       if (dfMap[timeFilter]) params.set("df", dfMap[timeFilter]);
     }
     const url = `https://html.duckduckgo.com/html/?${params.toString()}`;
-    const response = await fetch(url, {
+    const doFetch = context?.fetch ?? fetch;
+    const response = await doFetch(url, {
       headers: { "User-Agent": getRandomUserAgent() },
     });
     const html = await response.text();

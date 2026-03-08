@@ -1,18 +1,19 @@
 import * as cheerio from "cheerio";
-import type { SearchEngine, SearchResult, TimeFilter } from "../types";
+import type { SearchEngine, SearchResult, TimeFilter, EngineContext } from "../types";
 import { getRandomUserAgent } from "../user-agents";
 
 export class BingImagesEngine implements SearchEngine {
   name = "Bing Images";
 
-  async executeSearch(query: string, page: number = 1, timeFilter?: TimeFilter): Promise<SearchResult[]> {
+  async executeSearch(query: string, page: number = 1, timeFilter?: TimeFilter, context?: EngineContext): Promise<SearchResult[]> {
     const first = (page - 1) * 60;
     let url = `https://www.bing.com/images/search?q=${encodeURIComponent(query)}&count=60&first=${first}`;
     if (timeFilter && timeFilter !== "any") {
       const freshMap: Record<string, string> = { hour: "Hour", day: "Day", week: "Week", month: "Month", year: "Year" };
       if (freshMap[timeFilter]) url += `&qft=+filterui:age-lt${freshMap[timeFilter].toLowerCase()}`;
     }
-    const response = await fetch(url, {
+    const doFetch = context?.fetch ?? fetch;
+    const response = await doFetch(url, {
       headers: { "User-Agent": getRandomUserAgent() },
     });
     const html = await response.text();

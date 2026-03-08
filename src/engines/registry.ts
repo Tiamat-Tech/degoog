@@ -27,6 +27,7 @@ export interface EngineDefinition {
   searchType: EngineSearchType;
   EngineClass: new () => SearchEngine;
   disabledByDefault?: boolean;
+  outgoingHosts?: string[];
 }
 
 const BUILTIN_DEFINITIONS: EngineDefinition[] = [
@@ -35,12 +36,14 @@ const BUILTIN_DEFINITIONS: EngineDefinition[] = [
     displayName: "Google",
     searchType: "web",
     EngineClass: GoogleEngine,
+    outgoingHosts: ["www.google.com", "google.com"],
   },
   {
     id: "duckduckgo",
     displayName: "DuckDuckGo",
     searchType: "web",
     EngineClass: DuckDuckGoEngine,
+    outgoingHosts: ["html.duckduckgo.com", "duckduckgo.com"],
   },
   {
     id: "bing",
@@ -48,66 +51,77 @@ const BUILTIN_DEFINITIONS: EngineDefinition[] = [
     searchType: "web",
     EngineClass: BingEngine,
     disabledByDefault: true,
+    outgoingHosts: ["www.bing.com", "bing.com"],
   },
   {
     id: "brave",
     displayName: "Brave Search",
     searchType: "web",
     EngineClass: BraveEngine,
+    outgoingHosts: ["search.brave.com"],
   },
   {
     id: "wikipedia",
     displayName: "Wikipedia",
     searchType: "web",
     EngineClass: WikipediaEngine,
+    outgoingHosts: ["en.wikipedia.org", "www.wikipedia.org", "wikipedia.org"],
   },
   {
     id: "reddit",
     displayName: "Reddit",
     searchType: "web",
     EngineClass: RedditEngine,
+    outgoingHosts: ["www.reddit.com", "reddit.com"],
   },
   {
     id: "google-images",
     displayName: "Google Images",
     searchType: "images",
     EngineClass: GoogleImagesEngine,
+    outgoingHosts: ["www.google.com", "google.com"],
   },
   {
     id: "bing-images",
     displayName: "Bing Images",
     searchType: "images",
     EngineClass: BingImagesEngine,
+    outgoingHosts: ["www.bing.com", "bing.com"],
   },
   {
     id: "google-videos",
     displayName: "Google Videos",
     searchType: "videos",
     EngineClass: GoogleVideosEngine,
+    outgoingHosts: ["www.google.com", "google.com", "i.ytimg.com"],
   },
   {
     id: "bing-videos",
     displayName: "Bing Videos",
     searchType: "videos",
     EngineClass: BingVideosEngine,
+    outgoingHosts: ["www.bing.com", "bing.com"],
   },
   {
     id: "rss-news",
     displayName: "RSS Feeds",
     searchType: "news",
     EngineClass: RssNewsEngine,
+    outgoingHosts: ["*"],
   },
   {
     id: "brave-news",
     displayName: "Brave News",
     searchType: "news",
     EngineClass: BraveNewsEngine,
+    outgoingHosts: ["search.brave.com"],
   },
   {
     id: "bing-news",
     displayName: "Bing News",
     searchType: "news",
     EngineClass: BingNewsEngine,
+    outgoingHosts: ["www.bing.com", "bing.com"],
   },
 ];
 
@@ -136,6 +150,7 @@ interface PluginEntry {
   searchType: EngineSearchType;
   instance: SearchEngine;
   disabledByDefault?: boolean;
+  outgoingHosts?: string[];
 }
 
 let pluginEntries: PluginEntry[] = [];
@@ -157,6 +172,15 @@ export function getEngineRegistry(): {
         searchType: e.searchType,
       })),
   ];
+}
+
+export function getOutgoingAllowlist(): string[] {
+  const fromBuiltins = BUILTIN_DEFINITIONS.flatMap(
+    (d) => d.outgoingHosts ?? [],
+  );
+  const fromPlugins = pluginEntries.flatMap((e) => e.outgoingHosts ?? []);
+  const all = [...fromBuiltins, ...fromPlugins];
+  return [...new Set(all)];
 }
 
 export function getEngineMap(): Record<string, SearchEngine> {
@@ -360,6 +384,10 @@ export async function initEngines(): Promise<void> {
           mod.type === "images" || mod.type === "videos" || mod.type === "news"
             ? mod.type
             : "web";
+        const pluginHosts =
+          Array.isArray(mod.outgoingHosts) && mod.outgoingHosts.length > 0
+            ? (mod.outgoingHosts as string[])
+            : undefined;
         if (instance.configure && instance.settingsSchema?.length) {
           const stored = await getSettings(id);
           if (Object.keys(stored).length > 0) instance.configure(stored);
@@ -369,6 +397,7 @@ export async function initEngines(): Promise<void> {
           displayName: instance.name,
           searchType,
           instance,
+          outgoingHosts: pluginHosts,
         });
       } catch (err) {
         debug("engines", `Failed to load plugin engine: ${base}`, err);

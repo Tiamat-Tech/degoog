@@ -1,4 +1,4 @@
-import type { SearchEngine, SearchResult, TimeFilter } from "../types";
+import type { SearchEngine, SearchResult, TimeFilter, EngineContext } from "../types";
 import { getRandomUserAgent } from "../user-agents";
 
 export class RedditEngine implements SearchEngine {
@@ -9,6 +9,7 @@ export class RedditEngine implements SearchEngine {
     query: string,
     page: number = 1,
     timeFilter?: TimeFilter,
+    context?: EngineContext,
   ): Promise<SearchResult[]> {
     const limit = 25;
     const t = this.mapTimeFilter(timeFilter);
@@ -24,7 +25,8 @@ export class RedditEngine implements SearchEngine {
     }
 
     const url = `https://www.reddit.com/search.json?${params.toString()}`;
-    const response = await fetch(url, {
+    const doFetch = context?.fetch ?? fetch;
+    const response = await doFetch(url, {
       headers: { "User-Agent": getRandomUserAgent() },
     });
     const data = (await response.json()) as {

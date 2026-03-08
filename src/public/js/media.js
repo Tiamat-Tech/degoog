@@ -1,6 +1,6 @@
 import { state } from "./state.js";
 import { getEngines } from "./engines.js";
-import { buildSearchUrl } from "./url.js";
+import { buildSearchUrl, proxyImageUrl } from "./url.js";
 import { escapeHtml, cleanHostname } from "./utils.js";
 
 let mediaObserver = null;
@@ -69,7 +69,7 @@ export function openMediaPreview(item, idx, cardSelector) {
   const img = document.getElementById("media-preview-img");
   const info = document.getElementById("media-preview-info");
 
-  img.src = item.thumbnail || "";
+  img.src = proxyImageUrl(item.thumbnail || "") || "";
   info.innerHTML = `
     <h3 class="media-preview-title">${escapeHtml(item.title)}</h3>
     <a class="media-preview-link" href="${escapeHtml(item.url)}" target="_blank">${escapeHtml(cleanHostname(item.url))}</a>
