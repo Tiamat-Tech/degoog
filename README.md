@@ -32,7 +32,7 @@ Search aggregator that queries multiple engines and shows results in one place. 
 ```bash
 services:
   degoog:
-    image: ghcr.io/fccview/degoog:latest
+    image: ghcr.io/fccview/degoog:main
     volumes:
       - ./data:/app/data
     user: "1000:1000"
