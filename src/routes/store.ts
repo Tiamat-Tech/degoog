@@ -16,7 +16,7 @@ import {
   getInstalledItems,
   getStoreDirPath,
   resolveScreenshotPath,
-} from "../store/repo-manager";
+} from "../extensions/store/repo-manager";
 
 const router = new Hono();
 

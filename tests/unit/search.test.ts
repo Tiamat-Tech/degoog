@@ -1,5 +1,9 @@
 import { describe, test, expect } from "bun:test";
-import { aggregateAndScore, mergeNewResults, resolveEngine } from "../../src/search";
+import {
+  aggregateAndScore,
+  mergeNewResults,
+  resolveEngine,
+} from "../../src/search";
 import type { SearchResult, ScoredResult } from "../../src/types";
 
 const result = (
@@ -90,7 +94,8 @@ describe("search", () => {
 
   describe("resolveEngine", () => {
     test("returns engine by id when registry is initialized", async () => {
-      const { initEngines } = await import("../../src/engines/registry");
+      const { initEngines } =
+        await import("../../src/extensions/engines/registry");
       const orig = process.env.DEGOOG_ENGINES_DIR;
       process.env.DEGOOG_ENGINES_DIR = "/nonexistent-empty-dir-12345";
       await initEngines();
@@ -102,7 +107,8 @@ describe("search", () => {
     });
 
     test("returns null for unknown engine name", async () => {
-      const { initEngines } = await import("../../src/engines/registry");
+      const { initEngines } =
+        await import("../../src/extensions/engines/registry");
       const orig = process.env.DEGOOG_ENGINES_DIR;
       process.env.DEGOOG_ENGINES_DIR = "/nonexistent-empty-dir-12345";
       await initEngines();

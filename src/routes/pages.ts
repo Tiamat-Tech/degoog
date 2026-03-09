@@ -1,7 +1,14 @@
 import { Hono } from "hono";
 import * as cache from "../cache";
-import { getEngineRegistry, getDefaultEngineConfig } from "../engines/registry";
-import { getThemeHtml, getActiveTheme, getActiveThemeDataAttrs } from "../themes/registry";
+import {
+  getEngineRegistry,
+  getDefaultEngineConfig,
+} from "../extensions/engines/registry";
+import {
+  getThemeHtml,
+  getActiveTheme,
+  getActiveThemeDataAttrs,
+} from "../extensions/themes/registry";
 import { getAllPluginCss, getPluginScriptFolders } from "../plugin-assets";
 import { shouldServeSettingsGate } from "./settings-auth";
 import pkg from "../../package.json";
@@ -29,9 +36,12 @@ function themeCssPlaceholder(): string {
 function pluginAssetsPlaceholder(): string {
   const v = pkg.version;
   const parts: string[] = [];
-  if (getAllPluginCss()) parts.push(`<link rel="stylesheet" href="/api/plugins/styles.css?v=${v}">`);
+  if (getAllPluginCss())
+    parts.push(`<link rel="stylesheet" href="/api/plugins/styles.css?v=${v}">`);
   for (const folder of getPluginScriptFolders()) {
-    parts.push(`<script type="module" src="/plugins/${folder}/script.js?v=${v}"><\/script>`);
+    parts.push(
+      `<script type="module" src="/plugins/${folder}/script.js?v=${v}"><\/script>`,
+    );
   }
   return parts.join("\n  ");
 }
@@ -61,7 +71,8 @@ router.get("/", async (c) => {
 
 router.get("/search", async (c) => {
   const override = await getThemeHtml("search");
-  if (override) return c.html(override.replaceAll("__APP_VERSION__", pkg.version));
+  if (override)
+    return c.html(override.replaceAll("__APP_VERSION__", pkg.version));
   return c.html(await buildPage("search.html"));
 });
 

@@ -1,5 +1,8 @@
 import { describe, test, expect, beforeAll } from "bun:test";
-import { initSearchBarActions, getSearchBarActions } from "../../src/search-bar/registry";
+import {
+  initSearchBarActions,
+  getSearchBarActions,
+} from "../../src/extensions/search-bar/registry";
 
 describe("search-bar registry", () => {
   beforeAll(async () => {

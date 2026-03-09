@@ -13,7 +13,7 @@ import {
   getEngineMap,
   getActiveWebEngines,
   getEnginesForSearchType,
-} from "./engines/registry";
+} from "./extensions/engines/registry";
 import { outgoingFetch } from "./outgoing";
 
 const MAX_PAGE = 10;

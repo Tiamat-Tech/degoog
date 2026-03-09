@@ -1,11 +1,13 @@
 import { describe, test, expect, beforeAll } from "bun:test";
-import { helpCommand } from "../../src/commands/builtins/help/index";
-import { uuidCommand } from "../../src/commands/builtins/uuid/index";
+import { helpCommand } from "../../src/extensions/commands/builtins/help/index";
+import { uuidCommand } from "../../src/extensions/commands/builtins/uuid/index";
 
 describe("commands builtins", () => {
   beforeAll(async () => {
-    const { initPlugins } = await import("../../src/commands/registry");
-    const { initEngines } = await import("../../src/engines/registry");
+    const { initPlugins } =
+      await import("../../src/extensions/commands/registry");
+    const { initEngines } =
+      await import("../../src/extensions/engines/registry");
     const orig = process.env.DEGOOG_PLUGINS_DIR;
     process.env.DEGOOG_PLUGINS_DIR = "/nonexistent";
     process.env.DEGOOG_ENGINES_DIR = "/nonexistent";
@@ -27,7 +29,9 @@ describe("commands builtins", () => {
     const result = await uuidCommand.execute("");
     expect(result.title).toBe("Generated UUIDs");
     expect(result.html).toContain("uuid-value");
-    const uuidMatch = result.html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    const uuidMatch = result.html.match(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+    );
     expect(uuidMatch).not.toBeNull();
   });
 });

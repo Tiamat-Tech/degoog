@@ -1,9 +1,11 @@
 import { describe, test, expect, beforeAll } from "bun:test";
 
-let themesRouter: { request: (req: Request | string) => Response | Promise<Response> };
+let themesRouter: {
+  request: (req: Request | string) => Response | Promise<Response>;
+};
 
 beforeAll(async () => {
-  const { initThemes } = await import("../../src/themes/registry");
+  const { initThemes } = await import("../../src/extensions/themes/registry");
   const orig = process.env.DEGOOG_THEMES_DIR;
   process.env.DEGOOG_THEMES_DIR = "/nonexistent-themes-dir";
   await initThemes();

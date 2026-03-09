@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getSearchBarActions } from "../search-bar/registry";
+import { getSearchBarActions } from "../extensions/search-bar/registry";
 
 const router = new Hono();
 

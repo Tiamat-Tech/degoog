@@ -1,5 +1,8 @@
 import { describe, test, expect } from "bun:test";
-import { getRepoSlugFromUrl, getStoreDirPath } from "../../src/store/repo-manager";
+import {
+  getRepoSlugFromUrl,
+  getStoreDirPath,
+} from "../../src/extensions/store/repo-manager";
 
 describe("store/repo-manager", () => {
   test("getRepoSlugFromUrl returns slug format for https URL", () => {

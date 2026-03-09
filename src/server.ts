@@ -1,13 +1,16 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
-import { initEngines, getOutgoingAllowlist } from "./engines/registry";
+import {
+  initEngines,
+  getOutgoingAllowlist,
+} from "./extensions/engines/registry";
 import { setOutgoingAllowlist } from "./outgoing";
-import { initPlugins } from "./commands/registry";
-import { initSlotPlugins } from "./slots/registry";
-import { initSearchBarActions } from "./search-bar/registry";
-import { initPluginRoutes } from "./plugin-routes/registry";
-import { initMiddlewareRegistry } from "./middleware/registry";
-import { initThemes } from "./themes/registry";
+import { initPlugins } from "./extensions/commands/registry";
+import { initSlotPlugins } from "./extensions/slots/registry";
+import { initSearchBarActions } from "./extensions/search-bar/registry";
+import { initPluginRoutes } from "./extensions/plugin-routes/registry";
+import { initMiddlewareRegistry } from "./extensions/middleware/registry";
+import { initThemes } from "./extensions/themes/registry";
 import pagesRouter from "./routes/pages";
 import themesRouter from "./routes/themes";
 import searchRouter from "./routes/search";

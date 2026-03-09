@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import * as cache from "../cache";
 import { search, searchSingleEngine, mergeNewResults } from "../search";
-import { getEngineRegistry } from "../engines/registry";
-import { getSlotPlugins } from "../slots/registry";
+import { getEngineRegistry } from "../extensions/engines/registry";
+import { getSlotPlugins } from "../extensions/slots/registry";
 import { getSettings } from "../plugin-settings";
 import { getClientIp } from "../utils/request";
 import type {

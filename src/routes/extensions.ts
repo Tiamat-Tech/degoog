@@ -1,12 +1,18 @@
 import { Hono } from "hono";
-import { getEngineExtensionMeta, getEngineMap } from "../engines/registry";
+import {
+  getEngineExtensionMeta,
+  getEngineMap,
+} from "../extensions/engines/registry";
 import {
   getPluginExtensionMeta,
   getCommandInstanceById,
-} from "../commands/registry";
-import { getSlotPlugins, getSlotPluginById } from "../slots/registry";
-import { getSearchBarActionExtensionMeta } from "../search-bar/registry";
-import { getThemeExtensionMeta } from "../themes/registry";
+} from "../extensions/commands/registry";
+import {
+  getSlotPlugins,
+  getSlotPluginById,
+} from "../extensions/slots/registry";
+import { getSearchBarActionExtensionMeta } from "../extensions/search-bar/registry";
+import { getThemeExtensionMeta } from "../extensions/themes/registry";
 import {
   getSettings,
   setSettings,
@@ -43,30 +49,42 @@ async function getSlotExtensionMeta(): Promise<ExtensionMeta[]> {
 }
 
 router.get("/api/extensions", async (c) => {
-  const [engines, plugins, slotMeta, searchBarMeta, themes] = await Promise.all([
-    getEngineExtensionMeta(),
-    getPluginExtensionMeta(),
-    getSlotExtensionMeta(),
-    getSearchBarActionExtensionMeta(),
-    getThemeExtensionMeta(),
-  ]);
-  return c.json({ engines, plugins: [...plugins, ...slotMeta, ...searchBarMeta], themes });
+  const [engines, plugins, slotMeta, searchBarMeta, themes] = await Promise.all(
+    [
+      getEngineExtensionMeta(),
+      getPluginExtensionMeta(),
+      getSlotExtensionMeta(),
+      getSearchBarActionExtensionMeta(),
+      getThemeExtensionMeta(),
+    ],
+  );
+  return c.json({
+    engines,
+    plugins: [...plugins, ...slotMeta, ...searchBarMeta],
+    themes,
+  });
 });
 
 router.post("/api/extensions/:id/settings", async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json<Record<string, unknown>>();
 
-  const [engines, plugins, slotMeta, searchBarMeta, themes] = await Promise.all([
-    getEngineExtensionMeta(),
-    getPluginExtensionMeta(),
-    getSlotExtensionMeta(),
-    getSearchBarActionExtensionMeta(),
-    getThemeExtensionMeta(),
-  ]);
-  const ext = [...engines, ...plugins, ...slotMeta, ...searchBarMeta, ...themes].find(
-    (e) => e.id === id,
+  const [engines, plugins, slotMeta, searchBarMeta, themes] = await Promise.all(
+    [
+      getEngineExtensionMeta(),
+      getPluginExtensionMeta(),
+      getSlotExtensionMeta(),
+      getSearchBarActionExtensionMeta(),
+      getThemeExtensionMeta(),
+    ],
   );
+  const ext = [
+    ...engines,
+    ...plugins,
+    ...slotMeta,
+    ...searchBarMeta,
+    ...themes,
+  ].find((e) => e.id === id);
 
   if (!ext) {
     return c.json({ error: "Extension not found" }, 404);
@@ -79,7 +97,10 @@ router.post("/api/extensions/:id/settings", async (c) => {
     if (!schemaKeys.has(key)) continue;
     if (typeof value === "string") {
       filtered[key] = value;
-    } else if (Array.isArray(value) && value.every((v) => typeof v === "string")) {
+    } else if (
+      Array.isArray(value) &&
+      value.every((v) => typeof v === "string")
+    ) {
       filtered[key] = value as string[];
     }
   }
@@ -88,7 +109,10 @@ router.post("/api/extensions/:id/settings", async (c) => {
   const merged = mergeSecrets(filtered, existing, ext.settingsSchema);
   await setSettings(id, merged);
 
-  if (id.startsWith("plugin-") && ext.settingsSchema.some((f) => f.key === "useAsSettingsGate")) {
+  if (
+    id.startsWith("plugin-") &&
+    ext.settingsSchema.some((f) => f.key === "useAsSettingsGate")
+  ) {
     const slug = id.slice(7);
     const gateValue = `plugin:${slug}`;
     const mid = await getSettings("middleware");
@@ -105,12 +129,16 @@ router.post("/api/extensions/:id/settings", async (c) => {
   if (engineInstance?.configure) engineInstance.configure(merged);
 
   const commandInstance = getCommandInstanceById(id);
-  if (commandInstance?.configure) commandInstance.configure(merged as Record<string, string>);
+  if (commandInstance?.configure)
+    commandInstance.configure(merged as Record<string, string>);
 
-  const slotMatch = id.startsWith("slot-") ? id.slice(5) : getSlotPlugins().find((s) => (s.settingsId ?? `slot-${s.id}`) === id)?.id;
+  const slotMatch = id.startsWith("slot-")
+    ? id.slice(5)
+    : getSlotPlugins().find((s) => (s.settingsId ?? `slot-${s.id}`) === id)?.id;
   if (slotMatch) {
     const slotPlugin = getSlotPluginById(slotMatch);
-    if (slotPlugin?.configure) slotPlugin.configure(merged as Record<string, string>);
+    if (slotPlugin?.configure)
+      slotPlugin.configure(merged as Record<string, string>);
   }
 
   return c.json({ ok: true });

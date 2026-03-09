@@ -4,11 +4,12 @@ import {
   getFilteredCommandRegistry,
   getCommandInstanceById,
   matchBangCommand,
-} from "../../src/commands/registry";
+} from "../../src/extensions/commands/registry";
 
 describe("commands registry", () => {
   beforeAll(async () => {
-    const { initEngines } = await import("../../src/engines/registry");
+    const { initEngines } =
+      await import("../../src/extensions/engines/registry");
     const origPlugins = process.env.DEGOOG_PLUGINS_DIR;
     const origEngines = process.env.DEGOOG_ENGINES_DIR;
     process.env.DEGOOG_PLUGINS_DIR = "/nonexistent-plugins-dir";

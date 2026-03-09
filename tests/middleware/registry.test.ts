@@ -1,5 +1,8 @@
 import { describe, test, expect, beforeAll } from "bun:test";
-import { initMiddlewareRegistry, getMiddleware } from "../../src/middleware/registry";
+import {
+  initMiddlewareRegistry,
+  getMiddleware,
+} from "../../src/extensions/middleware/registry";
 
 describe("middleware registry", () => {
   beforeAll(async () => {

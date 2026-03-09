@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { findPluginRoute } from "../plugin-routes/registry";
+import { findPluginRoute } from "../extensions/plugin-routes/registry";
 
 const router = new Hono();
 

@@ -4,7 +4,7 @@ import {
   getThemes,
   getActiveTheme,
   getActiveThemeId,
-} from "../../src/themes/registry";
+} from "../../src/extensions/themes/registry";
 
 describe("themes registry", () => {
   beforeAll(async () => {
@@ -27,6 +27,8 @@ describe("themes registry", () => {
 
   test("getActiveTheme returns null or theme when no theme active", () => {
     const theme = getActiveTheme();
-    expect(theme === null || (typeof theme === "object" && "id" in theme)).toBe(true);
+    expect(theme === null || (typeof theme === "object" && "id" in theme)).toBe(
+      true,
+    );
   });
 });

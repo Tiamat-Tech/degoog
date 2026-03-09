@@ -1,5 +1,8 @@
 import { Hono } from "hono";
-import { matchBangCommand, getCommandsApiResponse } from "../commands/registry";
+import {
+  matchBangCommand,
+  getCommandsApiResponse,
+} from "../extensions/commands/registry";
 import { searchSingleEngine } from "../search";
 import { getSettings } from "../plugin-settings";
 import { getClientIp } from "../utils/request";

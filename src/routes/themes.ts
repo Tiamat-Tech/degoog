@@ -4,7 +4,7 @@ import {
   getActiveTheme,
   getActiveThemeId,
   setActiveTheme,
-} from "../themes/registry";
+} from "../extensions/themes/registry";
 
 const router = new Hono();
 
@@ -16,7 +16,7 @@ router.get("/api/themes", (c) => {
       id: t.id,
       name: t.manifest.name,
       description: t.manifest.description ?? "",
-      configurable: !!(t.manifest.settingsSchema?.length),
+      configurable: !!t.manifest.settingsSchema?.length,
     })),
     activeId,
   });

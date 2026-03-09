@@ -1,9 +1,12 @@
 import { describe, test, expect, beforeAll } from "bun:test";
 
-let commandsRouter: { request: (req: Request | string) => Response | Promise<Response> };
+let commandsRouter: {
+  request: (req: Request | string) => Response | Promise<Response>;
+};
 
 beforeAll(async () => {
-  const { initPlugins } = await import("../../src/commands/registry");
+  const { initPlugins } =
+    await import("../../src/extensions/commands/registry");
   const orig = process.env.DEGOOG_PLUGINS_DIR;
   process.env.DEGOOG_PLUGINS_DIR = "/nonexistent-plugins-dir";
   await initPlugins();
@@ -18,13 +21,17 @@ describe("routes/commands", () => {
     const res = await commandsRouter.request("http://localhost/api/commands");
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toEqual(expect.objectContaining({ commands: expect.any(Array) }));
+    expect(body).toEqual(
+      expect.objectContaining({ commands: expect.any(Array) }),
+    );
     expect(body.commands.length).toBeGreaterThan(0);
-    expect(body.commands[0]).toEqual(expect.objectContaining({
-      trigger: expect.any(String),
-      name: expect.any(String),
-      naturalLanguage: expect.any(Boolean),
-    }));
+    expect(body.commands[0]).toEqual(
+      expect.objectContaining({
+        trigger: expect.any(String),
+        name: expect.any(String),
+        naturalLanguage: expect.any(Boolean),
+      }),
+    );
   });
 
   test("GET /api/command without q returns 400", async () => {

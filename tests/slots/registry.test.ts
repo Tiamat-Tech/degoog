@@ -3,7 +3,7 @@ import {
   initSlotPlugins,
   getSlotPlugins,
   getSlotPluginById,
-} from "../../src/slots/registry";
+} from "../../src/extensions/slots/registry";
 
 describe("slots registry", () => {
   beforeAll(async () => {
