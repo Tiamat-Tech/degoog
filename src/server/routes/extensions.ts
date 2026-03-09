@@ -130,7 +130,7 @@ router.post("/api/extensions/:id/settings", async (c) => {
 
   const commandInstance = getCommandInstanceById(id);
   if (commandInstance?.configure)
-    commandInstance.configure(merged as Record<string, string>);
+    commandInstance.configure(merged);
 
   const slotMatch = id.startsWith("slot-")
     ? id.slice(5)
@@ -138,7 +138,7 @@ router.post("/api/extensions/:id/settings", async (c) => {
   if (slotMatch) {
     const slotPlugin = getSlotPluginById(slotMatch);
     if (slotPlugin?.configure)
-      slotPlugin.configure(merged as Record<string, string>);
+      slotPlugin.configure(merged);
   }
 
   return c.json({ ok: true });

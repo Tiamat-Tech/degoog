@@ -9,7 +9,6 @@ import { getEngineMap as getSearchEngineMap } from "../engines/registry";
 import {
   getSettings,
   maskSecrets,
-  settingsAsStrings,
   asString,
 } from "../../plugin-settings";
 import { addPluginCss, registerPluginScript } from "../../plugin-assets";
@@ -122,7 +121,7 @@ async function loadCommandsFromRoot(
       if (instance.configure && instance.settingsSchema?.length) {
         const stored = await getSettings(id);
         if (Object.keys(stored).length > 0)
-          instance.configure(settingsAsStrings(stored));
+          instance.configure(stored);
       }
       allCommands.push({
         id,

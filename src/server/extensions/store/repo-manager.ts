@@ -185,10 +185,56 @@ export async function removeRepo(url: string): Promise<void> {
   await writeReposData(data);
 }
 
+async function updateInstalledFromRepo(
+  data: ReposData,
+  repo: RepoInfo,
+): Promise<Set<"plugin" | "theme" | "engine">> {
+  const storeDir = getStoreDir();
+  const repoNorm = normalizeRepoUrl(repo.url);
+  const installed = data.installed.filter(
+    (i) => normalizeRepoUrl(i.repoUrl) === repoNorm,
+  );
+  const typesUpdated = new Set<"plugin" | "theme" | "engine">();
+  const pkgPath = join(storeDir, repo.localPath, "package.json");
+  let pkg: RepoPackageJson;
+  try {
+    const raw = await readFile(pkgPath, "utf-8");
+    pkg = JSON.parse(raw) as RepoPackageJson;
+  } catch {
+    return typesUpdated;
+  }
+
+  for (const inst of installed) {
+    const srcDir = join(storeDir, repo.localPath, inst.itemPath);
+    try {
+      await stat(srcDir);
+    } catch {
+      continue;
+    }
+    const destBase = getDestDir(inst.type);
+    const destDir = join(destBase, inst.installedAs);
+    await rm(destDir, { recursive: true, force: true }).catch(() => {});
+    await copyItemDir(srcDir, destDir, STORE_METADATA);
+    const entries =
+      inst.type === "plugin"
+        ? pkg.plugins
+        : inst.type === "theme"
+          ? pkg.themes
+          : pkg.engines;
+    const manifest = entries?.find(
+      (e) => e.path.replace(/\/$/, "") === inst.itemPath,
+    );
+    if (manifest?.version) inst.version = manifest.version;
+    typesUpdated.add(inst.type);
+  }
+  return typesUpdated;
+}
+
 export async function refreshRepo(url?: string): Promise<void> {
   const data = await readReposData();
   const repos = url ? [getRepoByUrl(data, url)] : data.repos;
   const toRefresh = repos.filter((r): r is RepoInfo => r != null);
+  const allTypesUpdated = new Set<"plugin" | "theme" | "engine">();
   for (const repo of toRefresh) {
     const repoPath = join(getStoreDir(), repo.localPath);
     try {
@@ -209,11 +255,17 @@ export async function refreshRepo(url?: string): Promise<void> {
       const pkg = JSON.parse(raw) as RepoPackageJson;
       repo.name = pkg.name ?? repo.name;
       repo.description = pkg.description ?? repo.description;
+
+      const updated = await updateInstalledFromRepo(data, repo);
+      for (const t of updated) allTypesUpdated.add(t);
     } catch (e) {
       repo.error = e instanceof Error ? e.message : String(e);
     }
   }
   await writeReposData(data);
+  for (const type of allTypesUpdated) {
+    await reloadAfterAction(type);
+  }
 }
 
 export async function refreshAllRepos(): Promise<

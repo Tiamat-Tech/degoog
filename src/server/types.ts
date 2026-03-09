@@ -111,7 +111,7 @@ export interface SlotPlugin {
     context?: SlotPluginContext,
   ): Promise<{ title?: string; html: string }>;
   settingsSchema?: SettingField[];
-  configure?(settings: Record<string, string>): void;
+  configure?(settings: Record<string, string | string[]>): void;
   init?(context: PluginContext): void | Promise<void>;
 }
 
@@ -136,7 +136,7 @@ export interface BangCommand {
   aliases?: string[];
   naturalLanguagePhrases?: string[];
   settingsSchema?: SettingField[];
-  configure?(settings: Record<string, string>): void;
+  configure?(settings: Record<string, string | string[]>): void;
   isConfigured?(): Promise<boolean>;
   init?(context: PluginContext): void | Promise<void>;
   execute(args: string, context?: CommandContext): Promise<CommandResult>;
