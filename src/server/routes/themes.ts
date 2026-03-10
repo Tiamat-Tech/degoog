@@ -5,6 +5,7 @@ import {
   getActiveThemeId,
   setActiveTheme,
 } from "../extensions/themes/registry";
+import { getSettingsTokenFromRequest, validateSettingsToken } from "./settings-auth";
 
 const router = new Hono();
 
@@ -23,6 +24,9 @@ router.get("/api/themes", (c) => {
 });
 
 router.post("/api/theme/active", async (c) => {
+  const token = getSettingsTokenFromRequest(c);
+  if (!(await validateSettingsToken(token)))
+    return c.json({ error: "Unauthorized" }, 401);
   const body = await c.req.json<{ id: string | null }>();
   const ok = await setActiveTheme(body.id ?? null);
   if (!ok) return c.json({ error: "Theme not found" }, 400);

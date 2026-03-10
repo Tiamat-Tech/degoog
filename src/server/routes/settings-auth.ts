@@ -1,6 +1,7 @@
 import { Hono, type Context } from "hono";
 import { getSettings, setSettings, asString } from "../plugin-settings";
 import { getMiddleware } from "../extensions/middleware/registry";
+import { isPublicInstance } from "../public-instance";
 
 const DEGOOG_SETTINGS_ID = "degoog-settings";
 
@@ -69,6 +70,7 @@ function pruneExpired(): void {
 export async function validateSettingsToken(
   token: string | undefined,
 ): Promise<boolean> {
+  if (isPublicInstance()) return false;
   const required = await isAuthRequired();
   if (!required) return true;
   if (!token) return false;
@@ -138,6 +140,7 @@ router.get("/api/settings/auth/callback", async (c) => {
 });
 
 router.post("/api/settings/auth", async (c) => {
+  if (isPublicInstance()) return c.json({ error: "Unauthorized" }, 401);
   const m = await getSelectedMiddlewareForSettingsGate();
   if (m) {
     const result = await m.handle(c.req.raw, { route: "settings-auth-post" });

@@ -1,12 +1,18 @@
 import { initTheme } from "./modules/theme";
 import { initInstallPrompt } from "./modules/installPrompt";
-import { initGeneralTab } from "./settings/general-tab";
+import { initGeneralTab, initThemeSelectOnly } from "./settings/general-tab";
 import { initEnginesTab } from "./settings/engines-tab";
 import { initPluginsTab } from "./settings/plugins-tab";
 import { initThemesTab } from "./settings/themes-tab";
 import { initStoreTab } from "./settings/store-tab";
 import "./modules/modal/modal";
 import type { AllExtensions } from "./types";
+
+declare global {
+  interface Window {
+    __DEGOOG_PUBLIC_INSTANCE__?: boolean;
+  }
+}
 
 const TOKEN_KEY = "degoog-settings-token";
 
@@ -173,7 +179,24 @@ window.addEventListener("extensions-saved", async () => {
   } catch {}
 });
 
+async function _initPublicSettings(): Promise<void> {
+  void initTheme();
+  void initThemeSelectOnly();
+  try {
+    const res = await fetch("/api/extensions");
+    const allExtensions = (await res.json()) as AllExtensions;
+    await initEnginesTab(allExtensions, { publicInstance: true });
+  } catch {
+    const enginesEl = document.getElementById("engines-content");
+    if (enginesEl) enginesEl.innerHTML = "<p>Failed to load engines.</p>";
+  }
+}
+
 async function _init(): Promise<void> {
+  if (window.__DEGOOG_PUBLIC_INSTANCE__) {
+    void _initPublicSettings();
+    return;
+  }
   void initTheme();
   const params = new URLSearchParams(window.location.search);
   const tokenFromUrl = params.get("token");

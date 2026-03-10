@@ -10,7 +10,8 @@ import {
   getActiveThemeDataAttrs,
 } from "../extensions/themes/registry";
 import { getAllPluginCss, getPluginScriptFolders } from "../plugin-assets";
-import { shouldServeSettingsGate } from "./settings-auth";
+import { shouldServeSettingsGate, getSettingsTokenFromRequest, validateSettingsToken } from "./settings-auth";
+import { isPublicInstance } from "../public-instance";
 import pkg from "../../../package.json";
 
 const router = new Hono();
@@ -77,6 +78,7 @@ router.get("/search", async (c) => {
 });
 
 router.get("/settings", async (c) => {
+  if (isPublicInstance()) return c.html(await buildPage("settings-public.html"));
   if (await shouldServeSettingsGate(c)) {
     return c.html(await buildPage("settings-gate.html"));
   }
@@ -84,6 +86,7 @@ router.get("/settings", async (c) => {
 });
 
 router.get("/settings/:tab", async (c) => {
+  if (isPublicInstance()) return c.redirect("/settings", 302);
   const tab = c.req.param("tab");
   const validTabs = ["general", "engines", "plugins", "themes", "store"];
   if (!validTabs.includes(tab)) {
@@ -115,7 +118,10 @@ router.get("/opensearch.xml", (c) => {
   });
 });
 
-router.post("/api/cache/clear", (c) => {
+router.post("/api/cache/clear", async (c) => {
+  const token = getSettingsTokenFromRequest(c);
+  if (!(await validateSettingsToken(token)))
+    return c.json({ error: "Unauthorized" }, 401);
   cache.clear();
   return c.json({ ok: true });
 });

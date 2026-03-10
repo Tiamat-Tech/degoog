@@ -4,6 +4,23 @@ import { applyTheme } from "../modules/theme";
 import { requestInstallPrompt } from "../modules/installPrompt";
 import { authHeaders, jsonHeaders } from "../utils/request";
 
+export async function initThemeSelectOnly(): Promise<void> {
+  const themeSelect = document.getElementById(
+    "theme-select",
+  ) as HTMLSelectElement | null;
+  if (!themeSelect) return;
+  const saved = await idbGet<string>(THEME_KEY);
+  themeSelect.value = saved || "system";
+  themeSelect.addEventListener("change", async () => {
+    const value = themeSelect.value;
+    await idbSet(THEME_KEY, value);
+    try {
+      localStorage.setItem(THEME_KEY, value);
+    } catch {}
+    applyTheme(value);
+  });
+}
+
 export async function initGeneralTab(
   getToken: () => string | null,
 ): Promise<void> {

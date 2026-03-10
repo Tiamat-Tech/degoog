@@ -3,6 +3,7 @@ import {
   getEngineExtensionMeta,
   getEngineMap,
 } from "../extensions/engines/registry";
+import { getSettingsTokenFromRequest, validateSettingsToken } from "./settings-auth";
 import {
   getPluginExtensionMeta,
   getCommandInstanceById,
@@ -66,6 +67,9 @@ router.get("/api/extensions", async (c) => {
 });
 
 router.post("/api/extensions/:id/settings", async (c) => {
+  const token = getSettingsTokenFromRequest(c);
+  if (!(await validateSettingsToken(token)))
+    return c.json({ error: "Unauthorized" }, 401);
   const id = c.req.param("id");
   const body = await c.req.json<Record<string, unknown>>();
 
@@ -129,16 +133,14 @@ router.post("/api/extensions/:id/settings", async (c) => {
   if (engineInstance?.configure) engineInstance.configure(merged);
 
   const commandInstance = getCommandInstanceById(id);
-  if (commandInstance?.configure)
-    commandInstance.configure(merged);
+  if (commandInstance?.configure) commandInstance.configure(merged);
 
   const slotMatch = id.startsWith("slot-")
     ? id.slice(5)
     : getSlotPlugins().find((s) => (s.settingsId ?? `slot-${s.id}`) === id)?.id;
   if (slotMatch) {
     const slotPlugin = getSlotPluginById(slotMatch);
-    if (slotPlugin?.configure)
-      slotPlugin.configure(merged);
+    if (slotPlugin?.configure) slotPlugin.configure(merged);
   }
 
   return c.json({ ok: true });

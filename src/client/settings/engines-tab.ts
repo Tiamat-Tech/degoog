@@ -22,13 +22,18 @@ const _groupByType = (engines: ExtensionMeta[]): Record<string, ExtensionMeta[]>
   return groups;
 };
 
-const _renderEngineCard = (engine: ExtensionMeta, enabledMap: EngineRecord): string => {
+const _renderEngineCard = (
+  engine: ExtensionMeta,
+  enabledMap: EngineRecord,
+  allowConfigure: boolean,
+): string => {
   const isEnabled = enabledMap[engine.id] !== false;
-  const configured = engine.configurable && isConfigured(engine);
+  const configured = allowConfigure && engine.configurable && isConfigured(engine);
   const badge = configured ? `<span class="ext-configured-badge"></span>` : "";
-  const configureBtn = engine.configurable
-    ? `<button class="ext-card-configure" data-id="${escapeHtml(engine.id)}" type="button">Configure</button>`
-    : "";
+  const configureBtn =
+    allowConfigure && engine.configurable
+      ? `<button class="ext-card-configure" data-id="${escapeHtml(engine.id)}" type="button">Configure</button>`
+      : "";
   return `
     <div class="ext-card" data-id="${escapeHtml(engine.id)}">
       <div class="ext-card-main">
@@ -47,9 +52,13 @@ const _renderEngineCard = (engine: ExtensionMeta, enabledMap: EngineRecord): str
     </div>`;
 };
 
-export async function initEnginesTab(allExtensions: AllExtensions): Promise<void> {
+export async function initEnginesTab(
+  allExtensions: AllExtensions,
+  options?: { publicInstance?: boolean },
+): Promise<void> {
   const container = document.getElementById("engines-content");
   if (!container) return;
+  const allowConfigure = !options?.publicInstance;
 
   const savedEngines = await idbGet<EngineRecord>(SETTINGS_KEY);
   const savedEnginesMap = savedEngines || {};
@@ -63,7 +72,7 @@ export async function initEnginesTab(allExtensions: AllExtensions): Promise<void
   for (const [label, engines] of Object.entries(groups)) {
     html += `<div class="ext-group"><h3 class="ext-group-label">${escapeHtml(label)}</h3><div class="ext-cards">`;
     for (const engine of engines) {
-      html += _renderEngineCard(engine, enabledMap);
+      html += _renderEngineCard(engine, enabledMap, allowConfigure);
     }
     html += `</div></div>`;
   }
@@ -77,11 +86,13 @@ export async function initEnginesTab(allExtensions: AllExtensions): Promise<void
     });
   });
 
-  container.querySelectorAll<HTMLElement>(".ext-card-configure").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const id = btn.dataset.id;
-      const ext = allExtensions.engines.find((e) => e.id === id);
-      if (ext) openModal(ext);
+  if (allowConfigure) {
+    container.querySelectorAll<HTMLElement>(".ext-card-configure").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        const ext = allExtensions.engines.find((e) => e.id === id);
+        if (ext) openModal(ext);
+      });
     });
-  });
+  }
 }
