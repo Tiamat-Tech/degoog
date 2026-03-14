@@ -1,6 +1,7 @@
 import type { SearchBarAction, ExtensionMeta } from "../../types";
 import {
   getSettings,
+  isDisabled,
   asString,
   maskSecrets,
 } from "../../utils/plugin-settings";
@@ -81,8 +82,9 @@ export async function initSearchBarActions(): Promise<void> {
 export async function getSearchBarActions(): Promise<SearchBarAction[]> {
   const out: SearchBarAction[] = [];
   for (const { pluginId, action } of storedActions) {
-    const settings = await getSettings(`plugin-${pluginId}`);
-    if (settings["disabled"] === "true") continue;
+    const pluginSettingsId = `plugin-${pluginId}`;
+    if (await isDisabled(pluginSettingsId)) continue;
+    const settings = await getSettings(pluginSettingsId);
     const label = asString(settings.buttonLabel).trim() || action.label;
     out.push({ ...action, label });
   }

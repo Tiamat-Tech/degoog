@@ -16,12 +16,13 @@ import { getSearchBarActionExtensionMeta } from "../extensions/search-bar/regist
 import { getThemeExtensionMeta } from "../extensions/themes/registry";
 import {
   getSettings,
+  isDisabled,
   setSettings,
   mergeSecrets,
   maskSecrets,
   type SettingValue,
 } from "../utils/plugin-settings";
-import { getAllPluginCss } from "../utils/plugin-assets";
+import { getPluginCssIds, getPluginCssById } from "../utils/plugin-assets";
 import type { ExtensionMeta } from "../types";
 
 const router = new Hono();
@@ -146,9 +147,16 @@ router.post("/api/extensions/:id/settings", async (c) => {
   return c.json({ ok: true });
 });
 
-router.get("/api/plugins/styles.css", (c) => {
+router.get("/api/plugins/styles.css", async (c) => {
+  const ids = getPluginCssIds();
+  const parts: string[] = [];
+  for (const id of ids) {
+    if (await isDisabled(id)) continue;
+    const css = getPluginCssById(id);
+    if (css) parts.push(css);
+  }
   c.header("Content-Type", "text/css");
-  return c.body(getAllPluginCss());
+  return c.body(parts.join("\n"));
 });
 
 export default router;

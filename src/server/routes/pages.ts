@@ -10,7 +10,7 @@ import {
   getActiveThemeDataAttrs,
 } from "../extensions/themes/registry";
 import { getAllPluginCss, getPluginScriptFolders, getPluginSettingsIds } from "../utils/plugin-assets";
-import { getSettings } from "../utils/plugin-settings";
+import { isDisabled } from "../utils/plugin-settings";
 import { shouldServeSettingsGate, getSettingsTokenFromRequest, validateSettingsToken } from "./settings-auth";
 import { isPublicInstance } from "../utils/public-instance";
 import pkg from "../../../package.json";
@@ -44,8 +44,7 @@ async function pluginAssetsPlaceholder(): Promise<string> {
     const settingsIds = getPluginSettingsIds(folder);
     let disabled = false;
     for (const sid of settingsIds) {
-      const settings = await getSettings(sid);
-      if (settings["disabled"] === "true") { disabled = true; break; }
+      if (await isDisabled(sid)) { disabled = true; break; }
     }
     if (disabled) continue;
     parts.push(

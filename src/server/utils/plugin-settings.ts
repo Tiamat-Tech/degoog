@@ -47,6 +47,11 @@ export const getSettings = async (
   return store[id] ?? {};
 }
 
+export const isDisabled = async (id: string): Promise<boolean> => {
+  const settings = await getSettings(id);
+  return settings["disabled"] === "true";
+}
+
 export const mergeDefaults = (
   stored: Record<string, SettingValue>,
   schema: Array<{ key: string; default?: unknown }>,

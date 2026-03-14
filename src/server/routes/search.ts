@@ -11,7 +11,7 @@ import {
   getSearchResultTabs,
   getSearchResultTabById,
 } from "../extensions/search-result-tabs/registry";
-import { getSettings } from "../utils/plugin-settings";
+import { getSettings, isDisabled } from "../utils/plugin-settings";
 import { getClientIp } from "../utils/request";
 import { outgoingFetch } from "../utils/outgoing";
 import { checkRateLimit } from "../utils/rate-limit";
@@ -77,8 +77,7 @@ async function runSlotPlugins(
     if (exclude && plugin.position === exclude) continue;
     try {
       const slotSettingsId = plugin.settingsId ?? `slot-${plugin.id}`;
-      const slotSettings = await getSettings(slotSettingsId);
-      if (slotSettings["disabled"] === "true") continue;
+      if (await isDisabled(slotSettingsId)) continue;
       const ok = await Promise.resolve(plugin.trigger(query.trim()));
       if (!ok) continue;
       const context = { clientIp, results };
@@ -172,8 +171,7 @@ router.post("/api/slots/glance", async (c) => {
   for (const plugin of glancePlugins) {
     try {
       const slotSettingsId = plugin.settingsId ?? `slot-${plugin.id}`;
-      const slotSettings = await getSettings(slotSettingsId);
-      if (slotSettings["disabled"] === "true") continue;
+      if (await isDisabled(slotSettingsId)) continue;
       const ok = await Promise.resolve(plugin.trigger(body.query!.trim()));
       if (!ok) continue;
       const out = await plugin.execute(body.query!.trim(), {
@@ -315,8 +313,7 @@ router.get("/api/search-tabs", async (c) => {
       continue;
     }
     const settingsId = tab.settingsId ?? `tab-${tab.id}`;
-    const tabSettings = await getSettings(settingsId);
-    if (tabSettings["disabled"] === "true") continue;
+    if (await isDisabled(settingsId)) continue;
     list.push({ id: tab.id, name: tab.name, icon: tab.icon ?? null });
   }
   return c.json({ tabs: list });
@@ -375,7 +372,7 @@ router.get("/api/tab-search", async (c) => {
       if (allResults.length > 0) totalPages = 10;
     }
 
-    if (tab?.executeSearch) {
+    if (tab?.executeSearch && !(await isDisabled(tab.settingsId ?? `tab-${tab.id}`))) {
       const result = await tab.executeSearch(query.trim(), page, {
         clientIp: clientIp ?? undefined,
       });
