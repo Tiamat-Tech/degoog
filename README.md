@@ -60,6 +60,7 @@ Aside from the official store these are third party repositories, they have been
 | :------------------- | :----------------------------------------------------- |
 | official store       | `https://github.com/fccview/fccview-degoog-extensions` |
 | Subatomic1618 addons | `https://codeberg.org/Subatomic1618/degoog-addons.git` |
+| Weeb paradise        | `https://codeberg.org/fccview/degoog-weeb-paradise.git`|
 
 ## Documentation
 
