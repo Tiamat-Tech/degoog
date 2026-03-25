@@ -89,6 +89,7 @@ export class GoogleImagesEngine implements SearchEngine {
           snippet: item.result?.site_title || "",
           source: this.name,
           thumbnail,
+          imageUrl: item.original_image?.url || thumbnail,
         });
       }
     }

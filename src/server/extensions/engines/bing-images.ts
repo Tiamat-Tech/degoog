@@ -65,6 +65,7 @@ export class BingImagesEngine implements SearchEngine {
             snippet: data.desc || "",
             source: this.name,
             thumbnail: data.turl,
+            imageUrl: data.murl,
           });
         }
       } catch {}

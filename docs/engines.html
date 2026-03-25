@@ -89,8 +89,33 @@
           <code>type</code> (text, password, url, toggle, textarea, select,
           urllist), and optional <code>required</code>,
           <code>placeholder</code>, <code>description</code>,
-          <code>secret</code>, <code>options</code> (for select).
+          <code>secret</code>, <code>options</code> (for select),
+          <code>default</code>.
         </p>
+        <p>
+          Mark sensitive fields (API keys, tokens) with <code>secret: true</code>. The UI will never
+          expose the saved value — it shows a <code>Set</code> / <code>Not set</code> indicator
+          instead. On save, if the field value equals the sentinel <code>"__SET__"</code> the
+          existing stored value is preserved, so a page reload never overwrites a key the user
+          already entered.
+        </p>
+
+        <h2>HTTP method</h2>
+        <p>
+          Engines are not limited to GET requests. Since you control the fetch call inside
+          <code>executeSearch</code>, you can use any method (POST, etc.) and set any headers or
+          body your API requires. A GraphQL engine using POST looks like:
+        </p>
+        <pre><code>async executeSearch(query, page = 1, _timeFilter, context) {
+  const doFetch = context?.fetch ?? fetch;
+  const response = await doFetch("https://graphql.example.com", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: MY_QUERY, variables: { search: query, page } }),
+  });
+  const data = await response.json();
+  // parse and return array of { title, url, snippet, source }
+}</code></pre>
 
         <h2>Search types</h2>
         <p>

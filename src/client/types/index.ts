@@ -4,6 +4,7 @@ export interface SearchResult {
   snippet: string;
   source: string;
   thumbnail?: string;
+  imageUrl?: string;
   duration?: string;
 }
 

@@ -37,10 +37,16 @@ export function initOptionsDropdown(): void {
   if (!toggle || !dropdown || !toolsBar || !submenuTime || !submenuLang) return;
 
   const customDateWrap = document.getElementById("tools-custom-date");
-  const dateFromInput = document.getElementById("tools-date-from") as HTMLInputElement | null;
-  const dateToInput = document.getElementById("tools-date-to") as HTMLInputElement | null;
+  const dateFromInput = document.getElementById(
+    "tools-date-from",
+  ) as HTMLInputElement | null;
+  const dateToInput = document.getElementById(
+    "tools-date-to",
+  ) as HTMLInputElement | null;
   const dateApplyBtn = document.getElementById("tools-date-apply");
-  const langFilter = document.getElementById("tools-lang-filter") as HTMLInputElement | null;
+  const langFilter = document.getElementById(
+    "tools-lang-filter",
+  ) as HTMLInputElement | null;
   const langList = document.getElementById("tools-lang-list");
   const timeValEl = document.getElementById("tools-time-val");
   const langValEl = document.getElementById("tools-lang-val");
@@ -57,12 +63,21 @@ export function initOptionsDropdown(): void {
 
   function updateValueLabels(): void {
     if (timeValEl) {
-      timeValEl.textContent = TIME_LABELS[state.currentTimeFilter] ?? "Any time";
-      timeValEl.classList.toggle("tools-menu-value--set", state.currentTimeFilter !== "any");
+      timeValEl.textContent =
+        TIME_LABELS[state.currentTimeFilter] ?? "Any time";
+      timeValEl.classList.toggle(
+        "tools-menu-value--set",
+        state.currentTimeFilter !== "any",
+      );
     }
     if (langValEl) {
-      langValEl.textContent = state.currentLanguage ? getLangName(state.currentLanguage) : "Any";
-      langValEl.classList.toggle("tools-menu-value--set", !!state.currentLanguage);
+      langValEl.textContent = state.currentLanguage
+        ? getLangName(state.currentLanguage)
+        : "Any";
+      langValEl.classList.toggle(
+        "tools-menu-value--set",
+        !!state.currentLanguage,
+      );
     }
   }
 
@@ -70,7 +85,7 @@ export function initOptionsDropdown(): void {
     const rect = toggle!.getBoundingClientRect();
     dropdown!.style.position = "fixed";
     dropdown!.style.top = `${rect.bottom + 4}px`;
-    dropdown!.style.left = `${rect.left}px`;
+    dropdown!.style.right = `${window.innerWidth - rect.right}px`;
   }
 
   function positionSubmenu(submenu: HTMLElement, itemEl: HTMLElement): void {
@@ -124,11 +139,17 @@ export function initOptionsDropdown(): void {
   }
 
   function syncTimeOptions(): void {
-    submenuTime!.querySelectorAll<HTMLElement>(".tools-option[data-time]").forEach((o) => {
-      o.classList.toggle("active", o.dataset.time === state.currentTimeFilter);
-    });
+    submenuTime!
+      .querySelectorAll<HTMLElement>(".tools-option[data-time]")
+      .forEach((o) => {
+        o.classList.toggle(
+          "active",
+          o.dataset.time === state.currentTimeFilter,
+        );
+      });
     if (customDateWrap) {
-      customDateWrap.style.display = state.currentTimeFilter === "custom" ? "flex" : "none";
+      customDateWrap.style.display =
+        state.currentTimeFilter === "custom" ? "flex" : "none";
     }
     updateValueLabels();
   }
@@ -136,13 +157,15 @@ export function initOptionsDropdown(): void {
   function syncLangOptions(filter = ""): void {
     if (!langList) return;
     const q = filter.toLowerCase();
-    langList.querySelectorAll<HTMLElement>(".tools-lang-option").forEach((el) => {
-      const code = el.dataset.lang ?? "";
-      const label = el.textContent ?? "";
-      const match = !q || code.includes(q) || label.toLowerCase().includes(q);
-      el.style.display = match ? "" : "none";
-      el.classList.toggle("active", code === state.currentLanguage);
-    });
+    langList
+      .querySelectorAll<HTMLElement>(".tools-lang-option")
+      .forEach((el) => {
+        const code = el.dataset.lang ?? "";
+        const label = el.textContent ?? "";
+        const match = !q || code.includes(q) || label.toLowerCase().includes(q);
+        el.style.display = match ? "" : "none";
+        el.classList.toggle("active", code === state.currentLanguage);
+      });
     updateValueLabels();
   }
 
@@ -153,7 +176,10 @@ export function initOptionsDropdown(): void {
       const data = (await res.json()) as { languages: string[] };
       const codes = data.languages ?? [];
 
-      const items = [{ code: "", label: "Any language" }, ...codes.map((c) => ({ code: c, label: getLangName(c) }))];
+      const items = [
+        { code: "", label: "Any language" },
+        ...codes.map((c) => ({ code: c, label: getLangName(c) })),
+      ];
       items.sort((a, b) => {
         if (!a.code) return -1;
         if (!b.code) return 1;
@@ -161,23 +187,29 @@ export function initOptionsDropdown(): void {
       });
 
       langList.innerHTML = items
-        .map(({ code, label }) =>
-          `<button type="button" class="tools-option tools-lang-option${code === state.currentLanguage ? " active" : ""}" data-lang="${code}">${label}${code ? ` <span class="tools-lang-code">${code}</span>` : ""}</button>`
+        .map(
+          ({ code, label }) =>
+            `<button type="button" class="tools-option tools-lang-option${code === state.currentLanguage ? " active" : ""}" data-lang="${code}">${label}${code ? ` <span class="tools-lang-code">${code}</span>` : ""}</button>`,
         )
         .join("");
 
       langList.addEventListener("click", (e) => {
-        const opt = (e.target as HTMLElement).closest<HTMLElement>(".tools-lang-option");
+        const opt = (e.target as HTMLElement).closest<HTMLElement>(
+          ".tools-lang-option",
+        );
         if (!opt) return;
         const lang = opt.dataset.lang ?? "";
         if (lang === state.currentLanguage) return;
         state.currentLanguage = lang;
         syncLangOptions(langFilter?.value ?? "");
         closeAll();
-        if (state.currentQuery) void performSearch(state.currentQuery, state.currentType);
+        if (state.currentQuery)
+          void performSearch(state.currentQuery, state.currentType);
       });
     } catch {
-      if (langList) langList.innerHTML = '<p class="tools-lang-error">Failed to load languages</p>';
+      if (langList)
+        langList.innerHTML =
+          '<p class="tools-lang-error">Failed to load languages</p>';
     }
   }
 
@@ -204,15 +236,21 @@ export function initOptionsDropdown(): void {
     }
   });
 
-  window.addEventListener("scroll", (e) => {
-    if (dropdown.style.display !== "block") return;
-    const target = e.target as Node;
-    if (submenuTime.contains(target) || submenuLang.contains(target)) return;
-    closeAll();
-  }, { capture: true });
+  window.addEventListener(
+    "scroll",
+    (e) => {
+      if (dropdown.style.display !== "block") return;
+      const target = e.target as Node;
+      if (submenuTime.contains(target) || submenuLang.contains(target)) return;
+      closeAll();
+    },
+    { capture: true },
+  );
 
   dropdown.addEventListener("click", (e) => {
-    const item = (e.target as HTMLElement).closest<HTMLElement>(".tools-menu-item");
+    const item = (e.target as HTMLElement).closest<HTMLElement>(
+      ".tools-menu-item",
+    );
     if (!item) return;
     const menu = item.dataset.menu;
     if (menu === "time") openSubmenu(submenuTime, item);
@@ -223,7 +261,9 @@ export function initOptionsDropdown(): void {
   });
 
   submenuTime.addEventListener("click", (e) => {
-    const opt = (e.target as HTMLElement).closest<HTMLElement>(".tools-option[data-time]");
+    const opt = (e.target as HTMLElement).closest<HTMLElement>(
+      ".tools-option[data-time]",
+    );
     if (!opt) return;
     const value = opt.dataset.time;
     if (!value || value === state.currentTimeFilter) return;
@@ -231,7 +271,8 @@ export function initOptionsDropdown(): void {
     syncTimeOptions();
     if (value !== "custom") {
       closeAll();
-      if (state.currentQuery) void performSearch(state.currentQuery, state.currentType);
+      if (state.currentQuery)
+        void performSearch(state.currentQuery, state.currentType);
     }
   });
 
@@ -239,8 +280,11 @@ export function initOptionsDropdown(): void {
     state.customDateFrom = dateFromInput?.value ?? "";
     state.customDateTo = dateToInput?.value ?? "";
     closeAll();
-    if (state.currentQuery) void performSearch(state.currentQuery, state.currentType);
+    if (state.currentQuery)
+      void performSearch(state.currentQuery, state.currentType);
   });
 
-  langFilter?.addEventListener("input", () => syncLangOptions(langFilter.value));
+  langFilter?.addEventListener("input", () =>
+    syncLangOptions(langFilter.value),
+  );
 }
