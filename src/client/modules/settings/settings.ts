@@ -125,7 +125,6 @@ function _initTabs(): void {
     );
   });
 
-  // Load tab from URL path
   const path = window.location.pathname;
   const match = path.match(/^\/settings\/(\w+)$/);
   if (match) {
@@ -179,7 +178,7 @@ window.addEventListener("extensions-saved", async () => {
     const allExtensions = (await res.json()) as AllExtensions;
     await initEnginesTab(allExtensions);
     initPluginsTab(allExtensions);
-  } catch { }
+  } catch {}
 });
 
 async function _initPublicSettings(): Promise<void> {

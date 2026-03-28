@@ -303,9 +303,10 @@ export function getDefaultEngineConfig(): Record<string, boolean> {
 const SCORE_FIELD: SettingField = {
   key: "score",
   label: "Score",
-  type: "text",
+  type: "number",
   default: "1",
   description: "Result ranking multiplier for this engine. Higher values favour its results.",
+  advanced: true,
 };
 
 export async function getEngineExtensionMeta(): Promise<ExtensionMeta[]> {

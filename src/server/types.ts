@@ -17,13 +17,14 @@ export enum ExtensionStoreType {
 export interface SettingField {
   key: string;
   label: string;
-  type: "text" | "password" | "url" | "toggle" | "textarea" | "select";
+  type: "text" | "number" | "password" | "url" | "toggle" | "textarea" | "select";
   required?: boolean;
   placeholder?: string;
   description?: string;
   secret?: boolean;
   options?: string[];
   default?: string;
+  advanced?: boolean;
 }
 
 export interface ExtensionMeta {

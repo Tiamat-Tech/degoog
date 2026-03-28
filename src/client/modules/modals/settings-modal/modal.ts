@@ -71,11 +71,30 @@ export function openModal(ext: ExtensionMeta): void {
   if (statusEl) statusEl.textContent = "";
 
   if (bodyEl) {
-    bodyEl.innerHTML = ext.settingsSchema
-      .map((field) =>
-        renderField(field, String(ext.settings[field.key] ?? ""), ext),
-      )
+    const normalFields = ext.settingsSchema.filter((f) => !f.advanced);
+    const advancedFields = ext.settingsSchema.filter((f) => f.advanced);
+    let html = normalFields
+      .map((field) => renderField(field, String(ext.settings[field.key] ?? field.default ?? ""), ext))
       .join("");
+    if (advancedFields.length > 0) {
+      html += `<div class="ext-advanced-section">
+        <label class="ext-field-toggle-row ext-advanced-header">
+          <span class="ext-field-label">Advanced</span>
+          <label class="engine-toggle">
+            <input type="checkbox" class="ext-advanced-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </label>
+        <div class="ext-advanced-body" hidden>${advancedFields
+          .map((field) => renderField(field, String(ext.settings[field.key] ?? field.default ?? ""), ext))
+          .join("")}</div>
+      </div>`;
+    }
+    bodyEl.innerHTML = html;
+    bodyEl.querySelector(".ext-advanced-toggle")?.addEventListener("change", (e) => {
+      const body = bodyEl.querySelector<HTMLElement>(".ext-advanced-body");
+      if (body) body.hidden = !(e.target as HTMLInputElement).checked;
+    });
     initUrlList(bodyEl);
     bodyEl
       .querySelectorAll<HTMLElement>(".ext-field-input--configured")

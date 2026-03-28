@@ -27,7 +27,7 @@ Search aggregator that queries multiple engines and shows results in one place. 
 
 ## Run
 
-By default the app will run on port `4444`, please check the [documentation](https://fccview.github.io/degoog/env.html) for a comprehensive list of env variables and various nuances.
+By default the app will run on port `4444` with user `1000:1000`, please check the [documentation](https://fccview.github.io/degoog/env.html) for a comprehensive list of env variables and various nuances.
 
 ```bash
 mkdir -p ./data
@@ -54,7 +54,7 @@ services:
 <summary>Inline podman</summary>
 
 ```bash
-podman run -d --name degoog -p 4444:4444 -v ./data:/app/data --user 1000:1000 --security-opt label=disable --restart unless-stopped ghcr.io/fccview/degoog:latest
+podman run -d --name degoog -p 4444:4444 -v ./data:/app/data --security-opt label=disable --restart unless-stopped ghcr.io/fccview/degoog:latest
 ```
 
 </details>
@@ -63,7 +63,7 @@ podman run -d --name degoog -p 4444:4444 -v ./data:/app/data --user 1000:1000 --
 <summary>Inline docker</summary>
 
 ```bash
-docker run -d --name degoog -p 4444:4444 -v ./data:/app/data --user "1000:1000" --restart unless-stopped ghcr.io/fccview/degoog:latest
+docker run -d --name degoog -p 4444:4444 -v ./data:/app/data --restart unless-stopped ghcr.io/fccview/degoog:latest
 ```
 
 </details>

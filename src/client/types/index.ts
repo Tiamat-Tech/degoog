@@ -87,6 +87,7 @@ export interface AppState {
 
 export type SettingFieldType =
   | "text"
+  | "number"
   | "password"
   | "url"
   | "toggle"
@@ -103,6 +104,7 @@ export interface SettingField {
   description?: string;
   secret?: boolean;
   options?: string[];
+  advanced?: boolean;
 }
 
 export interface ExtensionMeta {
