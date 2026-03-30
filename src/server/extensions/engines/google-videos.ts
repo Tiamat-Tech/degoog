@@ -18,7 +18,7 @@ const _DURATION_RE = /^\d{1,3}:\d{2}$|^\d{1,3}:\d{2}:\d{2}$/;
 
 const _ytThumbnail = (href: string): string => {
   const match = href.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
-  return match ? `https://i.ytimg.com/vi/${match[1]}/mqdefault.jpg` : "";
+  return match ? `https://i.ytimg.com/vi/${match[1]}/hqdefault.jpg` : "";
 };
 
 const _durationFromScope = (

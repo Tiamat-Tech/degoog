@@ -70,12 +70,12 @@
 }
 
 .skeleton-video-grid {
-  column-count: 4;
+  column-count: 2;
   column-gap: 8px;
   padding: 16px 0;
 
-  @media (max-width: 1400px) { column-count: 3; }
-  @media (max-width: 800px) { column-count: 2; }
+  @media (min-width: 800px) { column-count: 3; }
+  @media (min-width: 1400px) { column-count: 4; }
 }
 
 .skeleton-media-card {

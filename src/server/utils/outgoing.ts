@@ -1,4 +1,3 @@
-import { fetch as undiciFetch, ProxyAgent } from "undici";
 import { getSettings } from "./plugin-settings";
 import { debug } from "./logger";
 
@@ -78,13 +77,12 @@ export async function outgoingFetch(
 
   const proxyUrl = urls[proxyIndex++ % urls.length];
   debug("outgoing", `via proxy ${proxyUrl} -> ${new URL(url).hostname}`);
-  const agent = new ProxyAgent(proxyUrl);
-  return undiciFetch(url, {
+  return fetch(url, {
     method,
     redirect,
     signal,
     headers,
     body: body ?? undefined,
-    dispatcher: agent,
-  }) as unknown as Promise<Response>;
+    proxy: proxyUrl,
+  } as BunFetchRequestInit);
 }

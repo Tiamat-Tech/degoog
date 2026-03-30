@@ -71,46 +71,42 @@ export class BingVideosEngine implements SearchEngine {
     const html = await response.text();
     const $ = cheerio.load(html);
     const results: SearchResult[] = [];
+    const seen = new Set<string>();
 
-    $(".mc_vtvc, .dg_u").each((_, el) => {
-      const meta =
-        $(el).attr("data-video") ||
-        $(el).find("[data-video]").attr("data-video") ||
-        "";
-      try {
-        const data = JSON.parse(meta);
-        if (data.murl || data.vurl) {
-          results.push({
-            title: data.title || data.t || "",
-            url: data.murl || data.vurl || "",
-            snippet: data.desc || "",
-            source: this.name,
-            thumbnail: data.turl || data.imgurl || "",
-            duration: data.dur || "",
-          });
-        }
-      } catch {}
-    });
+    $(".mc_vtvc").each((_, el) => {
+      const $el = $(el);
 
-    if (results.length === 0) {
-      $(".mc_vtvc_meta, .vrhdata").each((_, el) => {
-        const title = $(el)
-          .find(".mc_vtvc_title, .mc_vtvc_meta_row")
-          .text()
-          .trim();
-        const link = $(el).closest("a").attr("href") || "";
-        const thumb = $(el).closest(".mc_vtvc").find("img").attr("src") || "";
-        if (title && link) {
-          results.push({
-            title,
-            url: link.startsWith("http") ? link : `https://www.bing.com${link}`,
-            snippet: "",
-            source: this.name,
-            thumbnail: thumb,
-          });
-        }
+      const mmeta = $el.attr("mmeta") || "";
+      let url = "";
+      let thumbnail = "";
+
+      if (mmeta) {
+        try {
+          const data = JSON.parse(mmeta) as Record<string, string>;
+          url = data.murl || data.pgurl || "";
+          thumbnail = data.turl || "";
+        } catch {}
+      }
+
+      const title = $el.find(".mc_vtvc_title").first().text().trim();
+
+      if (!thumbnail) {
+        const img = $el.find("img").first();
+        thumbnail = img.attr("data-src-hq") || img.attr("src") || "";
+      }
+
+      let duration = "";
+      $el.find(".mc_vtvc_meta_row").each((_, row) => {
+        if (duration) return;
+        const text = $(row).text().trim();
+        if (/^\d{1,3}:\d{2}(:\d{2})?$/.test(text)) duration = text;
       });
-    }
+
+      if (!title || !url || seen.has(url)) return;
+      seen.add(url);
+
+      results.push({ title, url, snippet: "", source: this.name, thumbnail, duration });
+    });
 
     return results;
   }

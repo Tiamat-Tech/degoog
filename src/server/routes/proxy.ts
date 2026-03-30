@@ -80,7 +80,7 @@ router.get("/api/proxy/image", async (c) => {
   const timeout = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
 
   try {
-    const res = await fetch(url, {
+    const res = await outgoingFetch(url, {
       signal: controller.signal,
       headers,
       redirect: "follow",

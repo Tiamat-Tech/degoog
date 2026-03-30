@@ -100,7 +100,7 @@ export function appendMediaCards(
       card.dataset.idx = String(idx);
       card.innerHTML = `
         <div class="video-thumb-wrap">
-          <img class="video-thumb" src="${escapeHtml(proxyImageUrl(r.thumbnail || ""))}" alt="${escapeHtml(r.title)}" loading="lazy" onerror="this.style.display='none'">
+          <img class="video-thumb" src="${escapeHtml(proxyImageUrl(r.thumbnail || ""))}" alt="${escapeHtml(r.title)}" loading="lazy" onerror="this.style.display='none';this.parentElement.querySelector('.video-play-icon').style.opacity='1'">
           ${r.duration ? `<span class="video-duration">${escapeHtml(r.duration)}</span>` : ""}
           <div class="video-play-icon">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>

@@ -8,6 +8,7 @@ import {
 import { applyTheme } from "../utils/theme";
 import { requestInstallPrompt } from "../utils/install-prompt";
 import { authHeaders, jsonHeaders } from "../utils/request";
+import { initProxyTest } from "./proxy-test";
 
 export async function initAppearanceSettings(): Promise<void> {
   const themeSelect = document.getElementById(
@@ -181,6 +182,7 @@ export async function initGeneralTab(
     proxyEnabled.addEventListener("change", () => {
       proxyUrlsWrap.style.display = proxyEnabled?.checked ? "block" : "none";
     });
+    initProxyTest(getToken);
   }
   if (languagesEnabled && languagesWrap) {
     languagesEnabled.addEventListener("change", () => {

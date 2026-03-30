@@ -6,30 +6,29 @@
 
 .results-header {
   display: flex;
-  align-items: center;
-  padding: 12px 16px 0;
+  align-items: stretch;
+  flex-direction: column;
+  padding: 16px 16px 0;
   gap: 15px;
-
-  @media (max-width: 767px) {
-    flex-direction: column;
-    align-items: stretch;
-    position: relative;
-    padding: 16px 16px 0;
-  }
+  position: relative;
 
   @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
     padding: 16px 20px 0;
     gap: 10px;
+    position: static;
   }
 }
 
 .results-search-bar {
-  flex: 1;
-  max-width: 692px;
+  flex: none;
+  width: 100%;
 
-  @media (max-width: 767px) {
-    flex: none;
-    width: 100%;
+  @media (min-width: 768px) {
+    flex: 1;
+    max-width: 692px;
+    width: auto;
   }
 }
 
@@ -37,17 +36,17 @@
   @include button-reset;
   color: var(--text-secondary);
   padding: 8px;
-  margin-left: auto;
-
-  @media (max-width: 767px) {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    margin-left: 0;
-  }
+  position: absolute;
+  top: 16px;
+  right: 16px;
 
   &:hover {
     color: var(--text-primary);
+  }
+
+  @media (min-width: 768px) {
+    position: static;
+    margin-left: auto;
   }
 }
 
@@ -61,12 +60,12 @@
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 
-  @media (min-width: 768px) { padding: 0 20px; }
-  @media (min-width: 1200px) { padding: 0 150px; }
-
   &::-webkit-scrollbar {
     display: none;
   }
+
+  @media (min-width: 768px) { padding: 0 20px; }
+  @media (min-width: 1200px) { padding: 0 150px; }
 }
 
 .results-tab {
@@ -245,7 +244,6 @@
   color: var(--text-secondary);
 }
 
-
 .tools-option {
   @include button-reset;
   display: flex;
@@ -281,10 +279,9 @@
   font-size: $font-size-small;
   color: var(--text-secondary);
 
-  @media (min-width: 768px) { padding: 20px 20px 10px 20px }
-  @media (min-width: 1200px) { padding: 20px 150px 10px 150px }
+  @media (min-width: 768px) { padding: 20px 20px 10px 20px; }
+  @media (min-width: 1200px) { padding: 20px 150px 10px 150px; }
 }
-
 
 .results-layout {
   display: flex;
@@ -301,6 +298,22 @@
   @media (min-width: 1200px) {
     padding: 0 150px;
   }
+
+  &.media-mode {
+    padding: 0 8px;
+
+    @media (min-width: 768px) {
+      padding: 0 20px;
+    }
+
+    .results-main {
+      max-width: none;
+    }
+
+    .results-sidebar {
+      display: none;
+    }
+  }
 }
 
 .results-main {
@@ -312,32 +325,15 @@
 .results-sidebar {
   width: 100%;
   flex-shrink: 0;
-  padding-top: 16px;
-
-  @media (max-width: 767px) {
-    order: -1;
-    padding-top: 8px;
-    padding-bottom: 8px;
-  }
+  padding-top: 8px;
+  padding-bottom: 8px;
+  order: -1;
 
   @media (min-width: 768px) {
     width: 340px;
-  }
-}
-
-.results-layout.media-mode {
-  padding: 0 8px;
-
-  @media (min-width: 768px) {
-    padding: 0 20px;
-  }
-
-  .results-main {
-    max-width: none;
-  }
-
-  .results-sidebar {
-    display: none;
+    padding-top: 16px;
+    padding-bottom: 0;
+    order: 0;
   }
 }
 
