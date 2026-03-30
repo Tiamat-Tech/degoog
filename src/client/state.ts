@@ -12,6 +12,12 @@ export const state: AppState = {
   videoPage: 1,
   videoLastPage: 10,
   currentTimeFilter: "any",
+  customDateFrom: "",
+  customDateTo: "",
+  currentLanguage: "",
   mediaLoading: false,
   currentBangQuery: "",
+  openInNewTab: false,
+  displayEnginePerformance: true,
+  displaySearchSuggestions: true,
 };

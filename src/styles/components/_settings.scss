@@ -235,19 +235,19 @@
   }
 }
 
-.settings-proxy-toggle-wrap {
+.settings-toggle-wrap {
   display: flex;
   align-items: center;
   gap: 12px;
   cursor: pointer;
   margin-top: 8px;
 
-  .settings-proxy-toggle {
+  .settings-toggle {
     display: none;
   }
 }
 
-.settings-proxy-toggle-label {
+.settings-toggle-label {
   font-size: $font-size-base;
   color: var(--text-primary);
 }
@@ -279,6 +279,40 @@
 
   &:focus {
     border-color: $primary;
+  }
+}
+
+.proxy-test-btn {
+  margin-top: 10px;
+}
+
+.proxy-test-result {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: $font-size-small;
+  line-height: 1.5;
+
+  strong {
+    font-weight: 600;
+  }
+
+  &--ok {
+    background: rgba($success, 0.1);
+    color: $success;
+    border: 1px solid rgba($success, 0.25);
+  }
+
+  &--warn {
+    background: rgba($warning, 0.1);
+    color: $warning;
+    border: 1px solid rgba($warning, 0.25);
+  }
+
+  &--error {
+    background: rgba($danger, 0.1);
+    color: $danger;
+    border: 1px solid rgba($danger, 0.25);
   }
 }
 

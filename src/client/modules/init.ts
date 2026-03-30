@@ -6,7 +6,14 @@ import { initLuckyAnimation } from "../animations/lucky-animation";
 import { initTabs } from "./tabs/tabs";
 import { initMediaPreview } from "./media/media-preview";
 import { initTheme } from "../utils/theme";
-import { initTimeFilter } from "../utils/time-filter";
+import { initOptionsDropdown } from "../utils/time-filter";
+import { idbGet } from "../utils/db";
+import {
+  OPEN_IN_NEW_TAB_KEY,
+  DISPLAY_ENGINE_PERFORMANCE,
+  DISPLAY_SEARCH_SUGGESTIONS,
+} from "../constants";
+import { state } from "../state";
 
 import { initInstallPrompt } from "../utils/install-prompt";
 import { initSearchBarActions } from "../utils/search-bar-actions";
@@ -70,8 +77,18 @@ export function init(): void {
   initTabs();
   initMediaPreview();
   void initTheme();
-  initTimeFilter();
+  initOptionsDropdown();
   initInstallPrompt();
+
+  void idbGet<boolean>(OPEN_IN_NEW_TAB_KEY).then((v) => {
+    if (v !== null) state.openInNewTab = v;
+  });
+  void idbGet<boolean>(DISPLAY_ENGINE_PERFORMANCE).then((v) => {
+    if (v !== null) state.displayEnginePerformance = v;
+  });
+  void idbGet<boolean>(DISPLAY_SEARCH_SUGGESTIONS).then((v) => {
+    if (v !== null) state.displaySearchSuggestions = v;
+  });
 
   document.body.addEventListener("click", (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>(".uuid-copy");

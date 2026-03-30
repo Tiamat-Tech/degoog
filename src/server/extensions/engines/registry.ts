@@ -3,12 +3,14 @@ import {
   type SearchType,
   type EngineConfig,
   type ExtensionMeta,
+  type SettingField,
   ExtensionStoreType,
 } from "../../types";
 import {
   getSettings,
   maskSecrets,
   mergeDefaults,
+  asString,
 } from "../../utils/plugin-settings";
 import { debug } from "../../utils/logger";
 import { GoogleEngine } from "./google";
@@ -263,27 +265,26 @@ export function getEnginesForSearchType(
   return allDefinitions.map((d) => engineMap[d.id]).filter(Boolean);
 }
 
-export async function getActiveWebEngines(
+export const getActiveWebEngines = async (
   config: EngineConfig,
-): Promise<SearchEngine[]> {
+): Promise<{ instance: SearchEngine; score: number }[]> => {
   const allDefinitions = [
     ...BUILTIN_DEFINITIONS.filter((d) => d.searchType === "web"),
     ...pluginEntries.filter((e) => e.searchType === "web"),
   ];
   const engineMap = getEngineMap();
-  const active: SearchEngine[] = [];
+  const active: { instance: SearchEngine; score: number }[] = [];
   for (const def of allDefinitions) {
     if (!config[def.id]) continue;
     const instance = engineMap[def.id];
     if (!instance) continue;
-    if (!engineRequiresConfig(instance)) {
-      active.push(instance);
-      continue;
-    }
-    if (await hasRequiredConfig(def.id, instance)) active.push(instance);
+    if (engineRequiresConfig(instance) && !(await hasRequiredConfig(def.id, instance))) continue;
+    const stored = await getSettings(def.id);
+    const score = Math.max(parseFloat(asString(stored["score"])) || 1, 0.1);
+    active.push({ instance, score });
   }
   return active;
-}
+};
 
 export function getDefaultEngineConfig(): Record<string, boolean> {
   const entries = getEngineRegistry();
@@ -298,6 +299,15 @@ export function getDefaultEngineConfig(): Record<string, boolean> {
     }),
   );
 }
+
+const SCORE_FIELD: SettingField = {
+  key: "score",
+  label: "Score",
+  type: "number",
+  default: "1",
+  description: "Result ranking multiplier for this engine. Higher values favour its results.",
+  advanced: true,
+};
 
 export async function getEngineExtensionMeta(): Promise<ExtensionMeta[]> {
   const allDefs = [
@@ -316,16 +326,17 @@ export async function getEngineExtensionMeta(): Promise<ExtensionMeta[]> {
   const defaults = getDefaultEngineConfig();
   for (const def of allDefs) {
     const instance = engineMap[def.id];
-    const schema = instance?.settingsSchema ?? [];
-    const rawSettings = schema.length > 0 ? await getSettings(def.id) : {};
-    const maskedSettings = maskSecrets(rawSettings, schema);
+    const engineSchema = instance?.settingsSchema ?? [];
+    const schema: SettingField[] = [SCORE_FIELD, ...engineSchema];
+    const rawSettings = await getSettings(def.id);
+    const maskedSettings = maskSecrets(rawSettings, engineSchema);
 
     results.push({
       id: def.id,
       displayName: def.displayName,
       description: `${def.searchType} search engine`,
       type: ExtensionStoreType.Engine,
-      configurable: schema.length > 0,
+      configurable: true,
       settingsSchema: schema,
       settings: maskedSettings,
       defaultEnabled: defaults[def.id],
@@ -334,6 +345,7 @@ export async function getEngineExtensionMeta(): Promise<ExtensionMeta[]> {
 
   return results;
 }
+
 
 function isSearchEngine(val: unknown): val is SearchEngine {
   return (

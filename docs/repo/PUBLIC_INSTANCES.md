@@ -7,3 +7,7 @@ Some amazing people around the web decided to make their degoog instances availa
 [https://mirnir.com/](https://mirnir.com/)
 
 [https://nepnir.com](https://nepnir.com) (Zen)
+
+## All public instances 
+
+[https://search2.drinker.beer/](https://search2.drinker.beer/)

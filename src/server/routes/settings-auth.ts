@@ -2,6 +2,7 @@ import { Hono, type Context } from "hono";
 import { getSettings, setSettings, asString } from "../utils/plugin-settings";
 import { getMiddleware } from "../extensions/middleware/registry";
 import { isPublicInstance } from "../utils/public-instance";
+import { outgoingFetch } from "../utils/outgoing";
 
 const DEGOOG_SETTINGS_ID = "degoog-settings";
 
@@ -191,6 +192,8 @@ router.post("/api/settings/general", async (c) => {
     "rateLimitBurstMax",
     "rateLimitLongWindow",
     "rateLimitLongMax",
+    "languagesEnabled",
+    "languages",
   ];
   const updates: Record<string, string> = {};
   for (const key of allowed) {
@@ -200,6 +203,53 @@ router.post("/api/settings/general", async (c) => {
   }
   await setSettings(DEGOOG_SETTINGS_ID, { ...existing, ...updates });
   return c.json({ ok: true });
+});
+
+const IP_CHECK_URL = "https://api.ipify.org?format=json";
+const IP_CHECK_TIMEOUT_MS = 8_000;
+
+async function fetchIp(useFn: typeof fetch): Promise<string | null> {
+  try {
+    const res = await useFn(IP_CHECK_URL, {
+      signal: AbortSignal.timeout(IP_CHECK_TIMEOUT_MS),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { ip?: string };
+    return data.ip ?? null;
+  } catch {
+    return null;
+  }
+}
+
+router.get("/api/settings/proxy-test", async (c) => {
+  const token = getSettingsTokenFromRequest(c);
+  if (!(await validateSettingsToken(token))) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  const enabled = asString(settings.proxyEnabled) === "true";
+  const proxyUrls = asString(settings.proxyUrls);
+
+  const directIp = await fetchIp(fetch);
+
+  if (!enabled || !proxyUrls.trim()) {
+    return c.json({
+      enabled: false,
+      directIp,
+      proxyIp: null,
+      match: null,
+    });
+  }
+
+  const proxyIp = await fetchIp(outgoingFetch as typeof fetch);
+
+  return c.json({
+    enabled: true,
+    directIp,
+    proxyIp,
+    match: directIp !== null && proxyIp !== null && directIp === proxyIp,
+  });
 });
 
 export default router;

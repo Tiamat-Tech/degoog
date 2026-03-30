@@ -1,16 +1,14 @@
-import { SlotPanelPosition, type SettingField, type SlotPlugin } from "../../../../types";
+import {
+  SlotPanelPosition,
+  type SettingField,
+  type SlotPlugin,
+} from "../../../../types";
 import { getSettings, asString } from "../../../../utils/plugin-settings";
+import { outgoingFetch } from "../../../../utils/outgoing";
 
 export const AI_SUMMARY_ID = "ai-summary";
 
 export const aiSummarySettingsSchema: SettingField[] = [
-  {
-    key: "enabled",
-    label: "Enable AI Summary",
-    type: "toggle",
-    description:
-      "Replace At a Glance with a brief AI-generated summary of search results",
-  },
   {
     key: "baseUrl",
     label: "API Base URL",
@@ -109,7 +107,7 @@ async function chatComplete(
   if (settings.apiKey) headers["Authorization"] = `Bearer ${settings.apiKey}`;
 
   try {
-    const res = await fetch(`${settings.baseUrl}/chat/completions`, {
+    const res = await outgoingFetch(`${settings.baseUrl}/chat/completions`, {
       method: "POST",
       headers,
       body: JSON.stringify({
