@@ -112,21 +112,15 @@ Some amazing people around the web decided to make their degoog instances availa
 
 Aside from the official store these are third party repositories, they have been vetted once before adding them to the readme but I will not personally keep an eye on all of them, it's your responsibility to make sure what you install on your instance. I love open source and I'll obviously try to add these for as long as it's manageable to do so, eventually I may need a system for it, but for now they're comfy in the readme.
 
-<<<<<<< HEAD
-| name                 | url                                                    |
-| :------------------- | :----------------------------------------------------- |
-| official store       | `https://github.com/fccview/fccview-degoog-extensions` |
-| Subatomic1618 addons | `https://codeberg.org/Subatomic1618/degoog-addons.git` |
-| Weeb paradise        | `https://codeberg.org/fccview/degoog-weeb-paradise.git`|
-=======
-| name                 | url                                                     |
-| :------------------- | :------------------------------------------------------ |
-| official store       | `https://github.com/fccview/fccview-degoog-extensions`  |
-| Subatomic1618 addons | `https://codeberg.org/Subatomic1618/degoog-addons.git`  |
-| Weeb Paradise        | `https://codeberg.org/fccview/degoog-weeb-paradise.git` |
-| Georgvwt stuff       | `https://github.com/Georgvwt/georgvwt-degoog-stuff.git` |
-| Lazerleif Maps       | `https://github.com/lazerleif/degoog-maps.git`          |
->>>>>>> 76279ae75a977d677d9cbe117a78f4d4a63cf51a
+| name                     | url                                                                |
+| :----------------------- | :----------------------------------------------------------------- |
+| official store           | `https://github.com/fccview/fccview-degoog-extensions`             |
+| Subatomic1618 addons     | `https://codeberg.org/Subatomic1618/degoog-addons.git`             |
+| Weeb Paradise            | `https://codeberg.org/fccview/degoog-weeb-paradise.git`            |
+| Georgvwt stuff           | `https://github.com/Georgvwt/georgvwt-degoog-stuff.git`            |
+| Lazerleif Maps           | `https://github.com/lazerleif/degoog-maps.git`                     |
+| trankil                  | `https://github.com/Arkmind/trankil.git`                           |
+| TheAnnoying's Extensions | `https://github.com/TheAnnoying/theannoying-degoog-extensions.git` |
 
 ## Documentation
 
