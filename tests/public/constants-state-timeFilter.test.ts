@@ -33,7 +33,7 @@ describe("public/constants", () => {
 describe("public/state", () => {
   test("state has expected keys", () => {
     expect(state).toHaveProperty("currentQuery");
-    expect(state).toHaveProperty("currentType", "all");
+    expect(state).toHaveProperty("currentType", "web");
     expect(state).toHaveProperty("currentPage", 1);
     expect(state).toHaveProperty("currentTimeFilter", "any");
   });
