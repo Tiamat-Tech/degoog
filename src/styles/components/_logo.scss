@@ -10,6 +10,7 @@
   margin: 0;
   user-select: none;
   letter-spacing: -2px;
+  display: flex;
 
   &-d { color: $primary; }
   &-e { color: $danger; }

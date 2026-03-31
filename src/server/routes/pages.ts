@@ -4,6 +4,8 @@ import {
   getEngineRegistry,
   getDefaultEngineConfig,
 } from "../extensions/engines/registry";
+import { readFile } from "fs/promises";
+import { join } from "path";
 import {
   getThemeHtml,
   getActiveTheme,
@@ -23,6 +25,32 @@ import {
 } from "./settings-auth";
 import { isPublicInstance } from "../utils/public-instance";
 import pkg from "../../../package.json";
+
+const DEFAULT_THEME_DIR = "src/public/themes/degoog-theme";
+
+interface DefaultThemeManifest {
+  templates?: Record<string, string>;
+}
+
+let defaultManifestCache: DefaultThemeManifest | null = null;
+
+async function getDefaultManifest(): Promise<DefaultThemeManifest> {
+  if (defaultManifestCache) return defaultManifestCache;
+  const raw = await readFile(join(DEFAULT_THEME_DIR, "theme.json"), "utf-8");
+  defaultManifestCache = JSON.parse(raw) as DefaultThemeManifest;
+  return defaultManifestCache;
+}
+
+async function getDefaultTemplatesHtml(): Promise<string> {
+  const manifest = await getDefaultManifest();
+  if (!manifest.templates) return "";
+  const parts: string[] = [];
+  for (const [id, filePath] of Object.entries(manifest.templates)) {
+    const content = await readFile(join(DEFAULT_THEME_DIR, filePath), "utf-8");
+    parts.push(`<template id="degoog-${id}">${content}</template>`);
+  }
+  return parts.join("\n");
+}
 
 const router = new Hono();
 
@@ -69,22 +97,20 @@ async function pluginAssetsPlaceholder(): Promise<string> {
 async function applyPagePlaceholders(html: string): Promise<string> {
   const themeAttrs = await getActiveThemeDataAttrs();
   let result = html
-    .replaceAll("__APP_VERSION__", pkg.version)
     .replace("__THEME_CSS__", themeCssPlaceholder())
     .replace("__THEME_ATTRS__", themeAttrs)
     .replace("__PLUGIN_ASSETS__", await pluginAssetsPlaceholder());
+  const defaultTemplates = await getDefaultTemplatesHtml();
+  const themeTemplates = await getThemeTemplatesHtml();
+  const allTemplates = [defaultTemplates, themeTemplates]
+    .filter(Boolean)
+    .join("\n");
   if (result.includes("__THEME_TEMPLATES__")) {
-    result = result.replace(
-      "__THEME_TEMPLATES__",
-      await getThemeTemplatesHtml(),
-    );
-  } else {
-    const templates = await getThemeTemplatesHtml();
-    if (templates) {
-      result = result.replace("</body>", `${templates}\n</body>`);
-    }
+    result = result.replace("__THEME_TEMPLATES__", allTemplates);
+  } else if (allTemplates) {
+    result = result.replace("</body>", `${allTemplates}\n</body>`);
   }
-  return result;
+  return result.replaceAll("__APP_VERSION__", pkg.version);
 }
 
 function isFullDocument(html: string): boolean {
@@ -95,7 +121,7 @@ function isFullDocument(html: string): boolean {
 async function getLayout(): Promise<string> {
   const themeLayout = await getThemeHtml("layout");
   if (themeLayout) return themeLayout;
-  return Bun.file("src/public/layout.html").text();
+  return Bun.file(`${DEFAULT_THEME_DIR}/layout.html`).text();
 }
 
 async function buildLayoutPage(
@@ -103,7 +129,7 @@ async function buildLayoutPage(
   bodyClass?: string,
 ): Promise<string> {
   const layout = await getLayout();
-  const pageContent = await Bun.file(`src/public/${pageName}`).text();
+  const pageContent = await Bun.file(`${DEFAULT_THEME_DIR}/${pageName}`).text();
   const html = layout
     .replace("__PAGE_CONTENT__", pageContent)
     .replace("__BODY_CLASS__", bodyClass ? `class="${bodyClass}"` : "");
