@@ -237,6 +237,25 @@
           <code>__BODY_CLASS__</code>.
         </p>
 
+        <h2>Static assets</h2>
+        <p>
+          Any file inside your theme folder is served at
+          <code>/themes/&lt;theme-id&gt;/&lt;path&gt;</code>. Supported types:
+          JS, CSS, HTML, JSON, SVG, PNG, JPG, GIF, WebP, TTF, WOFF, WOFF2.
+        </p>
+        <p>
+          Use this to load custom fonts, images, or scripts from your theme CSS
+          or HTML:
+        </p>
+        <pre><code>@font-face {
+  font-family: "My Font";
+  src: url("/themes/my-theme/fonts/my-font.woff2") format("woff2");
+  font-display: swap;
+}</code></pre>
+        <p>
+          <code>theme.json</code> is never served.
+        </p>
+
         <h3>Example</h3>
         <pre><code>{
   "name": "My Theme",
