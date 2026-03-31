@@ -10,7 +10,7 @@
     <div class="wrap">
       <header>
         <h1><a href="index.html">Degoog</a> — Themes</h1>
-        <p>Override look and optionally the home/search HTML.</p>
+        <p>Override look, layout, and result markup.</p>
       </header>
 
       <nav class="doc-nav">
@@ -56,100 +56,430 @@
           <code>theme.json</code> manifest.
         </p>
 
+        <h2>Theming tiers</h2>
+        <p>
+          There are three ways to theme degoog, from simplest to most
+          powerful. Pick the tier that matches what you need.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Tier</th>
+              <th>What you provide</th>
+              <th>What you control</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>CSS only</strong></td>
+              <td><code>theme.json</code> + stylesheet</td>
+              <td>Colours, fonts, spacing via CSS variables</td>
+              <td>Catppuccin, Pokemon, Sakura</td>
+            </tr>
+            <tr>
+              <td><strong>CSS + templates</strong></td>
+              <td><code>theme.json</code> + stylesheet + template files</td>
+              <td>
+                Everything above, plus the HTML structure of individual
+                results, image cards, video cards, and the at-a-glance box
+              </td>
+              <td>&mdash;</td>
+            </tr>
+            <tr>
+              <td><strong>Full HTML override</strong></td>
+              <td>
+                <code>theme.json</code> + stylesheet + custom
+                <code>search.html</code> / <code>index.html</code>
+              </td>
+              <td>
+                Total control over the page. Templates can be placed
+                inline inside the custom HTML.
+              </td>
+              <td>Zen</td>
+            </tr>
+          </tbody>
+        </table>
+
         <h2>Theme manifest (theme.json)</h2>
         <p><strong>Required:</strong></p>
         <ul>
-          <li><strong>name</strong> — Display name in Settings → Themes.</li>
+          <li><strong>name</strong> &mdash; Display name in Settings &rarr; Themes.</li>
         </ul>
         <p><strong>Optional:</strong></p>
         <ul>
           <li>
             <strong>author</strong>, <strong>description</strong>,
-            <strong>version</strong> — Shown on the theme card.
+            <strong>version</strong> &mdash; Shown on the theme card.
           </li>
           <li>
-            <strong>css</strong> — Path to the stylesheet relative to the theme
-            folder (e.g. <code>style.css</code> or <code>style.scss</code>).
-            SCSS is compiled at load. When the theme is active this file is
-            served at <code>/theme/style.css</code>.
+            <strong>css</strong> &mdash; Path to the stylesheet relative to the
+            theme folder (e.g. <code>style.css</code> or
+            <code>style.scss</code>). SCSS is compiled at load. When the
+            theme is active this file is served at
+            <code>/theme/style.css</code>.
           </li>
           <li>
-            <strong>html</strong> — Object with keys <code>index</code>,
-            <code>search</code>. Value is the filename in the theme folder (e.g.
-            <code>"index": "index.html"</code>). When the theme is active, that
-            file is served instead of the built-in home or search page. Custom
-            HTML can use placeholders: <code>__THEME_CSS__</code>,
-            <code>__THEME_ATTRS__</code>, <code>__PLUGIN_ASSETS__</code>,
-            <code>__APP_VERSION__</code>.
+            <strong>templates</strong> &mdash; Object mapping template ids to
+            file paths relative to the theme folder. These template files
+            are injected into the default page as
+            <code>&lt;template&gt;</code> elements, so you do <strong>not</strong>
+            need to provide a custom <code>search.html</code>. See
+            <a href="#templates">Templates</a> below.
           </li>
           <li>
-            <strong>settingsSchema</strong> — Same shape as plugin
-            SettingFields. If present, a Configure button appears on the theme
-            card; values are stored in
+            <strong>html</strong> &mdash; Object with keys <code>index</code>,
+            <code>search</code>. Value is the filename in the theme folder
+            (e.g. <code>"index": "index.html"</code>). When the theme is
+            active, that file is served instead of the built-in page.
+            Custom HTML can use page placeholders:
+            <code>__THEME_CSS__</code>, <code>__THEME_ATTRS__</code>,
+            <code>__PLUGIN_ASSETS__</code>, <code>__APP_VERSION__</code>,
+            <code>__THEME_TEMPLATES__</code>.
+          </li>
+          <li>
+            <strong>settingsSchema</strong> &mdash; Same shape as plugin
+            SettingFields. If present, a Configure button appears on the
+            theme card; values are stored in
             <code>data/plugin-settings.json</code> under
-            <code>theme-&lt;theme-id&gt;</code>. Theme settings can be exposed
-            as <code>data-*</code> attributes on <code>&lt;html&gt;</code> via
-            <code>dataAttrsFromSettings</code> in theme.json.
+            <code>theme-&lt;theme-id&gt;</code>. Settings can be exposed
+            as <code>data-*</code> attributes on
+            <code>&lt;html&gt;</code> via
+            <code>dataAttrsFromSettings</code>.
           </li>
         </ul>
+
+        <h3>Minimal CSS-only example</h3>
+<pre><code>{
+  "name": "My Theme",
+  "css": "style.css"
+}</code></pre>
+
+        <h3>CSS + templates example</h3>
+<pre><code>{
+  "name": "My Theme",
+  "css": "style.css",
+  "templates": {
+    "result": "templates/result.html",
+    "image-card": "templates/image-card.html"
+  }
+}</code></pre>
+
+        <h3>Full HTML override example</h3>
+<pre><code>{
+  "name": "My Theme",
+  "css": "style.css",
+  "html": {
+    "index": "index.html",
+    "search": "search.html"
+  }
+}</code></pre>
+
+        <h2 id="templates">Templates</h2>
+        <p>
+          Templates let you control the HTML markup of search results,
+          media cards, and other dynamic elements <strong>without</strong>
+          replacing the entire page. The JavaScript fills in data using
+          placeholders &mdash; you just write HTML.
+        </p>
+        <p>
+          There are two ways to provide templates:
+        </p>
+        <ol>
+          <li>
+            <strong>Standalone files</strong> (recommended) &mdash; list them
+            in the <code>templates</code> object in
+            <code>theme.json</code>. The server injects them into the
+            default page automatically. No <code>search.html</code>
+            override needed.
+          </li>
+          <li>
+            <strong>Inline in custom HTML</strong> &mdash; if your theme
+            overrides <code>search.html</code>, place
+            <code>&lt;template&gt;</code> elements directly in your HTML.
+            Use <code>__THEME_TEMPLATES__</code> as a placeholder or put
+            them anywhere before <code>&lt;/body&gt;</code>.
+          </li>
+        </ol>
+
+        <h3>Template IDs</h3>
+        <p>
+          Each template is identified by its element id. The
+          <code>templates</code> object in <code>theme.json</code> maps a
+          short key to a file path; the key is automatically prefixed with
+          <code>degoog-</code> to form the id. For inline templates, use
+          the full id directly.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Manifest key</th>
+              <th>Element id</th>
+              <th>Used for</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>result</code></td>
+              <td><code>degoog-result</code></td>
+              <td>Web / news search result item</td>
+            </tr>
+            <tr>
+              <td><code>image-card</code></td>
+              <td><code>degoog-image-card</code></td>
+              <td>Image grid card</td>
+            </tr>
+            <tr>
+              <td><code>video-card</code></td>
+              <td><code>degoog-video-card</code></td>
+              <td>Video grid card</td>
+            </tr>
+            <tr>
+              <td><code>at-a-glance</code></td>
+              <td><code>degoog-at-a-glance</code></td>
+              <td>At-a-glance box</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Placeholder syntax</h3>
+        <p>
+          Inside a <code>&lt;template&gt;</code> element, use double
+          curly braces for dynamic values. All values are
+          HTML-escaped automatically.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Syntax</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>{{ name }}</code></td>
+              <td>Output a value (escaped)</td>
+            </tr>
+            <tr>
+              <td><code>{{#if name}} &hellip; {{/if name}}</code></td>
+              <td>
+                Conditional block &mdash; rendered only when the value is
+                truthy (non-empty string, non-zero, non-empty array)
+              </td>
+            </tr>
+            <tr>
+              <td><code>{{#each name}} &hellip; {{/each name}}</code></td>
+              <td>
+                Loop over an array. Inside the loop, <code>{{ . }}</code>
+                is the current item and <code>{{ @index }}</code> is the
+                index.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          <strong>Important:</strong> because templates live inside HTML
+          <code>&lt;template&gt;</code> elements, the browser parses
+          them as HTML. This means:
+        </p>
+        <ul>
+          <li>
+            <code>{{#if}}</code> blocks must contain
+            <strong>balanced HTML</strong> &mdash; every opening tag
+            inside the block must have its closing tag inside the same
+            block.
+          </li>
+          <li>
+            Placeholders work inside text content and inside quoted
+            attribute values (<code>href="{{ url }}"</code>), but
+            <strong>not</strong> between attributes or as tag names.
+          </li>
+        </ul>
+
+        <h3>Available placeholders per template</h3>
+
+        <h4><code>degoog-result</code></h4>
+        <table>
+          <thead>
+            <tr><th>Placeholder</th><th>Type</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>title</code></td><td>string</td><td>Result title</td></tr>
+            <tr><td><code>url</code></td><td>string</td><td>Result URL</td></tr>
+            <tr><td><code>cite_url</code></td><td>string</td><td>Cleaned display URL (hostname + path)</td></tr>
+            <tr><td><code>snippet</code></td><td>string</td><td>Result description/snippet</td></tr>
+            <tr><td><code>favicon_url</code></td><td>string</td><td>Proxied favicon URL</td></tr>
+            <tr><td><code>thumbnail_url</code></td><td>string</td><td>Proxied thumbnail URL (empty if none)</td></tr>
+            <tr><td><code>sources</code></td><td>array</td><td>Engine names that returned this result</td></tr>
+            <tr><td><code>duration</code></td><td>string</td><td>Video duration (empty for non-video)</td></tr>
+            <tr><td><code>link_target</code></td><td>string</td><td><code>_blank</code> or <code>_self</code></td></tr>
+            <tr><td><code>link_rel</code></td><td>string</td><td><code>noopener</code> or empty</td></tr>
+          </tbody>
+        </table>
+
+        <h4><code>degoog-image-card</code></h4>
+        <table>
+          <thead>
+            <tr><th>Placeholder</th><th>Type</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>title</code></td><td>string</td><td>Image title / alt text</td></tr>
+            <tr><td><code>url</code></td><td>string</td><td>Source page URL</td></tr>
+            <tr><td><code>thumbnail_url</code></td><td>string</td><td>Proxied thumbnail URL</td></tr>
+            <tr><td><code>hostname</code></td><td>string</td><td>Source hostname</td></tr>
+            <tr><td><code>sources</code></td><td>array</td><td>Engine names</td></tr>
+          </tbody>
+        </table>
+
+        <h4><code>degoog-video-card</code></h4>
+        <table>
+          <thead>
+            <tr><th>Placeholder</th><th>Type</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>title</code></td><td>string</td><td>Video title</td></tr>
+            <tr><td><code>url</code></td><td>string</td><td>Video page URL</td></tr>
+            <tr><td><code>thumbnail_url</code></td><td>string</td><td>Proxied thumbnail URL</td></tr>
+            <tr><td><code>hostname</code></td><td>string</td><td>Source hostname</td></tr>
+            <tr><td><code>duration</code></td><td>string</td><td>Duration label (may be empty)</td></tr>
+            <tr><td><code>sources</code></td><td>array</td><td>Engine names</td></tr>
+          </tbody>
+        </table>
+
+        <h4><code>degoog-at-a-glance</code></h4>
+        <table>
+          <thead>
+            <tr><th>Placeholder</th><th>Type</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>title</code></td><td>string</td><td>Result title</td></tr>
+            <tr><td><code>url</code></td><td>string</td><td>Result URL</td></tr>
+            <tr><td><code>snippet</code></td><td>string</td><td>Snippet text</td></tr>
+            <tr><td><code>sources</code></td><td>array</td><td>Engine names</td></tr>
+            <tr><td><code>sources_text</code></td><td>string</td><td>Engine names joined with commas</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Example: custom result template</h3>
+        <p>
+          Create <code>templates/result.html</code> in your theme folder:
+        </p>
+<pre><code>&lt;div class="my-result"&gt;
+  &lt;a href="{{ url }}" target="{{ link_target }}"&gt;
+    &lt;strong&gt;{{ title }}&lt;/strong&gt;
+  &lt;/a&gt;
+  &lt;p&gt;{{ snippet }}&lt;/p&gt;
+  &lt;small&gt;{{ cite_url }}&lt;/small&gt;
+  {{#if thumbnail_url}}
+  &lt;img src="{{ thumbnail_url }}" loading="lazy"&gt;
+  {{/if thumbnail_url}}
+  &lt;div&gt;
+    {{#each sources}}
+    &lt;span class="tag"&gt;{{ . }}&lt;/span&gt;
+    {{/each sources}}
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+        <p>Then in <code>theme.json</code>:</p>
+<pre><code>{
+  "name": "My Theme",
+  "css": "style.css",
+  "templates": {
+    "result": "templates/result.html"
+  }
+}</code></pre>
+        <p>
+          Only the result template is overridden &mdash; image cards,
+          video cards, and the at-a-glance box keep their defaults.
+        </p>
+
+        <h3>Inline templates (full HTML override)</h3>
+        <p>
+          If your theme provides a custom <code>search.html</code>, you
+          can place <code>&lt;template&gt;</code> elements anywhere in
+          the page. Use the <code>__THEME_TEMPLATES__</code> placeholder
+          to inject any standalone template files from other themes that
+          extend yours, or omit it if you want full control.
+        </p>
+<pre><code>&lt;!-- inside your search.html, before &lt;/body&gt; --&gt;
+&lt;template id="degoog-result"&gt;
+  &lt;div class="my-result"&gt;
+    &lt;a href="{{ url }}"&gt;{{ title }}&lt;/a&gt;
+    &lt;p&gt;{{ snippet }}&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/template&gt;</code></pre>
 
         <h2>Setup</h2>
         <p>
           Create <code>data/themes/</code> (or set
-          <code>DEGOOG_THEMES_DIR</code>). Each theme is a subfolder, e.g.
-          <code>data/themes/my-theme/</code>, with:
+          <code>DEGOOG_THEMES_DIR</code>). Each theme is a subfolder,
+          e.g. <code>data/themes/my-theme/</code>, with:
         </p>
         <ul>
           <li><strong>theme.json</strong> (required)</li>
           <li>
-            <strong>style.css</strong> or <strong>style.scss</strong> (optional)
-            — Use the app’s CSS variables so light/dark mode work. See
-            <a href="styling.html">Styling</a> for the full list.
+            <strong>style.css</strong> or <strong>style.scss</strong>
+            (optional) &mdash; Use the app's CSS variables so light/dark
+            mode work. See <a href="styling.html">Styling</a> for the
+            full list.
           </li>
           <li>
-            <strong>index.html</strong>, <strong>search.html</strong> (optional)
-            — Only used if listed under <code>html</code> in theme.json.
+            <strong>templates/</strong> (optional) &mdash; Template
+            files referenced by <code>theme.json</code>.
+          </li>
+          <li>
+            <strong>index.html</strong>, <strong>search.html</strong>
+            (optional) &mdash; Only needed for full HTML override; listed
+            under <code>html</code> in theme.json.
           </li>
         </ul>
         <p>The theme id is the folder name.</p>
 
         <h2>Applying a theme</h2>
         <p>
-          Settings → Themes → choose a theme → <strong>Apply</strong>. The
-          active theme id is stored in <code>data/plugin-settings.json</code> as
+          Settings &rarr; Themes &rarr; choose a theme &rarr;
+          <strong>Apply</strong>. The active theme id is stored in
+          <code>data/plugin-settings.json</code> as
           <code>theme.active</code>.
         </p>
+
+        <h2>Migrating existing themes</h2>
+        <p>
+          Existing themes that use only CSS or full HTML overrides
+          continue to work with no changes. To take advantage of
+          templates:
+        </p>
+        <ol>
+          <li>
+            If your theme overrides <code>search.html</code> only to
+            restyle results, consider switching to CSS + template files
+            instead. This makes your theme resilient to upstream page
+            layout changes.
+          </li>
+          <li>
+            Extract the result markup from your custom
+            <code>search.html</code> into template files, replacing
+            hardcoded data with placeholders.
+          </li>
+          <li>
+            Add a <code>templates</code> object to your
+            <code>theme.json</code> and remove the
+            <code>html</code> entry if the page override is no longer
+            needed.
+          </li>
+        </ol>
 
         <h2>Examples from the official store</h2>
         <ul>
           <li>
-            <a
-              href="https://github.com/fccview/fccview-degoog-extensions/tree/main/themes/zen"
-              class="external"
-              target="_blank"
-              rel="noopener"
-              >Zen</a
-            >
-            — minimalist theme with <code>theme.json</code> (<code>css</code>,
-            <code>html.index</code>, <code>html.search</code>), style.css,
-            index.html, search.html overrides.
+            <strong>Catppuccin</strong>, <strong>Pokemon</strong>,
+            <strong>Sakura</strong> &mdash; CSS-only themes with
+            variant settings. No HTML or template overrides.
           </li>
           <li>
-            <a
-              href="https://github.com/fccview/fccview-degoog-extensions/tree/main/themes/catpuccin"
-              class="external"
-              target="_blank"
-              rel="noopener"
-              >Catppuccin</a
-            >,
-            <a
-              href="https://github.com/fccview/fccview-degoog-extensions/tree/main/themes/pokemon"
-              class="external"
-              target="_blank"
-              rel="noopener"
-              >Pokemon</a
-            >
-            — themes with variants/settings.
+            <strong>Zen</strong> &mdash; Full HTML override with custom
+            <code>index.html</code> and <code>search.html</code>.
           </li>
         </ul>
       </main>

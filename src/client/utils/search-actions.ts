@@ -231,7 +231,7 @@ async function _performSearchWithBang(
     }
     renderResults(searchData.results);
 
-    if (glanceEl && cmdRes.ok) {
+    if (glanceEl && cmdRes.ok && !isMediaType) {
       const cmdData = (await cmdRes.json()) as {
         type: string;
         results?: ScoredResult[];

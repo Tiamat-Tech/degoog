@@ -8,6 +8,7 @@ import {
   getThemeHtml,
   getActiveTheme,
   getActiveThemeDataAttrs,
+  getThemeTemplatesHtml,
 } from "../extensions/themes/registry";
 import {
   getAllPluginCss,
@@ -67,11 +68,20 @@ async function pluginAssetsPlaceholder(): Promise<string> {
 
 async function applyPagePlaceholders(html: string): Promise<string> {
   const themeAttrs = await getActiveThemeDataAttrs();
-  return html
+  let result = html
     .replaceAll("__APP_VERSION__", pkg.version)
     .replace("__THEME_CSS__", themeCssPlaceholder())
     .replace("__THEME_ATTRS__", themeAttrs)
     .replace("__PLUGIN_ASSETS__", await pluginAssetsPlaceholder());
+  if (result.includes("__THEME_TEMPLATES__")) {
+    result = result.replace("__THEME_TEMPLATES__", await getThemeTemplatesHtml());
+  } else {
+    const templates = await getThemeTemplatesHtml();
+    if (templates) {
+      result = result.replace("</body>", `${templates}\n</body>`);
+    }
+  }
+  return result;
 }
 
 async function buildPage(filename: string): Promise<string> {

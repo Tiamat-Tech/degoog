@@ -27,6 +27,7 @@ export interface ThemeManifest {
     search?: string;
     settings?: string;
   };
+  templates?: Record<string, string>;
 }
 
 export interface LoadedTheme {
@@ -219,6 +220,21 @@ export async function getActiveThemeDataAttrs(): Promise<string> {
     parts.push(`${attrName}="${escaped}"`);
   }
   return parts.length > 0 ? " " + parts.join(" ") : "";
+}
+
+export async function getThemeTemplatesHtml(): Promise<string> {
+  const theme = getActiveTheme();
+  if (!theme?.manifest.templates) return "";
+  const parts: string[] = [];
+  for (const [id, filePath] of Object.entries(theme.manifest.templates)) {
+    try {
+      const content = await readFile(join(theme.dir, filePath), "utf-8");
+      parts.push(`<template id="degoog-${id}">${content}</template>`);
+    } catch {
+      debug("themes", `Failed to read template file: ${filePath} for theme ${theme.id}`);
+    }
+  }
+  return parts.join("\n");
 }
 
 export async function recompileTheme(id: string): Promise<void> {
