@@ -12,6 +12,7 @@ export enum ExtensionStoreType {
   Plugin = "plugin",
   Theme = "theme",
   Engine = "engine",
+  Transport = "transport",
 }
 
 export interface SettingField {

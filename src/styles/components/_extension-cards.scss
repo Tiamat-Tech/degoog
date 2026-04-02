@@ -318,6 +318,49 @@
   }
 }
 
+.ext-test-connection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.ext-test-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: $font-family;
+  font-size: $font-size-small;
+  padding: 6px 14px;
+  transition: color $transition-fast, border-color $transition-fast;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    border-color: $primary;
+    color: $primary;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+.ext-test-result {
+  font-size: $font-size-small;
+  color: var(--text-secondary);
+}
+
+.ext-test-ok {
+  color: $success;
+}
+
+.ext-test-fail {
+  color: $danger;
+}
+
 .ext-required {
   color: $danger;
 }

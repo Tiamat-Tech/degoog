@@ -124,6 +124,7 @@ export interface AllExtensions {
   engines: ExtensionMeta[];
   plugins: ExtensionMeta[];
   themes: ExtensionMeta[];
+  transports: ExtensionMeta[];
 }
 
 export interface SearchBarAction {

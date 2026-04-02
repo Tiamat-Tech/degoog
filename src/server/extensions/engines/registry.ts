@@ -12,6 +12,7 @@ import {
   mergeDefaults,
   asString,
 } from "../../utils/plugin-settings";
+import { getTransportNames } from "../transports/registry";
 import { debug } from "../../utils/logger";
 import { GoogleEngine } from "./google";
 import { DuckDuckGoEngine } from "./duckduckgo";
@@ -39,6 +40,7 @@ export interface EngineDefinition {
   EngineClass: new () => SearchEngine;
   disabledByDefault?: boolean;
   outgoingHosts?: string[];
+  defaultTransport?: string;
 }
 
 const BUILTIN_DEFINITIONS: EngineDefinition[] = [
@@ -48,6 +50,7 @@ const BUILTIN_DEFINITIONS: EngineDefinition[] = [
     searchType: "web",
     EngineClass: GoogleEngine,
     outgoingHosts: ["www.google.com", "google.com"],
+    defaultTransport: "curl",
   },
   {
     id: "duckduckgo",
@@ -310,12 +313,12 @@ const SCORE_FIELD: SettingField = {
 
 const OUTGOING_TRANSPORT_FIELD: SettingField = {
   key: "outgoingTransport",
-  label: "Outgoing HTTP client",
+  label: "Outgoing HTTP client transport",
   type: "select",
-  options: ["fetch", "curl", "auto"],
+  options: ["fetch", "curl", "curl-fallback"],
   default: "fetch",
   description:
-    "fetch: runtime client | curl: system binary (different TLS) | auto: retry with curl on 403, 429, 502, or 503 | curl and auto need curl on the server PATH.",
+    "The outgoing HTTP client to use for this engine. Select 'auto' to use the best available client based on your system configuration.",
   advanced: true,
 };
 
@@ -331,6 +334,18 @@ export function getEngineIdByInstance(
   return undefined;
 }
 
+export const getEngineDefaultTransport = (
+  engineId: string,
+): string | undefined => {
+  const builtinDef = BUILTIN_DEFINITIONS.find((d) => d.id === engineId);
+  if (builtinDef?.defaultTransport) return builtinDef.defaultTransport;
+  const instance = getEngineMap()[engineId];
+  const field = instance?.settingsSchema?.find(
+    (f) => f.key === "outgoingTransport",
+  );
+  return field?.default ?? undefined;
+};
+
 export async function getEngineExtensionMeta(): Promise<ExtensionMeta[]> {
   const allDefs = [
     ...BUILTIN_DEFINITIONS,
@@ -344,17 +359,43 @@ export async function getEngineExtensionMeta(): Promise<ExtensionMeta[]> {
 
   const engineMap = getEngineMap();
   const results: ExtensionMeta[] = [];
+  const transportOptions = getTransportNames();
 
   const defaults = getDefaultEngineConfig();
   for (const def of allDefs) {
     const instance = engineMap[def.id];
     const engineSchema = instance?.settingsSchema ?? [];
+
+    const engineTransportField = engineSchema.find(
+      (f) => f.key === "outgoingTransport",
+    );
+    const engineScoreField = engineSchema.find((f) => f.key === "score");
+    const builtinDef = BUILTIN_DEFINITIONS.find((d) => d.id === def.id);
+
+    const transportDefault =
+      engineTransportField?.default ??
+      builtinDef?.defaultTransport ??
+      OUTGOING_TRANSPORT_FIELD.default;
+
+    const transportField: SettingField = {
+      ...OUTGOING_TRANSPORT_FIELD,
+      options: transportOptions,
+      default: transportDefault,
+    };
+
+    const scoreField: SettingField = engineScoreField
+      ? {
+          ...SCORE_FIELD,
+          default: engineScoreField.default ?? SCORE_FIELD.default,
+        }
+      : SCORE_FIELD;
+
     const engineSchemaFiltered = engineSchema.filter(
-      (f) => f.key !== "outgoingTransport",
+      (f) => f.key !== "outgoingTransport" && f.key !== "score",
     );
     const schema: SettingField[] = [
-      SCORE_FIELD,
-      OUTGOING_TRANSPORT_FIELD,
+      scoreField,
+      transportField,
       ...engineSchemaFiltered,
     ];
     const rawSettings = await getSettings(def.id);
