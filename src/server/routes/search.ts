@@ -132,6 +132,7 @@ async function runSlotPlugins(
         title: out.title,
         html: out.html,
         position: effectivePosition,
+        gridSize: plugin.gridSize,
       });
     } catch { }
   }
@@ -449,6 +450,7 @@ router.post("/api/slots/glance", async (c) => {
         title: out.title,
         html: out.html,
         position: plugin.position,
+        gridSize: plugin.gridSize,
       });
     } catch { }
   }

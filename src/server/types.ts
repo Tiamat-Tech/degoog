@@ -103,6 +103,7 @@ export interface SlotPanelResult {
   title?: string;
   html: string;
   position: SlotPanelPosition;
+  gridSize?: 1 | 2 | 3 | 4;
 }
 
 export interface SearchResponse {
@@ -131,6 +132,7 @@ export interface SlotPlugin {
   slotPositions?: SlotPanelPosition[];
   settingsId?: string;
   trigger: (query: string) => boolean | Promise<boolean>;
+  gridSize?: 1 | 2 | 3 | 4;
   execute(
     query: string,
     context?: SlotPluginContext,
