@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import {
   getEngineExtensionMeta,
   getEngineMap,
+  setEnginesLocale,
 } from "../extensions/engines/registry";
 import {
   getSettingsTokenFromRequest,
@@ -12,6 +13,7 @@ import {
   getCommandInstanceById,
   setCommandsLocale,
 } from "../extensions/commands/registry";
+import { getCoreTranslator } from "./pages";
 import { getLocale } from "../utils/hono";
 import {
   getSlotPlugins,
@@ -33,6 +35,7 @@ import {
   SLOT_POSITION_SETTING_KEY,
   type ExtensionMeta,
   type SettingField,
+  type Translate,
 } from "../types";
 import {
   getTransportExtensionMeta,
@@ -42,7 +45,7 @@ import { outgoingFetch } from "../utils/outgoing";
 
 const router = new Hono();
 
-async function getSlotExtensionMeta(): Promise<ExtensionMeta[]> {
+async function getSlotExtensionMeta(coreT?: Translate): Promise<ExtensionMeta[]> {
   const slots = getSlotPlugins();
   const out: ExtensionMeta[] = [];
   for (const slot of slots) {
@@ -52,11 +55,12 @@ async function getSlotExtensionMeta(): Promise<ExtensionMeta[]> {
     if (hasPositionChoice) {
       fullSchema.push({
         key: SLOT_POSITION_SETTING_KEY,
-        label: "Position",
+        label: coreT ? coreT("settings-page.schema.slot-position.label") || "Position" : "Position",
         type: "select",
         options: [...slot.slotPositions!],
-        description:
-          "Where the slot content appears (e.g. knowledge-panel replaces the default knowledge panel).",
+        description: coreT
+          ? coreT("settings-page.schema.slot-position.description") || "Where the slot content appears on the page."
+          : "Where the slot content appears on the page.",
       });
     }
     const id = slot.settingsId ?? `slot-${slot.id}`;
@@ -88,12 +92,17 @@ async function getSlotExtensionMeta(): Promise<ExtensionMeta[]> {
 
 router.get("/api/extensions", async (c) => {
   const locale = getLocale(c);
-  if (locale) setCommandsLocale(locale);
+  const coreT = await getCoreTranslator();
+  if (locale) {
+    setCommandsLocale(locale);
+    setEnginesLocale(locale);
+    coreT.setLocale(locale);
+  }
   const [engines, plugins, slotMeta, searchBarMeta, themes, transports] =
     await Promise.all([
-      getEngineExtensionMeta(),
-      getPluginExtensionMeta(),
-      getSlotExtensionMeta(),
+      getEngineExtensionMeta(coreT),
+      getPluginExtensionMeta(coreT),
+      getSlotExtensionMeta(coreT),
       getSearchBarActionExtensionMeta(),
       getThemeExtensionMeta(),
       getTransportExtensionMeta(),
@@ -114,12 +123,17 @@ router.post("/api/extensions/:id/settings", async (c) => {
   const body = await c.req.json<Record<string, unknown>>();
 
   const locale = getLocale(c);
-  if (locale) setCommandsLocale(locale);
+  const coreT = await getCoreTranslator();
+  if (locale) {
+    setCommandsLocale(locale);
+    setEnginesLocale(locale);
+    coreT.setLocale(locale);
+  }
   const [engines, plugins, slotMeta, searchBarMeta, themes, transportMeta] =
     await Promise.all([
-      getEngineExtensionMeta(),
-      getPluginExtensionMeta(),
-      getSlotExtensionMeta(),
+      getEngineExtensionMeta(coreT),
+      getPluginExtensionMeta(coreT),
+      getSlotExtensionMeta(coreT),
       getSearchBarActionExtensionMeta(),
       getThemeExtensionMeta(),
       getTransportExtensionMeta(),

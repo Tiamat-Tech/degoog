@@ -42,6 +42,7 @@ import {
 } from "./settings-auth";
 
 const DEFAULT_THEME_DIR = "src/public/themes/degoog-theme";
+const CORE_LOCALES_ROOT = "src";
 
 interface DefaultThemeManifest {
   templates?: Record<string, string>;
@@ -49,6 +50,7 @@ interface DefaultThemeManifest {
 
 let defaultManifestCache: DefaultThemeManifest | null = null;
 let defaultThemeTranslator: Translate | null = null;
+let coreTranslator: Translate | null = null;
 
 async function getDefaultManifest(): Promise<DefaultThemeManifest> {
   if (defaultManifestCache) return defaultManifestCache;
@@ -75,13 +77,22 @@ async function getDefaultThemeTranslator(): Promise<Translate> {
   return defaultThemeTranslator;
 }
 
+export async function getCoreTranslator(): Promise<Translate> {
+  if (!coreTranslator) {
+    coreTranslator = await createTranslatorFromPath(CORE_LOCALES_ROOT);
+  }
+  return coreTranslator;
+}
+
 async function getTranslator(
   locale?: string,
   themed = false,
 ): Promise<Translate> {
   const baseT = await getDefaultThemeTranslator();
   const theme = getActiveTheme();
-  const t = themed && theme?.t ? withFallback(theme.t, baseT) : baseT;
+  const themeChain = themed && theme?.t ? withFallback(theme.t, baseT) : baseT;
+  const coreT = await getCoreTranslator();
+  const t = withFallback(themeChain, coreT);
   if (locale) t.setLocale(locale);
   return t;
 }
@@ -137,6 +148,10 @@ async function applyPagePlaceholders(
 
   // Collect all translations for the current locale (namespaced)
   const entries: { namespace: string; translator: Translate }[] = [
+    {
+      namespace: "core",
+      translator: await getCoreTranslator(),
+    },
     {
       namespace: "themes/degoog",
       translator: await getDefaultThemeTranslator(),

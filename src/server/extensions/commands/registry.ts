@@ -296,23 +296,33 @@ const NATURAL_LANGUAGE_FIELD: SettingField = {
 function schemaWithNaturalLanguage(
   schema: SettingField[],
   naturalLanguagePhrases: string[] | undefined,
+  field: SettingField,
 ): SettingField[] {
   if (schema.some((f) => f.key === "naturalLanguage")) return schema;
   const hasPhrases =
     Array.isArray(naturalLanguagePhrases) && naturalLanguagePhrases.length > 0;
   if (!hasPhrases) return schema;
-  return [...schema, NATURAL_LANGUAGE_FIELD];
+  return [...schema, field];
 }
 
-export async function getPluginExtensionMeta(): Promise<ExtensionMeta[]> {
+export async function getPluginExtensionMeta(coreT?: Translate): Promise<ExtensionMeta[]> {
   const results: ExtensionMeta[] = [];
   const middlewareSettings = await getSettings("middleware");
+
+  const naturalLangField: SettingField = coreT
+    ? {
+        ...NATURAL_LANGUAGE_FIELD,
+        label: coreT("settings-page.schema.natural-language.label") || NATURAL_LANGUAGE_FIELD.label,
+        description: coreT("settings-page.schema.natural-language.description") || NATURAL_LANGUAGE_FIELD.description,
+      }
+    : NATURAL_LANGUAGE_FIELD;
 
   for (const entry of allCommands) {
     const baseSchema = entry.instance.settingsSchema ?? [];
     const schema = schemaWithNaturalLanguage(
       baseSchema,
       entry.instance.naturalLanguagePhrases,
+      naturalLangField,
     );
     let rawSettings = await getSettings(entry.id);
     if (
@@ -329,13 +339,32 @@ export async function getPluginExtensionMeta(): Promise<ExtensionMeta[]> {
     const maskedSettings = maskSecrets(rawSettings, schema);
     if (rawSettings["disabled"])
       maskedSettings["disabled"] = rawSettings["disabled"];
+    const t = entry.instance.t;
+    const nameKey = `${entry.id}.name`;
+    const descKey = `${entry.id}.description`;
+    const translatedName = t ? t(nameKey) : nameKey;
+    const translatedDesc = t ? t(descKey) : descKey;
+    const translatedSchema = t
+      ? schema.map((field) => {
+          const base = `${entry.id}.settings.${field.key}`;
+          const label = t(`${base}.label`);
+          const desc = field.description !== undefined ? t(`${base}.description`) : undefined;
+          const placeholder = field.placeholder !== undefined ? t(`${base}.placeholder`) : undefined;
+          return {
+            ...field,
+            label: label !== `${base}.label` ? label : field.label,
+            ...(desc !== undefined && desc !== `${base}.description` ? { description: desc } : {}),
+            ...(placeholder !== undefined && placeholder !== `${base}.placeholder` ? { placeholder } : {}),
+          };
+        })
+      : schema;
     const meta: ExtensionMeta = {
       id: entry.id,
-      displayName: entry.displayName,
-      description: entry.instance.description,
+      displayName: translatedName !== nameKey ? translatedName : entry.displayName,
+      description: translatedDesc !== descKey ? translatedDesc : entry.instance.description,
       type: "command",
       configurable: schema.length > 0,
-      settingsSchema: schema,
+      settingsSchema: translatedSchema,
       settings: maskedSettings,
     };
     const inst = entry.instance as unknown as Record<string, unknown>;

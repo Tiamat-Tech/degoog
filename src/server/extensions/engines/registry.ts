@@ -349,7 +349,7 @@ export const getEngineDefaultTransport = (
   return field?.default ?? undefined;
 };
 
-export async function getEngineExtensionMeta(): Promise<ExtensionMeta[]> {
+export async function getEngineExtensionMeta(coreT?: Translate): Promise<ExtensionMeta[]> {
   const allDefs = [
     ...BUILTIN_DEFINITIONS,
     ...pluginEntries.map((e) => ({
@@ -363,6 +363,22 @@ export async function getEngineExtensionMeta(): Promise<ExtensionMeta[]> {
   const engineMap = getEngineMap();
   const results: ExtensionMeta[] = [];
   const transportOptions = getTransportNames();
+
+  const baseScoreField = coreT
+    ? {
+        ...SCORE_FIELD,
+        label: coreT("settings-page.schema.score.label") || SCORE_FIELD.label,
+        description: coreT("settings-page.schema.score.description") || SCORE_FIELD.description,
+      }
+    : SCORE_FIELD;
+
+  const baseTransportField = coreT
+    ? {
+        ...OUTGOING_TRANSPORT_FIELD,
+        label: coreT("settings-page.schema.outgoing-transport.label") || OUTGOING_TRANSPORT_FIELD.label,
+        description: coreT("settings-page.schema.outgoing-transport.description") || OUTGOING_TRANSPORT_FIELD.description,
+      }
+    : OUTGOING_TRANSPORT_FIELD;
 
   const defaults = getDefaultEngineConfig();
   for (const def of allDefs) {
@@ -381,25 +397,43 @@ export async function getEngineExtensionMeta(): Promise<ExtensionMeta[]> {
       OUTGOING_TRANSPORT_FIELD.default;
 
     const transportField: SettingField = {
-      ...OUTGOING_TRANSPORT_FIELD,
+      ...baseTransportField,
       options: transportOptions,
       default: transportDefault,
     };
 
     const scoreField: SettingField = engineScoreField
       ? {
-          ...SCORE_FIELD,
-          default: engineScoreField.default ?? SCORE_FIELD.default,
+          ...baseScoreField,
+          default: engineScoreField.default ?? baseScoreField.default,
         }
-      : SCORE_FIELD;
+      : baseScoreField;
+
+    const pluginEntry = pluginEntries.find((e) => e.id === def.id);
+    const pluginT = pluginEntry?.instance.t;
 
     const engineSchemaFiltered = engineSchema.filter(
       (f) => f.key !== "outgoingTransport" && f.key !== "score",
     );
+    const translatedEngineSchema = pluginT
+      ? engineSchemaFiltered.map((field) => {
+          const base = `${def.id}.settings.${field.key}`;
+          const label = pluginT(`${base}.label`);
+          const desc = field.description !== undefined ? pluginT(`${base}.description`) : undefined;
+          const placeholder = field.placeholder !== undefined ? pluginT(`${base}.placeholder`) : undefined;
+          return {
+            ...field,
+            label: label !== `${base}.label` ? label : field.label,
+            ...(desc !== undefined && desc !== `${base}.description` ? { description: desc } : {}),
+            ...(placeholder !== undefined && placeholder !== `${base}.placeholder` ? { placeholder } : {}),
+          };
+        })
+      : engineSchemaFiltered;
+
     const schema: SettingField[] = [
       scoreField,
       transportField,
-      ...engineSchemaFiltered,
+      ...translatedEngineSchema,
     ];
     const rawSettings = await getSettings(def.id);
     const maskedSettings = maskSecrets(rawSettings, schema);
@@ -409,6 +443,7 @@ export async function getEngineExtensionMeta(): Promise<ExtensionMeta[]> {
       displayName: def.displayName,
       description: `${def.searchType} search engine`,
       type: ExtensionStoreType.Engine,
+
       configurable: true,
       settingsSchema: schema,
       settings: maskedSettings,
@@ -519,6 +554,12 @@ export async function initEngines(): Promise<void> {
 
 export async function reloadEngines(): Promise<void> {
   await initEngines();
+}
+
+export function setEnginesLocale(locale: string): void {
+  for (const entry of pluginEntries) {
+    entry.instance.t?.setLocale(locale);
+  }
 }
 
 export function getAllEngineTranslators(): {
