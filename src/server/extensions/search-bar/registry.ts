@@ -5,14 +5,13 @@ import {
   asString,
   maskSecrets,
 } from "../../utils/plugin-settings";
-import { debug } from "../../utils/logger";
+import { pluginsDir } from "../../utils/paths";
+import { createRegistry } from "../registry-factory";
 
 interface StoredAction {
   pluginId: string;
   action: SearchBarAction;
 }
-
-let storedActions: StoredAction[] = [];
 
 function isSearchBarAction(val: unknown): val is SearchBarAction {
   if (typeof val !== "object" || val === null) return false;
@@ -29,54 +28,28 @@ function isSearchBarActionArray(val: unknown): val is SearchBarAction[] {
   return Array.isArray(val) && val.every(isSearchBarAction);
 }
 
-export async function initSearchBarActions(): Promise<void> {
-  const { readdir, stat } = await import("fs/promises");
-  const { join } = await import("path");
-  const { pathToFileURL } = await import("url");
-  const { pluginsDir } = await import("../../utils/paths");
-  const pluginDir = pluginsDir();
-  storedActions = [];
+let storedActions: StoredAction[] = [];
 
-  try {
-    const entries = await readdir(pluginDir);
-    for (const entry of entries) {
-      const entryPath = join(pluginDir, entry);
-      const entryStat = await stat(entryPath).catch(() => null);
-      if (!entryStat?.isDirectory()) continue;
-
-      let indexFile: string | undefined;
-      for (const f of ["index.js", "index.ts", "index.mjs", "index.cjs"]) {
-        const s = await stat(join(entryPath, f)).catch(() => null);
-        if (s?.isFile()) {
-          indexFile = f;
-          break;
-        }
-      }
-      if (!indexFile) continue;
-
-      try {
-        const fullPath = join(entryPath, indexFile);
-        const url = pathToFileURL(fullPath).href;
-        const mod = await import(url);
-        const actions = mod.searchBarActions ?? mod.default?.searchBarActions;
-        if (!isSearchBarActionArray(actions)) continue;
-        for (const action of actions) {
-          storedActions.push({
-            pluginId: entry,
-            action: { ...action, id: `${entry}-${action.id}` },
-          });
-        }
-      } catch (err) {
-        debug(
-          "search-bar",
-          `Failed to load search bar actions from plugin: ${entry}`,
-          err,
-        );
-      }
+const registry = createRegistry<SearchBarAction[]>({
+  dirs: () => [{ dir: pluginsDir(), source: "plugin" }],
+  match: (mod) => {
+    const actions = mod.searchBarActions ?? (mod.default as Record<string, unknown>)?.searchBarActions;
+    return isSearchBarActionArray(actions) ? actions : null;
+  },
+  onLoad: async (actions, { folderName }) => {
+    for (const action of actions) {
+      storedActions.push({
+        pluginId: folderName,
+        action: { ...action, id: `${folderName}-${action.id}` },
+      });
     }
-  } catch (err) {
-    debug("search-bar", "Failed to read plugin directory", err);
-  }
+  },
+  debugTag: "search-bar",
+});
+
+export async function initSearchBarActions(): Promise<void> {
+  storedActions = [];
+  await registry.init();
 }
 
 export async function getSearchBarActions(): Promise<SearchBarAction[]> {
@@ -93,7 +66,7 @@ export async function getSearchBarActions(): Promise<SearchBarAction[]> {
 
 export async function reloadSearchBarActions(): Promise<void> {
   storedActions = [];
-  await initSearchBarActions();
+  await registry.init();
 }
 
 export async function getSearchBarActionExtensionMeta(): Promise<

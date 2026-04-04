@@ -8,14 +8,8 @@ import {
   asString,
 } from "../../utils/plugin-settings";
 import { loadPluginAssets, initPlugin } from "../../utils/plugin-assets";
-import { debug } from "../../utils/logger";
-
-interface CommandEntry {
-  id: string;
-  trigger: string;
-  displayName: string;
-  instance: BangCommand;
-}
+import { pluginsDir } from "../../utils/paths";
+import { createRegistry } from "../registry-factory";
 
 const builtinsDir = join(
   process.cwd(),
@@ -25,15 +19,20 @@ const builtinsDir = join(
   "commands",
   "builtins",
 );
-let allCommands: CommandEntry[] = [];
+
+interface CommandEntry {
+  id: string;
+  trigger: string;
+  displayName: string;
+  instance: BangCommand;
+}
+
 let userAliases: Record<string, string> = {};
 
 function getEngineShortcuts(): Map<string, string> {
   const map = new Map<string, string>();
   for (const [id, engine] of Object.entries(getSearchEngineMap())) {
-    if (engine.bangShortcut) {
-      map.set(engine.bangShortcut, id);
-    }
+    if (engine.bangShortcut) map.set(engine.bangShortcut, id);
   }
   return map;
 }
@@ -51,86 +50,44 @@ function isBangCommand(val: unknown): val is BangCommand {
   );
 }
 
-async function loadCommandsFromRoot(
-  rootDir: string,
-  idPrefix: string,
-  source: "plugin" | "builtin",
-): Promise<void> {
-  const { readdir, stat } = await import("fs/promises");
-  const { pathToFileURL } = await import("url");
-  let entries: string[];
-  try {
-    entries = await readdir(rootDir);
-  } catch {
-    return;
-  }
-  for (const entry of entries) {
-    const entryPath = join(rootDir, entry);
-    const entryStat = await stat(entryPath).catch(() => null);
-    if (!entryStat?.isDirectory()) continue;
-
-    let indexFile: string | undefined;
-    for (const f of ["index.js", "index.ts", "index.mjs", "index.cjs"]) {
-      const s = await stat(join(entryPath, f)).catch(() => null);
-      if (s?.isFile()) {
-        indexFile = f;
-        break;
-      }
+const registry = createRegistry<CommandEntry>({
+  dirs: () => [
+    { dir: builtinsDir, source: "builtin" },
+    { dir: pluginsDir(), source: "plugin" },
+  ],
+  match: (mod) => {
+    const Export = mod.default ?? mod.command ?? mod.Command;
+    const instance: BangCommand =
+      typeof Export === "function" ? new (Export as new () => BangCommand)() : (Export as BangCommand);
+    if (!isBangCommand(instance)) return null;
+    if (registry.items().some((c) => c.trigger === instance.trigger)) return null;
+    return { id: "", trigger: instance.trigger, displayName: instance.name, instance };
+  },
+  onLoad: async (entry, { entryPath, folderName, source }) => {
+    entry.id = (source === "plugin" ? "plugin-" : "") + folderName;
+    if (!(await isDisabled(entry.id))) {
+      const template = await loadPluginAssets(entryPath, folderName, entry.id, source);
+      await initPlugin(entry.instance, entryPath, entry.id, template);
     }
-    if (!indexFile) continue;
-
-    const id = idPrefix + entry;
-
-    try {
-      const fullPath = join(entryPath, indexFile);
-      const url = pathToFileURL(fullPath).href;
-      const mod = await import(url);
-      const Export = mod.default ?? mod.command ?? mod.Command;
-      const instance: BangCommand =
-        typeof Export === "function" ? new Export() : Export;
-      if (!isBangCommand(instance)) continue;
-      if (allCommands.some((c) => c.trigger === instance.trigger)) continue;
-
-      if (!(await isDisabled(id))) {
-        const template = await loadPluginAssets(entryPath, entry, id, source);
-        await initPlugin(instance, entryPath, id, template);
-      }
-      allCommands.push({
-        id,
-        trigger: instance.trigger,
-        displayName: instance.name,
-        instance,
-      });
-    } catch (err) {
-      debug("commands", `Failed to load command: ${entry}`, err);
-    }
-  }
-}
+  },
+  debugTag: "commands",
+});
 
 export async function initPlugins(): Promise<void> {
   const { readFile } = await import("fs/promises");
-  const { pluginsDir, aliasesFile } = await import("../../utils/paths");
-  const commandDir = pluginsDir();
-  allCommands = [];
+  const { aliasesFile } = await import("../../utils/paths");
 
   try {
-    const aliasPath = aliasesFile();
-    const raw = await readFile(aliasPath, "utf-8");
+    const raw = await readFile(aliasesFile(), "utf-8");
     const parsed = JSON.parse(raw);
-    if (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      !Array.isArray(parsed)
-    ) {
+    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
       userAliases = parsed as Record<string, string>;
     }
-  } catch (err) {
-    debug("commands", "Failed to load user aliases", err);
+  } catch {
     userAliases = {};
   }
 
-  await loadCommandsFromRoot(builtinsDir, "", "builtin");
-  await loadCommandsFromRoot(commandDir, "plugin-", "plugin");
+  await registry.init();
 }
 
 export async function reloadCommands(): Promise<void> {
@@ -138,15 +95,12 @@ export async function reloadCommands(): Promise<void> {
 }
 
 export function getCommandInstanceById(id: string): BangCommand | undefined {
-  return allCommands.find((c) => c.id === id)?.instance;
+  return registry.items().find((c) => c.id === id)?.instance;
 }
 
-export function getCommandMap(): Map<
-  string,
-  { instance: BangCommand; id: string }
-> {
+export function getCommandMap(): Map<string, { instance: BangCommand; id: string }> {
   const map = new Map<string, { instance: BangCommand; id: string }>();
-  for (const cmd of allCommands) {
+  for (const cmd of registry.items()) {
     map.set(cmd.trigger, { instance: cmd.instance, id: cmd.id });
     for (const alias of cmd.instance.aliases ?? []) {
       map.set(alias, { instance: cmd.instance, id: cmd.id });
@@ -172,8 +126,7 @@ export type CommandRegistryEntry = {
 };
 
 export function getCommandRegistry(): CommandRegistryEntry[] {
-  const all = allCommands;
-  const registry: CommandRegistryEntry[] = all.map((c) => {
+  const entries: CommandRegistryEntry[] = registry.items().map((c) => {
     const builtinAliases = c.instance.aliases ?? [];
     const extraAliases = Object.entries(userAliases)
       .filter(([, target]) => target === c.trigger)
@@ -187,16 +140,14 @@ export function getCommandRegistry(): CommandRegistryEntry[] {
       description: c.instance.description,
       aliases: [...builtinAliases, ...extraAliases],
       category,
-      ...(phrases && phrases.length > 0
-        ? { naturalLanguagePhrases: phrases }
-        : {}),
+      ...(phrases && phrases.length > 0 ? { naturalLanguagePhrases: phrases } : {}),
     };
   });
 
   for (const [shortcut, engineId] of getEngineShortcuts()) {
     const engine = getSearchEngineMap()[engineId];
     if (engine) {
-      registry.push({
+      entries.push({
         trigger: shortcut,
         name: `${engine.name} only`,
         description: `Search only ${engine.name}`,
@@ -206,18 +157,15 @@ export function getCommandRegistry(): CommandRegistryEntry[] {
     }
   }
 
-  return registry;
+  return entries;
 }
 
-export async function getFilteredCommandRegistry(): Promise<
-  CommandRegistryEntry[]
-> {
+export async function getFilteredCommandRegistry(): Promise<CommandRegistryEntry[]> {
   const full = getCommandRegistry();
-  const all = allCommands;
-
   const configuredTriggers = new Set<string>();
+
   await Promise.all(
-    all.map(async (entry) => {
+    registry.items().map(async (entry) => {
       if (await isDisabled(entry.id)) return;
       const configured = entry.instance.isConfigured
         ? await entry.instance.isConfigured()
@@ -237,9 +185,7 @@ export type CommandApiEntry = CommandRegistryEntry & {
   naturalLanguage: boolean;
 };
 
-export async function getCommandsApiResponse(): Promise<{
-  commands: CommandApiEntry[];
-}> {
+export async function getCommandsApiResponse(): Promise<{ commands: CommandApiEntry[] }> {
   const full = await getFilteredCommandRegistry();
   const commands: CommandApiEntry[] = await Promise.all(
     full.map(async (entry) => {
@@ -265,8 +211,7 @@ function schemaWithNaturalLanguage(
   naturalLanguagePhrases: string[] | undefined,
 ): SettingField[] {
   if (schema.some((f) => f.key === "naturalLanguage")) return schema;
-  const hasPhrases =
-    Array.isArray(naturalLanguagePhrases) && naturalLanguagePhrases.length > 0;
+  const hasPhrases = Array.isArray(naturalLanguagePhrases) && naturalLanguagePhrases.length > 0;
   if (!hasPhrases) return schema;
   return [...schema, NATURAL_LANGUAGE_FIELD];
 }
@@ -275,27 +220,21 @@ export async function getPluginExtensionMeta(): Promise<ExtensionMeta[]> {
   const results: ExtensionMeta[] = [];
   const middlewareSettings = await getSettings("middleware");
 
-  for (const entry of allCommands) {
+  for (const entry of registry.items()) {
     const baseSchema = entry.instance.settingsSchema ?? [];
-    const schema = schemaWithNaturalLanguage(
-      baseSchema,
-      entry.instance.naturalLanguagePhrases,
-    );
+    const schema = schemaWithNaturalLanguage(baseSchema, entry.instance.naturalLanguagePhrases);
     let rawSettings = await getSettings(entry.id);
     if (
       entry.id.startsWith("plugin-") &&
       baseSchema.some((f) => f.key === "useAsSettingsGate")
     ) {
       const slug = entry.id.slice(7);
-      if (
-        asString(middlewareSettings.settingsGate).trim() === `plugin:${slug}`
-      ) {
+      if (asString(middlewareSettings.settingsGate).trim() === `plugin:${slug}`) {
         rawSettings = { ...rawSettings, useAsSettingsGate: "true" };
       }
     }
     const maskedSettings = maskSecrets(rawSettings, schema);
-    if (rawSettings["disabled"])
-      maskedSettings["disabled"] = rawSettings["disabled"];
+    if (rawSettings["disabled"]) maskedSettings["disabled"] = rawSettings["disabled"];
     const meta: ExtensionMeta = {
       id: entry.id,
       displayName: entry.displayName,
@@ -324,20 +263,14 @@ export function matchBangCommand(query: string): BangMatch | null {
   if (!trimmed.startsWith("!")) return null;
   const withoutBang = trimmed.slice(1);
   const spaceIdx = withoutBang.indexOf(" ");
-  const trigger =
-    spaceIdx === -1 ? withoutBang : withoutBang.slice(0, spaceIdx);
+  const trigger = spaceIdx === -1 ? withoutBang : withoutBang.slice(0, spaceIdx);
   const args = spaceIdx === -1 ? "" : withoutBang.slice(spaceIdx + 1);
   const lowerTrigger = trigger.toLowerCase();
 
   const map = getCommandMap();
-  const entry = map.get(lowerTrigger);
-  if (entry)
-    return {
-      type: "command",
-      command: entry.instance,
-      commandId: entry.id,
-      args,
-    };
+  const cmdEntry = map.get(lowerTrigger);
+  if (cmdEntry)
+    return { type: "command", command: cmdEntry.instance, commandId: cmdEntry.id, args };
 
   const engineId = getEngineShortcuts().get(lowerTrigger);
   if (engineId) return { type: "engine", engineId, query: args };

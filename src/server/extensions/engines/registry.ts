@@ -13,7 +13,8 @@ import {
   asString,
 } from "../../utils/plugin-settings";
 import { getTransportNames } from "../transports/registry";
-import { debug } from "../../utils/logger";
+import { enginesDir } from "../../utils/paths";
+import { createRegistry } from "../registry-factory";
 import { GoogleEngine } from "./google";
 import { DuckDuckGoEngine } from "./duckduckgo";
 import { BingEngine } from "./bing";
@@ -159,6 +160,47 @@ interface PluginEntry {
 }
 
 let pluginEntries: PluginEntry[] = [];
+
+function isSearchEngine(val: unknown): val is SearchEngine {
+  return (
+    typeof val === "object" &&
+    val !== null &&
+    "name" in val &&
+    typeof (val as SearchEngine).name === "string" &&
+    "executeSearch" in val &&
+    typeof (val as SearchEngine).executeSearch === "function"
+  );
+}
+
+const engineRegistry = createRegistry<PluginEntry>({
+  dirs: () => [{ dir: enginesDir(), source: "plugin" }],
+  match: (mod) => {
+    const Export = mod.default ?? mod.engine ?? mod.Engine;
+    const instance: SearchEngine =
+      typeof Export === "function" ? new (Export as new () => SearchEngine)() : (Export as SearchEngine);
+    if (!isSearchEngine(instance)) return null;
+    return {
+      id: "",
+      displayName: instance.name,
+      searchType: typeof mod.type === "string" && (mod.type as string).trim() ? (mod.type as string) : "web",
+      instance,
+      outgoingHosts:
+        Array.isArray(mod.outgoingHosts) && (mod.outgoingHosts as unknown[]).length > 0
+          ? (mod.outgoingHosts as string[])
+          : undefined,
+    };
+  },
+  onLoad: async (entry, { folderName }) => {
+    entry.id = `engine-${folderName}`;
+    if (entry.instance.configure && entry.instance.settingsSchema?.length) {
+      const stored = await getSettings(entry.id);
+      entry.instance.configure(mergeDefaults(stored, entry.instance.settingsSchema));
+    }
+    pluginEntries.push(entry);
+  },
+  allowFlatFiles: true,
+  debugTag: "engines",
+});
 
 export function getEngineRegistry(): {
   id: string;
@@ -416,19 +458,9 @@ export async function getEngineExtensionMeta(): Promise<ExtensionMeta[]> {
   return results;
 }
 
-function isSearchEngine(val: unknown): val is SearchEngine {
-  return (
-    typeof val === "object" &&
-    val !== null &&
-    "name" in val &&
-    typeof (val as SearchEngine).name === "string" &&
-    "executeSearch" in val &&
-    typeof (val as SearchEngine).executeSearch === "function"
-  );
-}
-
 export async function initEngines(): Promise<void> {
   pluginEntries = [];
+
   for (const def of BUILTIN_DEFINITIONS) {
     const instance = builtinMap[def.id];
     if (instance?.configure && instance.settingsSchema?.length) {
@@ -437,76 +469,7 @@ export async function initEngines(): Promise<void> {
     }
   }
 
-  const { readdir } = await import("fs/promises");
-  const { join } = await import("path");
-  const { pathToFileURL } = await import("url");
-  const { enginesDir } = await import("../../utils/paths");
-  const pluginDir = enginesDir();
-  const seen = new Set<string>(BUILTIN_DEFINITIONS.map((d) => d.id));
-
-  const { stat } = await import("fs/promises");
-  try {
-    const entries = await readdir(pluginDir, { withFileTypes: true });
-    for (const entry of entries) {
-      let fullPath: string;
-      let base: string;
-      if (entry.isFile() && /\.(js|ts|mjs|cjs)$/.test(entry.name)) {
-        base = entry.name.replace(/\.(js|ts|mjs|cjs)$/, "");
-        fullPath = join(pluginDir, entry.name);
-      } else if (entry.isDirectory()) {
-        let indexFile: string | undefined;
-        for (const f of ["index.js", "index.ts", "index.mjs", "index.cjs"]) {
-          try {
-            const s = await stat(join(pluginDir, entry.name, f));
-            if (s.isFile()) {
-              indexFile = f;
-              break;
-            }
-          } catch {
-            //
-          }
-        }
-        if (!indexFile) continue;
-        base = entry.name;
-        fullPath = join(pluginDir, entry.name, indexFile);
-      } else {
-        continue;
-      }
-      const id = `engine-${base}`;
-      if (seen.has(id)) continue;
-      seen.add(id);
-
-      try {
-        const url = pathToFileURL(fullPath).href;
-        const mod = await import(url);
-        const Export = mod.default ?? mod.engine ?? mod.Engine;
-        const instance: SearchEngine =
-          typeof Export === "function" ? new Export() : Export;
-        if (!isSearchEngine(instance)) continue;
-        const searchType =
-          typeof mod.type === "string" && mod.type.trim() ? mod.type : "web";
-        const pluginHosts =
-          Array.isArray(mod.outgoingHosts) && mod.outgoingHosts.length > 0
-            ? (mod.outgoingHosts as string[])
-            : undefined;
-        if (instance.configure && instance.settingsSchema?.length) {
-          const stored = await getSettings(id);
-          instance.configure(mergeDefaults(stored, instance.settingsSchema));
-        }
-        pluginEntries.push({
-          id,
-          displayName: instance.name,
-          searchType,
-          instance,
-          outgoingHosts: pluginHosts,
-        });
-      } catch (err) {
-        debug("engines", `Failed to load plugin engine: ${base}`, err);
-      }
-    }
-  } catch (err) {
-    debug("engines", `Failed to read engine plugin directory`, err);
-  }
+  await engineRegistry.init();
 }
 
 export async function reloadEngines(): Promise<void> {
