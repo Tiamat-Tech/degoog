@@ -198,6 +198,12 @@ export type CommandRegistryEntry = {
   category?: string;
 };
 
+export function setCommandsLocale(locale: string): void {
+  for (const entry of allCommands) {
+    entry.instance.t?.setLocale(locale);
+  }
+}
+
 export function getCommandRegistry(): CommandRegistryEntry[] {
   const all = allCommands;
   const registry: CommandRegistryEntry[] = all.map((c) => {

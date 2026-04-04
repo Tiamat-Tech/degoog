@@ -38,6 +38,7 @@ import { outgoingFetch } from "../utils/outgoing";
 import { asString, getSettings, isDisabled } from "../utils/plugin-settings";
 import { checkRateLimit } from "../utils/rate-limit";
 import { getClientIp } from "../utils/request";
+import { getLocale } from "../utils/hono";
 import { injectScope, translateHTML } from "../utils/translation";
 
 const DEGOOG_SETTINGS_ID = "degoog-settings";
@@ -177,11 +178,12 @@ async function runSlotPlugins(
   query: string,
   clientIp?: string,
   results?: ScoredResult[],
-  options?: { excludePosition?: SlotPanelPosition },
+  options?: { excludePosition?: SlotPanelPosition; locale?: string },
 ): Promise<SlotPanelResult[]> {
   const plugins = getSlotPlugins();
   const panels: SlotPanelResult[] = [];
   const exclude = options?.excludePosition;
+  const locale = options?.locale;
   for (const plugin of plugins) {
     const slotSettingsId = plugin.settingsId ?? `slot-${plugin.id}`;
     let effectivePosition: SlotPanelPosition = plugin.position;
@@ -200,6 +202,7 @@ async function runSlotPlugins(
       if (await isDisabled(slotSettingsId)) continue;
       const ok = await Promise.resolve(plugin.trigger(query.trim()));
       if (!ok) continue;
+      if (plugin.t && locale) plugin.t.setLocale(locale);
       const context: SlotPluginContext = {
         clientIp,
         results: plugin.waitForResults ? results : undefined,
@@ -549,6 +552,7 @@ router.post("/api/slots", async (c) => {
   const clientIp = getClientIp(c);
   const panels = await runSlotPlugins(body.query.trim(), clientIp, body.results, {
     excludePosition: SlotPanelPosition.AtAGlance,
+    locale: getLocale(c),
   });
   return c.json({ panels });
 });
@@ -566,6 +570,7 @@ router.post("/api/slots/glance", async (c) => {
     return c.json({ error: "Missing query or results" }, 400);
   }
   const clientIp = getClientIp(c);
+  const locale = getLocale(c);
   const glancePlugins = getSlotPlugins().filter(
     (p) => p.position === SlotPanelPosition.AtAGlance,
   );
@@ -576,6 +581,7 @@ router.post("/api/slots/glance", async (c) => {
       if (await isDisabled(slotSettingsId)) continue;
       const ok = await Promise.resolve(plugin.trigger(body.query!.trim()));
       if (!ok) continue;
+      if (plugin.t && locale) plugin.t.setLocale(locale);
       const context: SlotPluginContext = {
         clientIp: clientIp ?? undefined,
         results: body.results,

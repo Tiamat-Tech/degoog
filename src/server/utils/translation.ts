@@ -14,12 +14,14 @@ export const getClosestLanguage = (
   lang: string,
   availableLangs: string[],
 ): string | null => {
+  if (availableLangs.length === 0) return null;
+
   if (availableLangs.includes(lang)) return lang;
 
   const baseLang = lang.split("-")[0];
 
-  if (availableLangs.map((l) => l.split("-")[0]).includes(baseLang))
-    return baseLang;
+  const baseMatch = availableLangs.find((l) => l.split("-")[0] === baseLang);
+  if (baseMatch) return baseMatch;
 
   debug(
     "translation",
