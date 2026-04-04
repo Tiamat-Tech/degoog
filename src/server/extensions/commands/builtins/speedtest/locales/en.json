@@ -1,0 +1,10 @@
+{
+  "speedtest": {
+    "title": "Speed Test",
+    "description": "Run an internet speed test",
+    "download": "Download (Mbps)",
+    "upload": "Upload (Mbps)",
+    "latency": "Latency (ms)",
+    "starting": "Starting..."
+  }
+}

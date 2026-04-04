@@ -116,7 +116,7 @@ export const createTranslator = (translations: TranslationRecord) => {
         return key;
       }
 
-      if (typeof value !== "string" || !vars) return value;
+      if (typeof value !== "string" || !vars) return String(value);
 
       if (Array.isArray(vars)) {
         return vars.reduce<string>(
@@ -172,31 +172,6 @@ export const withFallback = (
   );
 };
 
-const TEMPLATE_DIRECTIVE_PREFIXES = ["#if", "/if", "#each", "/each"] as const;
-
-const TEMPLATE_RESERVED_KEYS = new Set([
-  ".",
-  "@index",
-  "title",
-  "url",
-  "snippet",
-  "cite_url",
-  "favicon_url",
-  "thumbnail_url",
-  "hostname",
-  "link_target",
-  "link_rel",
-  "sources",
-  "sources_text",
-  "duration",
-  "content",
-]);
-
-const isTemplateKey = (key: string): boolean => {
-  if (TEMPLATE_RESERVED_KEYS.has(key)) return true;
-  return TEMPLATE_DIRECTIVE_PREFIXES.some((p) => key.startsWith(p));
-};
-
 export const translateHTML = (
   html: string,
   t: ReturnType<typeof createTranslator>,
@@ -211,17 +186,26 @@ export const translateHTML = (
   });
 
   const translated = stripped.replace(
-    /\{\{\s*([^}]+?)\s*\}\}/g,
-    (match, content: string) => {
+    // This regex looks for {{ t:key }} or {{ t:key, var1, var2 }} patterns
+    // I've done this to prevent conflicts with other templating syntaxes
+    // @fccview i don't really know what to do here, if you have any ideas to make this better please tell me
+    /\{\{\s*t:([^}]+?)\s*\}\}/g,
+    (_, content: string) => {
       const parts = content.split(",").map((p) => p.trim());
       const key = parts[0];
-
-      if (isTemplateKey(key)) return match;
-
       const vars = parts.slice(1);
-      const value = vars.length > 0 ? t(key, vars) : t(key);
 
-      return String(value);
+      if (vars.length === 0) return String(t(key));
+
+      // Build a named vars record: each var name maps to its {{ }} template
+      // placeholder so the client-side template engine can resolve it later.
+      // e.g. "sources_text" > { sources_text: "{{ sources_text }}" }
+      const namedVars: Record<string, string> = {};
+      for (const v of vars) {
+        namedVars[v] = `{{ ${v} }}`;
+      }
+
+      return String(t(key, namedVars));
     },
   );
 

@@ -180,7 +180,7 @@ export interface Translate {
   (
     key: string,
     vars?: Record<string, TranslationVars> | TranslationVars[],
-  ): TranslationVars;
+  ): string;
   setLocale(locale: string): void;
   locale: string;
 }

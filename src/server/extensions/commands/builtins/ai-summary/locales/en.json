@@ -1,0 +1,9 @@
+{
+  "ai-summary": {
+    "name": "AI Summary",
+    "description": "Replaces At a Glance with a brief AI-generated summary using any OpenAI-compatible provider",
+    "badge": "AI Summary",
+    "dive-deeper": "Dive deeper",
+    "follow-up-placeholder": "Ask a follow-up\u2026"
+  }
+}
