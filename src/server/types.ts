@@ -17,7 +17,14 @@ export enum ExtensionStoreType {
 export interface SettingField {
   key: string;
   label: string;
-  type: "text" | "number" | "password" | "url" | "toggle" | "textarea" | "select";
+  type:
+    | "text"
+    | "number"
+    | "password"
+    | "url"
+    | "toggle"
+    | "textarea"
+    | "select";
   required?: boolean;
   placeholder?: string;
   description?: string;
@@ -67,10 +74,18 @@ export interface SearchEngine {
     timeFilter?: TimeFilter,
     context?: EngineContext,
   ): Promise<SearchResult[]>;
+  t?: Translate;
 }
 
 export type SearchType = "web" | "images" | "videos" | "news";
-export type TimeFilter = "any" | "hour" | "day" | "week" | "month" | "year" | "custom";
+export type TimeFilter =
+  | "any"
+  | "hour"
+  | "day"
+  | "week"
+  | "month"
+  | "year"
+  | "custom";
 
 export interface EngineTiming {
   name: string;
@@ -137,6 +152,7 @@ export interface SlotPlugin {
   settingsSchema?: SettingField[];
   configure?(settings: Record<string, string | string[]>): void;
   init?(context: PluginContext): void | Promise<void>;
+  t?: Translate;
 }
 
 export interface ScoredResult extends SearchResult {
@@ -153,6 +169,31 @@ export interface CommandResult {
   action?: string;
 }
 
+export type TranslationVars = string | number | boolean;
+export type TranslationRecord = {
+  [key: string]: TranslationVars | TranslationRecord;
+};
+export interface Translate {
+  (
+    key: string,
+    vars?: Record<string, TranslationVars> | TranslationVars[],
+  ): TranslationVars;
+  setLocale(locale: string): void;
+  locale: string;
+}
+export const TranslateFunction: Translate = Object.assign(
+  function (
+    key: string,
+    _vars?: Record<string, TranslationVars> | TranslationVars[],
+  ): string {
+    return key;
+  },
+  {
+    setLocale(_locale: string) {},
+    locale: "",
+  },
+);
+
 export interface BangCommand {
   name: string;
   description: string;
@@ -164,6 +205,10 @@ export interface BangCommand {
   isConfigured?(): Promise<boolean>;
   init?(context: PluginContext): void | Promise<void>;
   execute(args: string, context?: CommandContext): Promise<CommandResult>;
+  // The translation function will be injected into the command instance before init is called
+  // If you want types please declare it in the object, it will be overridden anyway
+  // Yes I know this is a hack, but there's no good way to do this without a major refactor
+  t?: Translate;
 }
 
 export interface CommandContext {
@@ -191,6 +236,7 @@ export interface SearchResultTab {
   settingsSchema?: SettingField[];
   configure?(settings: Record<string, string | string[]>): void;
   init?(context: PluginContext): void | Promise<void>;
+  t?: Translate;
 }
 
 export type SearchBarActionType = "navigate" | "bang" | "custom";
@@ -202,6 +248,7 @@ export interface SearchBarAction {
   type: SearchBarActionType;
   url?: string;
   trigger?: string;
+  t?: Translate;
 }
 
 export interface MiddlewareResult {
@@ -215,6 +262,7 @@ export interface RequestMiddleware {
     req: Request,
     context?: { route?: string },
   ): Response | Promise<Response | MiddlewareResult | null>;
+  t?: Translate;
 }
 
 export type PluginRouteMethod = "get" | "post" | "put" | "delete" | "patch";

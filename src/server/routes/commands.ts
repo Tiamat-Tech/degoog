@@ -1,13 +1,13 @@
 import { Hono } from "hono";
 import {
-  matchBangCommand,
   getCommandsApiResponse,
+  matchBangCommand,
 } from "../extensions/commands/registry";
 import { searchSingleEngine } from "../search";
+import type { TimeFilter } from "../types";
+import { debug } from "../utils/logger";
 import { isDisabled } from "../utils/plugin-settings";
 import { getClientIp } from "../utils/request";
-import { debug } from "../utils/logger";
-import type { TimeFilter } from "../types";
 
 const router = new Hono();
 
@@ -69,8 +69,17 @@ router.get("/api/command", async (c) => {
   const clientIp = getClientIp(c);
 
   const t0 = performance.now();
+
+  const language = c.req.header("Accept-Language");
+  if (language) {
+    match.command.t?.setLocale(language);
+  }
+
   const result = await match.command.execute(match.args, { clientIp, page });
-  debug("plugin", `${match.command.trigger} executed in ${Math.round(performance.now() - t0)}ms`);
+  debug(
+    "plugin",
+    `${match.command.trigger} executed in ${Math.round(performance.now() - t0)}ms`,
+  );
   return c.json({
     type: "command",
     trigger: match.command.trigger,
