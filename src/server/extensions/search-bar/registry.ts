@@ -1,11 +1,17 @@
-import { type SearchBarAction, type ExtensionMeta, ExtensionStoreType } from "../../types";
 import {
+  type ExtensionMeta,
+  ExtensionStoreType,
+  type SearchBarAction,
+  type Translate,
+} from "../../types";
+import { debug } from "../../utils/logger";
+import {
+  asString,
   getSettings,
   isDisabled,
-  asString,
   maskSecrets,
 } from "../../utils/plugin-settings";
-import { debug } from "../../utils/logger";
+import { createTranslatorFromPath } from "../../utils/translation";
 
 interface StoredAction {
   pluginId: string;
@@ -59,8 +65,12 @@ export async function initSearchBarActions(): Promise<void> {
         const url = pathToFileURL(fullPath).href;
         const mod = await import(url);
         const actions = mod.searchBarActions ?? mod.default?.searchBarActions;
+
         if (!isSearchBarActionArray(actions)) continue;
+
         for (const action of actions) {
+          action.t = await createTranslatorFromPath(entryPath);
+
           storedActions.push({
             pluginId: entry,
             action: { ...action, id: `${entry}-${action.id}` },
@@ -130,4 +140,21 @@ export async function getSearchBarActionExtensionMeta(): Promise<
     });
   }
   return out;
+}
+
+export function getAllSearchBarTranslators(): {
+  namespace: string;
+  translator: Translate;
+}[] {
+  const seen = new Map<string, Translate>();
+
+  for (const { pluginId, action } of storedActions) {
+    if (!action.t || seen.has(pluginId)) continue;
+    seen.set(pluginId, action.t);
+  }
+
+  return Array.from(seen.entries()).map(([id, translator]) => ({
+    namespace: `search-bar/${id}`,
+    translator,
+  }));
 }

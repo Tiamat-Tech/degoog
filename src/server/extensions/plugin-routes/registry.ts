@@ -1,5 +1,6 @@
 import type { PluginRoute } from "../../types";
 import { debug } from "../../utils/logger";
+import { createTranslatorFromPath } from "../../utils/translation";
 
 const pluginRoutes = new Map<string, PluginRoute[]>();
 
@@ -53,12 +54,15 @@ export async function initPluginRoutes(): Promise<void> {
         const url = pathToFileURL(fullPath).href;
         const mod = await import(url);
         const routes = mod.routes ?? mod.default?.routes;
+
         if (!isPluginRouteArray(routes) || routes.length === 0) continue;
-        const normalized = routes.map((r) => ({
-          ...r,
-          path: normalizePath(r.path),
-        }));
-        pluginRoutes.set(entry, normalized);
+
+        for (const route of routes) {
+          route.t = await createTranslatorFromPath(entryPath);
+          route.path = normalizePath(route.path);
+        }
+
+        pluginRoutes.set(entry, routes);
       } catch (err) {
         debug(
           "plugin-routes",
