@@ -52,7 +52,6 @@ export interface SlotPanel {
 
 export interface SearchResponse {
   results: ScoredResult[];
-  atAGlance: ScoredResult | null;
   query: string;
   totalTime: number;
   type: string;

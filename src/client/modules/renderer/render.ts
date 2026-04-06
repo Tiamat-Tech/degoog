@@ -15,7 +15,6 @@ export {
   clearSlotPanels,
   renderSlotPanels,
   appendSlotPanels,
-  renderAtAGlance,
 } from "./render-slots";
 export { renderSidebar } from "./render-sidebar";
 

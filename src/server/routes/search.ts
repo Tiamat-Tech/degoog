@@ -339,7 +339,6 @@ router.get("/api/search/stream", async (c) => {
               engineTimings: cached.engineTimings,
               relatedSearches: cached.relatedSearches,
               knowledgePanel: cached.knowledgePanel,
-              atAGlance: cached.atAGlance,
             })}\n\n`,
           ),
         );
@@ -381,7 +380,6 @@ router.get("/api/search/stream", async (c) => {
   if (rawActiveEngines.length === 0) {
     return c.json({
       results: [],
-      atAGlance: null,
       query,
       totalTime: 0,
       type: searchType,
@@ -478,13 +476,6 @@ router.get("/api/search/stream", async (c) => {
       void Promise.all(enginePromises).then(async () => {
         const totalTime = Math.round(performance.now() - start);
         const finalResults = scoreResults(allRawResults);
-        const atAGlance =
-          searchType === "web" &&
-          finalResults.length > 0 &&
-          finalResults[0].snippet
-            ? finalResults[0]
-            : null;
-
         let relatedSearches: string[] = [];
         let knowledgePanel: import("../types").KnowledgePanel | null = null;
         if (searchType === "web" && page === 1) {
@@ -496,7 +487,6 @@ router.get("/api/search/stream", async (c) => {
 
         const response: SearchResponse = {
           results: finalResults,
-          atAGlance,
           query,
           totalTime,
           type: searchType,
@@ -517,7 +507,6 @@ router.get("/api/search/stream", async (c) => {
           engineTimings: allTimings,
           relatedSearches,
           knowledgePanel,
-          atAGlance,
         });
         if (!closed) {
           closed = true;
@@ -661,8 +650,6 @@ router.get("/api/search/retry", async (c) => {
       ...cached,
       results: merged,
       engineTimings: updatedTimings,
-      atAGlance:
-        merged.length > 0 && merged[0].snippet ? merged[0] : cached.atAGlance,
     };
     cache.set(
       key,

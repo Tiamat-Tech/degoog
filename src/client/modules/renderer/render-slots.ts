@@ -1,5 +1,4 @@
 import { SlotPanelPosition, type SlotPanel } from "../../types";
-import { renderTemplate } from "../../utils/template";
 
 const SLOT_IDS = [
   "slot-above-results",
@@ -59,27 +58,4 @@ export function renderSlotPanels(panels: SlotPanel[]): void {
 
 export function appendSlotPanels(panels: SlotPanel[]): void {
   _renderSlotPanelsInto(panels, false);
-}
-
-export function renderAtAGlance(
-  data: {
-    snippet: string;
-    url: string;
-    title: string;
-    sources: string[];
-  } | null,
-): void {
-  const container = document.getElementById("at-a-glance");
-  if (!container) return;
-  if (!data) {
-    container.innerHTML = "";
-    return;
-  }
-  container.innerHTML = renderTemplate("degoog-at-a-glance", {
-    snippet: data.snippet,
-    url: data.url,
-    title: data.title,
-    sources: data.sources,
-    sources_text: data.sources.join(", "),
-  }) ?? "";
 }

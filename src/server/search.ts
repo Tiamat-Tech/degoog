@@ -314,7 +314,6 @@ export const search = async (
   if (rawActiveEngines.length === 0) {
     return {
       results: [],
-      atAGlance: null,
       query,
       totalTime: 0,
       type,
@@ -362,8 +361,6 @@ export const search = async (
   }
 
   const scored = scoreResults(allResults);
-  const atAGlance =
-    type === "web" && scored.length > 0 && scored[0].snippet ? scored[0] : null;
 
   let relatedSearches: string[] = [];
   let knowledgePanel: KnowledgePanel | null = null;
@@ -383,7 +380,6 @@ export const search = async (
 
   return {
     results: scored,
-    atAGlance,
     query,
     totalTime,
     type,

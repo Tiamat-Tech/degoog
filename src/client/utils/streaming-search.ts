@@ -41,7 +41,6 @@ interface StreamDone {
   engineTimings: EngineTiming[];
   relatedSearches: string[];
   knowledgePanel: { title: string; description: string; image?: string; url: string } | null;
-  atAGlance: ScoredResult | null;
 }
 
 let _activeSource: EventSource | null = null;
@@ -175,10 +174,6 @@ export async function performStreamingSearch(
 
     const searchData: SearchResponse = {
       results: currentResults,
-      atAGlance:
-        currentResults.length > 0 && currentResults[0].snippet
-          ? currentResults[0]
-          : null,
       query,
       totalTime: data.totalTime,
       type,
@@ -199,7 +194,7 @@ export async function performStreamingSearch(
     } else {
       renderSidebar(searchData, (q) => onComplete(q));
       if (type === "web") {
-        void fetchGlancePanels(query, currentResults, data.atAGlance);
+        void fetchGlancePanels(query, currentResults);
         void fetchSlotPanels(query, currentResults);
       } else {
         if (glanceEl) glanceEl.innerHTML = "";

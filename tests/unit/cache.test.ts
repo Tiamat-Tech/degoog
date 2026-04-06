@@ -12,7 +12,6 @@ import type { SearchResponse } from "../../src/server/types";
 
 const mockResponse = (timings: { resultCount: number }[]): SearchResponse => ({
   results: [],
-  atAGlance: null,
   query: "test",
   totalTime: 0,
   type: "web",

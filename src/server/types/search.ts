@@ -59,7 +59,6 @@ export interface EngineContext {
 
 export interface SearchResponse {
   results: ScoredResult[];
-  atAGlance: ScoredResult | null;
   query: string;
   totalTime: number;
   type: SearchType;
