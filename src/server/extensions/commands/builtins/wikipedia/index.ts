@@ -1,4 +1,8 @@
-import { SlotPanelPosition, TranslateFunction, type SlotPlugin } from "../../../../types";
+import {
+  SlotPanelPosition,
+  TranslateFunction,
+  type SlotPlugin,
+} from "../../../../types";
 
 const TIMEOUT_MS = 5_000;
 const USER_AGENT = "degoog/1.0 (+https://github.com/fccview/degoog)";

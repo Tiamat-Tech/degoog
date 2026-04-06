@@ -16,7 +16,12 @@ import {
 } from "../modules/renderer/render";
 import { renderMediaEngineBar } from "../modules/renderer/render-media";
 import { state } from "../state";
-import { SlotPanelPosition, type Command, type ScoredResult, type SearchResponse } from "../types";
+import {
+  SlotPanelPosition,
+  type Command,
+  type ScoredResult,
+  type SearchResponse,
+} from "../types";
 import { hideAcDropdown } from "./autocomplete";
 import { getEngines } from "./engines";
 import { setActiveTab } from "./navigation";
