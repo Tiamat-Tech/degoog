@@ -13,7 +13,6 @@ import {
 import { getSlotPlugins } from "../extensions/slots/registry";
 import {
   createSearchEngineContext,
-  fetchKnowledgePanel,
   fetchRelatedSearches,
   mergeNewResults,
   scoreResults,
@@ -338,7 +337,6 @@ router.get("/api/search/stream", async (c) => {
               totalTime: cached.totalTime,
               engineTimings: cached.engineTimings,
               relatedSearches: cached.relatedSearches,
-              knowledgePanel: cached.knowledgePanel,
             })}\n\n`,
           ),
         );
@@ -385,7 +383,6 @@ router.get("/api/search/stream", async (c) => {
       type: searchType,
       engineTimings: [],
       relatedSearches: [],
-      knowledgePanel: null,
     });
   }
 
@@ -477,12 +474,10 @@ router.get("/api/search/stream", async (c) => {
         const totalTime = Math.round(performance.now() - start);
         const finalResults = scoreResults(allRawResults);
         let relatedSearches: string[] = [];
-        let knowledgePanel: import("../types").KnowledgePanel | null = null;
         if (searchType === "web" && page === 1) {
-          [relatedSearches, knowledgePanel] = await Promise.all([
-            fetchRelatedSearches(query).catch(() => [] as string[]),
-            fetchKnowledgePanel(query).catch(() => null),
-          ]);
+          relatedSearches = await fetchRelatedSearches(query).catch(
+            () => [] as string[],
+          );
         }
 
         const response: SearchResponse = {
@@ -492,7 +487,6 @@ router.get("/api/search/stream", async (c) => {
           type: searchType,
           engineTimings: allTimings,
           relatedSearches,
-          knowledgePanel,
         };
 
         const ttl = cache.hasFailedEngines(response)
@@ -506,7 +500,6 @@ router.get("/api/search/stream", async (c) => {
           totalTime,
           engineTimings: allTimings,
           relatedSearches,
-          knowledgePanel,
         });
         if (!closed) {
           closed = true;

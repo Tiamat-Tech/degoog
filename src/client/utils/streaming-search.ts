@@ -18,6 +18,7 @@ import {
 } from "../modules/renderer/render";
 import { renderMediaEngineBar } from "../modules/renderer/render-media";
 import { state } from "../state";
+import { SlotPanelPosition } from "../types";
 import type { EngineTiming, ScoredResult, SearchResponse } from "../types";
 import { hideAcDropdown } from "./autocomplete";
 import { getEngines } from "./engines";
@@ -45,12 +46,6 @@ interface StreamDone {
   totalTime: number;
   engineTimings: EngineTiming[];
   relatedSearches: string[];
-  knowledgePanel: {
-    title: string;
-    description: string;
-    image?: string;
-    url: string;
-  } | null;
 }
 
 let _activeSource: EventSource | null = null;
@@ -189,7 +184,6 @@ export async function performStreamingSearch(
       type,
       engineTimings: data.engineTimings,
       relatedSearches: data.relatedSearches,
-      knowledgePanel: data.knowledgePanel,
     };
 
     state.currentData = searchData;
@@ -205,7 +199,16 @@ export async function performStreamingSearch(
       renderSidebar(searchData, (q) => onComplete(q));
       if (type === "web") {
         void fetchGlancePanels(query, currentResults);
-        void fetchSlotPanels(query, currentResults);
+        void fetchSlotPanels(query, currentResults).then((panels) => {
+          const kpPanels = panels.filter(
+            (p) => p.position === SlotPanelPosition.KnowledgePanel,
+          );
+          if (kpPanels.length > 0) {
+            renderSidebar(searchData, (q) => onComplete(q), {
+              sidebarTopPanels: kpPanels,
+            });
+          }
+        });
       } else {
         if (glanceEl) glanceEl.innerHTML = "";
       }

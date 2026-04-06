@@ -63,7 +63,6 @@ router.get("/api/command", async (c) => {
       totalTime: timing.time,
       engineTimings: [timing],
       relatedSearches: [],
-      knowledgePanel: null,
     });
   }
 

@@ -57,7 +57,6 @@ export interface SearchResponse {
   type: string;
   engineTimings: EngineTiming[];
   relatedSearches: string[];
-  knowledgePanel: KnowledgePanel | null;
   slotPanels?: SlotPanel[];
 }
 

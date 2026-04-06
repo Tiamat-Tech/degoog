@@ -32,14 +32,6 @@ export interface EngineTiming {
   resultCount: number;
 }
 
-export interface KnowledgePanel {
-  title: string;
-  description: string;
-  image?: string;
-  url: string;
-  facts?: Record<string, string>;
-}
-
 export type EngineFetch = (
   url: string,
   options?: {
@@ -64,6 +56,5 @@ export interface SearchResponse {
   type: SearchType;
   engineTimings: EngineTiming[];
   relatedSearches: string[];
-  knowledgePanel: KnowledgePanel | null;
   slotPanels?: SlotPanelResult[];
 }

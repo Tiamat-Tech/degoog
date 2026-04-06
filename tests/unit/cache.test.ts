@@ -21,7 +21,6 @@ const mockResponse = (timings: { resultCount: number }[]): SearchResponse => ({
     resultCount: t.resultCount,
   })),
   relatedSearches: [],
-  knowledgePanel: null,
 });
 
 describe("cache", () => {

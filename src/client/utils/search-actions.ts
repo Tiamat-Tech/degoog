@@ -16,7 +16,7 @@ import {
 } from "../modules/renderer/render";
 import { renderMediaEngineBar } from "../modules/renderer/render-media";
 import { state } from "../state";
-import { type Command, type ScoredResult, type SearchResponse } from "../types";
+import { SlotPanelPosition, type Command, type ScoredResult, type SearchResponse } from "../types";
 import { hideAcDropdown } from "./autocomplete";
 import { getEngines } from "./engines";
 import { setActiveTab } from "./navigation";
@@ -203,7 +203,16 @@ export async function performSearch(
       renderSidebar(data, (q) => void performSearch(q));
       if (resolvedType === "web") {
         void fetchGlancePanels(query, data.results);
-        void fetchSlotPanels(query, data.results);
+        void fetchSlotPanels(query, data.results).then((panels) => {
+          const kpPanels = panels.filter(
+            (p) => p.position === SlotPanelPosition.KnowledgePanel,
+          );
+          if (kpPanels.length > 0) {
+            renderSidebar(data, (q) => void performSearch(q), {
+              sidebarTopPanels: kpPanels,
+            });
+          }
+        });
       } else {
         if (glanceEl) glanceEl.innerHTML = "";
       }
@@ -245,7 +254,16 @@ async function _performSearchWithBang(
     } else {
       renderSidebar(searchData, (q) => void performSearch(q));
       if (type === "web") {
-        void fetchSlotPanels(query, searchData.results);
+        void fetchSlotPanels(query, searchData.results).then((panels) => {
+          const kpPanels = panels.filter(
+            (p) => p.position === SlotPanelPosition.KnowledgePanel,
+          );
+          if (kpPanels.length > 0) {
+            renderSidebar(searchData, (q) => void performSearch(q), {
+              sidebarTopPanels: kpPanels,
+            });
+          }
+        });
       } else {
         if (glanceEl) glanceEl.innerHTML = "";
       }
