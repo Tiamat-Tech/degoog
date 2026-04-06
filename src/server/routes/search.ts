@@ -33,12 +33,12 @@ import {
   type TimeFilter,
 } from "../types";
 import * as cache from "../utils/cache";
+import { getLocale } from "../utils/hono";
 import { debug } from "../utils/logger";
 import { outgoingFetch } from "../utils/outgoing";
 import { asString, getSettings, isDisabled } from "../utils/plugin-settings";
 import { checkRateLimit } from "../utils/rate-limit";
 import { getClientIp } from "../utils/request";
-import { getLocale } from "../utils/hono";
 import { injectScope, translateHTML } from "../utils/translation";
 
 const DEGOOG_SETTINGS_ID = "degoog-settings";
@@ -539,10 +539,15 @@ router.post("/api/slots", async (c) => {
   }
   if (!body.query || !body.query.trim()) return c.json({ panels: [] });
   const clientIp = getClientIp(c);
-  const panels = await runSlotPlugins(body.query.trim(), clientIp, body.results, {
-    excludePosition: SlotPanelPosition.AtAGlance,
-    locale: getLocale(c),
-  });
+  const panels = await runSlotPlugins(
+    body.query.trim(),
+    clientIp,
+    body.results,
+    {
+      excludePosition: SlotPanelPosition.AtAGlance,
+      locale: getLocale(c),
+    },
+  );
   return c.json({ panels });
 });
 

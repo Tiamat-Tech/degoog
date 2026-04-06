@@ -1,10 +1,8 @@
-import { escapeHtml } from "./dom";
-import {
-  appendSlotPanels,
-} from "../modules/renderer/render-slots";
 import { skeletonGlance } from "../animations/skeleton";
-import { runScriptsInContainer } from "./search-helpers";
+import { appendSlotPanels } from "../modules/renderer/render-slots";
 import { SlotPanelPosition, type ScoredResult, type SlotPanel } from "../types";
+import { escapeHtml } from "./dom";
+import { runScriptsInContainer } from "./search-helpers";
 
 let glanceAbortController: AbortController | null = null;
 
@@ -55,7 +53,10 @@ export async function fetchGlancePanels(
   }
 }
 
-export async function fetchSlotPanels(query: string, results?: ScoredResult[]): Promise<SlotPanel[]> {
+export async function fetchSlotPanels(
+  query: string,
+  results?: ScoredResult[],
+): Promise<SlotPanel[]> {
   try {
     const res = await fetch("/api/slots", {
       method: "POST",

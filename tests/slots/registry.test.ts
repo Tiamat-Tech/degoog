@@ -1,8 +1,8 @@
-import { describe, test, expect, beforeAll } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 import {
-  initSlotPlugins,
-  getSlotPlugins,
   getSlotPluginById,
+  getSlotPlugins,
+  initSlotPlugins,
 } from "../../src/server/extensions/slots/registry";
 import { SlotPanelPosition } from "../../src/server/types";
 

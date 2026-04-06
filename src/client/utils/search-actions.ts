@@ -1,29 +1,41 @@
+import {
+  skeletonGlance,
+  skeletonImageGrid,
+  skeletonResults,
+  skeletonVideoGrid,
+} from "../animations/skeleton";
+import { BUILTIN_SEARCH_TYPES, MAX_PAGE } from "../constants";
+import {
+  closeMediaPreview,
+  destroyMediaObserver,
+} from "../modules/media/media";
+import {
+  clearSlotPanels,
+  renderResults,
+  renderSidebar,
+} from "../modules/renderer/render";
+import { renderMediaEngineBar } from "../modules/renderer/render-media";
 import { state } from "../state";
-import { MAX_PAGE, BUILTIN_SEARCH_TYPES } from "../constants";
-import { setActiveTab } from "./navigation";
+import { type Command, type ScoredResult, type SearchResponse } from "../types";
+import { hideAcDropdown } from "./autocomplete";
 import { getEngines } from "./engines";
-import { buildSearchUrl } from "./url";
+import { setActiveTab } from "./navigation";
 import { buildPaginationHtml } from "./pagination";
 import {
-  destroyMediaObserver,
-  closeMediaPreview,
-} from "../modules/media/media";
-import { renderResults, renderSidebar, clearSlotPanels } from "../modules/renderer/render";
-import { renderMediaEngineBar } from "../modules/renderer/render-media";
-import { hideAcDropdown } from "./autocomplete";
-import {
-  setResultsMeta,
-  runScriptsInContainer,
   getNaturalLanguageBangQuery,
+  runScriptsInContainer,
+  setResultsMeta,
 } from "./search-helpers";
 import {
+  buildCommandGlanceHtml,
   fetchGlancePanels,
   fetchSlotPanels,
-  buildCommandGlanceHtml,
 } from "./search-utils";
-import { skeletonResults, skeletonGlance, skeletonImageGrid, skeletonVideoGrid } from "../animations/skeleton";
-import { type Command, type SearchResponse, type ScoredResult } from "../types";
-import { performStreamingSearch, abortStreamingSearch } from "./streaming-search";
+import {
+  abortStreamingSearch,
+  performStreamingSearch,
+} from "./streaming-search";
+import { buildSearchUrl } from "./url";
 
 let commandsCache: Command[] | null = null;
 let _streamingConfig: { enabled: boolean } | null = null;
@@ -61,7 +73,7 @@ const _fetchCommands = async (): Promise<Command[]> => {
       commandsCache = body.commands || [];
       return commandsCache;
     }
-  } catch { }
+  } catch {}
   return [];
 };
 
@@ -100,9 +112,13 @@ export async function performSearch(
     return _performBangCommand(query, resolvedType, page || 1);
   }
 
-  if ((!page || page === 1) && await _fetchStreamingConfig()) {
+  if ((!page || page === 1) && (await _fetchStreamingConfig())) {
     abortStreamingSearch();
-    return performStreamingSearch(query, resolvedType, (q) => void performSearch(q));
+    return performStreamingSearch(
+      query,
+      resolvedType,
+      (q) => void performSearch(q),
+    );
   }
 
   state.currentQuery = query;
@@ -117,7 +133,6 @@ export async function performSearch(
 
   const engines = await getEngines();
   const url = buildSearchUrl(query, engines, resolvedType, 1);
-
 
   setActiveTab(resolvedType);
   closeMediaPreview();
@@ -265,7 +280,6 @@ async function _performBangCommand(
   _type: string,
   page = 1,
 ): Promise<void> {
-
   closeMediaPreview();
   hideAcDropdown(document.getElementById("ac-dropdown-home"));
   hideAcDropdown(document.getElementById("ac-dropdown-results"));
@@ -453,7 +467,7 @@ export async function retryEngine(engineName: string): Promise<void> {
     } else if (state.currentData) {
       renderSidebar(state.currentData, (q) => void performSearch(q));
     }
-  } catch { }
+  } catch {}
 }
 
 export async function performLucky(query: string): Promise<void> {

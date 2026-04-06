@@ -6,8 +6,8 @@ import {
 } from "../extensions/commands/registry";
 import { searchSingleEngine } from "../search";
 import type { TimeFilter } from "../types";
-import { debug } from "../utils/logger";
 import { getLocale } from "../utils/hono";
+import { debug } from "../utils/logger";
 import { isDisabled } from "../utils/plugin-settings";
 import { getClientIp } from "../utils/request";
 import { injectScope, translateHTML } from "../utils/translation";

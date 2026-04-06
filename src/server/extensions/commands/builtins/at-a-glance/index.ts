@@ -31,9 +31,11 @@ const atAGlanceSlot: SlotPlugin = {
     const results = context?.results ?? [];
     const top = results.length > 0 && results[0].snippet ? results[0] : null;
     if (!top) return { html: "" };
+
     const foundOn = this.t!("at-a-glance.found-on", {
       sources_text: top.sources.join(", "),
     });
+
     return {
       html:
         '<div class="glance-box">' +

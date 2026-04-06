@@ -20,10 +20,14 @@ function _renderSlotPanelsInto(panels: SlotPanel[], clearFirst: boolean): void {
   if (!panels || !Array.isArray(panels) || panels.length === 0) return;
   if (clearFirst) clearSlotPanels();
   const byPosition: Record<SlotPanelPosition, HTMLElement | null> = {
-    [SlotPanelPosition.AboveResults]: document.getElementById("slot-above-results"),
-    [SlotPanelPosition.BelowResults]: document.getElementById("slot-below-results"),
-    [SlotPanelPosition.AboveSidebar]: document.getElementById("slot-above-sidebar"),
-    [SlotPanelPosition.BelowSidebar]: document.getElementById("slot-below-sidebar"),
+    [SlotPanelPosition.AboveResults]:
+      document.getElementById("slot-above-results"),
+    [SlotPanelPosition.BelowResults]:
+      document.getElementById("slot-below-results"),
+    [SlotPanelPosition.AboveSidebar]:
+      document.getElementById("slot-above-sidebar"),
+    [SlotPanelPosition.BelowSidebar]:
+      document.getElementById("slot-below-sidebar"),
     [SlotPanelPosition.KnowledgePanel]: null,
     [SlotPanelPosition.AtAGlance]: document.getElementById("at-a-glance"),
   };

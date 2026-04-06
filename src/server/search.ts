@@ -1,25 +1,25 @@
+import {
+  getActiveWebEngines,
+  getEngineDefaultTransport,
+  getEngineIdByInstance,
+  getEngineMap,
+  getEnginesForSearchType,
+} from "./extensions/engines/registry";
+import { resolveTransport } from "./extensions/transports/registry";
 import type {
-  SearchEngine,
-  SearchResult,
-  ScoredResult,
-  SearchResponse,
   EngineConfig,
-  SearchType,
+  EngineContext,
   EngineTiming,
   KnowledgePanel,
+  ScoredResult,
+  SearchEngine,
+  SearchResponse,
+  SearchResult,
+  SearchType,
   TimeFilter,
-  EngineContext,
 } from "./types";
-import {
-  getEngineMap,
-  getActiveWebEngines,
-  getEnginesForSearchType,
-  getEngineIdByInstance,
-  getEngineDefaultTransport,
-} from "./extensions/engines/registry";
-import { getSettings, asString } from "./utils/plugin-settings";
 import { outgoingFetch, parseOutgoingTransport } from "./utils/outgoing";
-import { resolveTransport } from "./extensions/transports/registry";
+import { asString, getSettings } from "./utils/plugin-settings";
 
 const MAX_PAGE = 10;
 const ENGINE_TIMEOUT_MS = 10_000;

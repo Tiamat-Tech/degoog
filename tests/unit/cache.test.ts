@@ -1,14 +1,14 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import {
-  get,
-  set,
-  clear,
-  hasFailedEngines,
-  TTL_MS,
-  SHORT_TTL_MS,
-  NEWS_TTL_MS,
-} from "../../src/server/utils/cache";
+import { beforeEach, describe, expect, test } from "bun:test";
 import type { SearchResponse } from "../../src/server/types";
+import {
+  clear,
+  get,
+  hasFailedEngines,
+  NEWS_TTL_MS,
+  set,
+  SHORT_TTL_MS,
+  TTL_MS,
+} from "../../src/server/utils/cache";
 
 const mockResponse = (timings: { resultCount: number }[]): SearchResponse => ({
   results: [],
