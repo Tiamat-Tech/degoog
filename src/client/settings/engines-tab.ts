@@ -7,10 +7,10 @@ import type { ExtensionMeta, EngineRecord, AllExtensions } from "../types";
 const t = window.scopedT("core");
 const themeT = window.scopedT("themes/degoog");
 
-const _TAB_TYPES = new Set(["web", "images", "videos", "news"]);
+const TAB_TYPES = new Set(["web", "images", "videos", "news"]);
 
 const _typeLabel = (type: string): string =>
-  _TAB_TYPES.has(type)
+  TAB_TYPES.has(type)
     ? themeT(`search-templates.tabs.${type}`)
     : type.charAt(0).toUpperCase() + type.slice(1);
 
