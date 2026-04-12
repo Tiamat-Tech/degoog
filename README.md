@@ -152,7 +152,7 @@ Aside from the official store these are third party repositories, they have been
 | official store           | `https://github.com/fccview/fccview-degoog-extensions`             |
 | Subatomic1618 addons     | `https://codeberg.org/Subatomic1618/degoog-addons.git`             |
 | Weeb Paradise            | `https://codeberg.org/fccview/degoog-weeb-paradise.git`            |
-| Georgvwt stuff           | `https://github.com/Georgvwt/georgvwt-degoog-stuff.git`            |
+| Georgvwt stuff           | `https://codeberg.org/Georgvwt/georgvwt-degoog-stuff.git`          |
 | Lazerleif Maps           | `https://github.com/lazerleif/degoog-maps.git`                     |
 | trankil                  | `https://github.com/Arkmind/trankil.git`                           |
 | TheAnnoying's Extensions | `https://github.com/TheAnnoying/theannoying-degoog-extensions.git` |
