@@ -128,7 +128,7 @@ bun run start
 
 The community Proxmox script exists, but it is currently marked as in development and not recommended for production use:
 
-https://proxmox-scripts.com/posts/degoog
+https://community-scripts.org/scripts/degoog
 
 </details>
 
