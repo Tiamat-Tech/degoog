@@ -127,7 +127,7 @@ Aside from the official store these are third party repositories, they have been
 
 ## Documentation
 
-Full customisation guide (plugins, themes, engines, transports, store, settings gate, aliases, env): **[documentation](https://fccview.github.io/degoog)**.
+Full customisation guide  (plugins, themes, engines, transports, store, settings gate, aliases, env): **[documentation](https://fccview.github.io/degoog)**.
 
 ## Little shoutout
 
