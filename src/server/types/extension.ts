@@ -187,6 +187,10 @@ export interface MiddlewareResult {
 export interface RequestMiddleware {
   id: string;
   name: string;
+  settingsId?: string;
+  settingsSchema?: SettingField[];
+  configure?(settings: Record<string, string | string[]>): void;
+  init?(context: PluginContext): void | Promise<void>;
   handle(
     req: Request,
     context?: { route?: string },

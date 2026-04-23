@@ -1,5 +1,11 @@
 import type { RequestMiddleware, Translate } from "../../types";
-import { registerPluginNamespace } from "../../utils/plugin-assets";
+import {
+  initPlugin,
+  loadPluginAssets,
+  registerPluginNamespace,
+  registerPluginSettingsId,
+} from "../../utils/plugin-assets";
+import { isDisabled } from "../../utils/plugin-settings";
 import { createTranslatorFromPath } from "../../utils/translation";
 import { pluginsDir } from "../../utils/paths";
 import { createRegistry } from "../registry-factory";
@@ -21,9 +27,20 @@ const registry = createRegistry<RequestMiddleware>({
       mod.middleware ?? (mod.default as Record<string, unknown>)?.middleware;
     return isRequestMiddleware(m) ? m : null;
   },
-  onLoad: async (m, { entryPath, folderName }) => {
+  onLoad: async (m, { entryPath, folderName, source }) => {
+    const settingsId = m.settingsId ?? `middleware-${m.id}`;
     m.t = await createTranslatorFromPath(entryPath);
     registerPluginNamespace(folderName, `middleware/${m.id}`);
+    registerPluginSettingsId(folderName, settingsId);
+    if (!(await isDisabled(settingsId))) {
+      const template = await loadPluginAssets(
+        entryPath,
+        folderName,
+        settingsId,
+        source,
+      );
+      await initPlugin(m, entryPath, settingsId, template);
+    }
   },
   debugTag: "middleware",
 });
