@@ -192,6 +192,20 @@ export function init(): void {
     }
   }
 
+  window.addEventListener("pageshow", () => {
+    const restoredParams = new URLSearchParams(window.location.search);
+    const restoredQ = restoredParams.get("q");
+    if (!restoredQ) return;
+    if (searchInput && !searchInput.value) {
+      searchInput.value = restoredQ;
+      searchInput.defaultValue = restoredQ;
+    }
+    if (resultsInput && !resultsInput.value) {
+      resultsInput.value = restoredQ;
+      resultsInput.defaultValue = restoredQ;
+    }
+  });
+
   window.addEventListener("popstate", (e) => {
     const hs = e.state as {
       degoog: boolean;

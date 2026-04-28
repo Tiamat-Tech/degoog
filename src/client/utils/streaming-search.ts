@@ -97,7 +97,10 @@ export async function performStreamingSearch(
   const resultsInput = document.getElementById(
     "results-search-input",
   ) as HTMLInputElement | null;
-  if (resultsInput) resultsInput.value = query;
+  if (resultsInput) {
+    resultsInput.value = query;
+    resultsInput.defaultValue = query;
+  }
   const isMediaType = type === "images" || type === "videos";
   const layout = document.getElementById("results-layout");
   if (isMediaType) {
