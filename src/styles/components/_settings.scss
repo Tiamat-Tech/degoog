@@ -162,6 +162,19 @@
   margin: 0 0 $space-4;
 }
 
+.settings-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-inline-size: 0;
+  display: grid;
+  gap: $space-4;
+}
+
+.settings-fieldset--compact {
+  gap: $space-3;
+}
+
 .settings-page-actions {
   padding-top: $space-4;
 }
@@ -225,7 +238,7 @@
 }
 
 .theme-select-wrap {
-  margin-top: $space-1;
+  margin-top: 0;
 }
 
 .theme-select {
@@ -249,7 +262,6 @@
   align-items: center;
   gap: $space-3;
   cursor: pointer;
-  margin-top: $space-2;
 
   .settings-toggle {
     display: none;
@@ -262,14 +274,14 @@
 }
 
 .settings-proxy-urls-wrap {
-  margin-top: $space-3;
+  margin-top: 0;
 }
 
 .settings-proxy-urls-label {
   display: block;
   font-size: $font-size-small;
   color: var(--text-secondary);
-  margin: $space-2 0;
+  margin: 0;
 }
 
 .settings-proxy-urls {
@@ -294,10 +306,9 @@
   display: flex;
   flex-direction: column;
   gap: $space-2;
-  margin-bottom: $space-3;
 
   &:empty {
-    margin-bottom: 0;
+    display: none;
   }
 }
 
@@ -363,11 +374,11 @@
 }
 
 .proxy-test-btn {
-  margin-top: $space-3;
+  margin-top: 0;
 }
 
 .proxy-test-result {
-  margin-top: $space-3;
+  margin-top: 0;
   padding: $space-3;
   border-radius: $radius-md;
   font-size: $font-size-small;
@@ -397,7 +408,7 @@
 }
 
 .settings-rate-limit-wrap {
-  margin-top: $space-3;
+  margin-top: 0;
 }
 
 .settings-rate-limit-desc {
@@ -406,21 +417,13 @@
 }
 
 .settings-rate-limit-options {
-  margin-top: $space-3;
+  margin-top: 0;
 }
 
 .settings-rate-limit-defaults {
   font-size: $font-size-small;
   color: var(--text-secondary);
-  margin-bottom: $space-3;
-}
-
-.settings-rate-limit-options .settings-proxy-urls-label {
-  margin-top: $space-3;
-
-  &:first-of-type {
-    margin-top: 0;
-  }
+  margin: 0;
 }
 
 .settings-rate-limit-input {
@@ -428,7 +431,7 @@
   width: 100%;
   min-height: $search-bar-height;
   padding: $space-3;
-  margin-top: $space-2;
+  margin-top: 0;
   font-size: $font-size-base;
   color: var(--text-primary);
   background: var(--bg-light);
