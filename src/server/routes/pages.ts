@@ -1,5 +1,5 @@
 import { readFile } from "fs/promises";
-import { Hono } from "hono";
+import { Context, Hono } from "hono";
 import { join } from "path";
 import pkg from "../../../package.json";
 import { SETTINGS_TABS } from "../../shared/settings-tabs";
@@ -97,11 +97,9 @@ async function getTranslator(
   return t;
 }
 
-function getTextDirection(
-  locale: string
-): "rtl" | "ltr" {
+function getTextDirection(locale: string): "rtl" | "ltr" {
   const RTL_LANGS = ["ar", "he", "fa", "ur", "ps", "ckb"];
-  const isRTL = RTL_LANGS.some(lang => locale.toLowerCase().startsWith(lang));
+  const isRTL = RTL_LANGS.some((lang) => locale.toLowerCase().startsWith(lang));
   return isRTL ? "rtl" : "ltr";
 }
 
@@ -280,9 +278,7 @@ router.get("/", async (c) => {
   return c.html(await buildLayoutPage("index.html", locale));
 });
 
-const _buildResultActionsScript = async (
-  c: Parameters<Parameters<typeof router.get>[1]>[0],
-): Promise<string> => {
+const _buildResultActionsScript = async (c: Context): Promise<string> => {
   const token = getSettingsTokenFromRequest(c);
   const authenticated = await validateSettingsToken(token);
   let blockUi = false;
