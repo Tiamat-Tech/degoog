@@ -45,6 +45,10 @@
       "date-to": "עד",
       "apply": "החל",
       "filter-languages": "סנן שפות..."
+    },
+    "result": {
+      "insecure": "בלתי מאובטח",
+      "insecure-tooltip": "אתר זה משובץ על חיבור HTTP לא מאובטח."
     }
   }
 }

@@ -31,6 +31,7 @@ export const buildResultContext = (
   duration: r.duration || "",
   link_target: state.openInNewTab ? "_blank" : "_self",
   link_rel: state.openInNewTab ? "noopener" : "",
+  insecure: !!r.insecure,
 });
 
 export function renderResults(results: ScoredResult[]): void {

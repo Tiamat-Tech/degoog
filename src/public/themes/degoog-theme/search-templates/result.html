@@ -23,6 +23,13 @@
           onerror="this.style.display = 'none'"
         />
         <cite class="result-cite">{{ cite_url }}</cite>
+        {{#if insecure}}
+        <span
+          class="result-insecure-badge"
+          title="{{t:search-templates.result.insecure-tooltip}}"
+          >{{t:search-templates.result.insecure}}</span
+        >
+        {{/if insecure}}
       </div>
       <a
         class="result-title"

@@ -45,6 +45,10 @@
       "date-to": "to",
       "apply": "Apply",
       "filter-languages": "Filter languages..."
+    },
+    "result": {
+      "insecure": "Insecure",
+      "insecure-tooltip": "This site is served over an unencrypted HTTP connection."
     }
   }
 }

@@ -33,8 +33,8 @@
       "open-new-tab-aria": "פתח קישורי תוצאות בלשונית חדשה",
       "engine-performance": "הצג ביצועי מנוע",
       "engine-performance-aria": "הצג ביצועי מנוע",
-      "search-suggestions": "הצג הצעות חיפוש",
-      "search-suggestions-aria": "הצג הצעות חיפוש",
+      "related-queries": "הצג שאילתות חיפוש קשורות",
+      "related-queries-aria": "הצג שאילתות חיפוש קשורות",
       "post-method": "השתמש בשיטת POST לבקשות חיפוש (לא יעבוד עם תוצאות מוזרמות)",
       "post-method-aria": "השתמש בשיטת POST לבקשות חיפוש (לא יעבוד עם תוצאות מוזרמות)",
       "post-method-tooltip": "שיטת POST אינה תואמת לתוצאות מוזרמות"

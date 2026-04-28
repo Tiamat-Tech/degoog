@@ -388,6 +388,17 @@
   @include truncate;
 }
 
+.result-insecure-badge {
+  font-size: $font-size-xs;
+  color: var(--color-danger, #c0392b);
+  border: 1px solid currentColor;
+  border-radius: $radius-xs;
+  padding: 0 $space-2;
+  flex-shrink: 0;
+  cursor: help;
+  line-height: 1.4;
+}
+
 .result-title {
   display: block;
   font-size: $font-size-xl;

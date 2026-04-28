@@ -17,6 +17,10 @@ import { performTabSearch } from "./tabs/tab-search";
 import { initTabs } from "./tabs/tabs";
 
 import { initInstallPrompt } from "../utils/install-prompt";
+import {
+  focusInput,
+  initKeyboardShortcuts,
+} from "../utils/keyboard-shortcuts";
 import { initSearchBarActions } from "../utils/search-bar-actions";
 import { renderPageTemplates } from "./renderer/render-page";
 
@@ -113,6 +117,8 @@ export function init(): void {
     (q) => void performSearch(q),
   );
   initSearchBarActions();
+  initKeyboardShortcuts();
+  focusInput(resultsInput);
   initLuckyAnimation();
   initTabs();
   initMediaPreview();

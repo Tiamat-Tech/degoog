@@ -45,6 +45,10 @@
       "date-to": "au",
       "apply": "Appliquer",
       "filter-languages": "Filtrer les langues..."
+    },
+    "result": {
+      "insecure": "Insecure",
+      "insecure-tooltip": "Ce site est servi sur une connexion HTTP non chiffrée."
     }
   }
 }
