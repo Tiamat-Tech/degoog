@@ -719,3 +719,10 @@
   color: var(--text-secondary);
   font-style: italic;
 }
+
+@media (min-width: 2000px) {
+  #results-page {
+      max-width: 2000px;
+      margin: 0 auto
+  }
+}

@@ -45,16 +45,7 @@
     <div class="settings-page">
       <header class="settings-page-header">
         <a href="/" class="settings-page-back">
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
+          <i class="fa-solid fa-arrow-left fa-xl"></i>
           {{t:settings-page.back}}
         </a>
         <h1 class="settings-page-title">{{t:settings-page.page-title}}</h1>
@@ -89,58 +80,71 @@
             data-tab="general"
             type="button"
           >
+            <i class="fa-solid fa-gear fa-lg"></i>
             {{t:settings-page.nav.general}}
           </button>
           <button class="settings-nav-item" data-tab="server" type="button">
+            <i class="fa-solid fa-server fa-lg"></i>
             {{t:settings-page.nav.server}}
           </button>
           <button class="settings-nav-item" data-tab="engines" type="button">
+            <i class="fa-solid fa-bolt fa-lg"></i>
             {{t:settings-page.nav.engines}}
           </button>
           <button class="settings-nav-item" data-tab="plugins" type="button">
+            <i class="fa-solid fa-puzzle-piece fa-lg"></i>
             {{t:settings-page.nav.plugins}}
           </button>
           <button class="settings-nav-item" data-tab="transports" type="button">
+            <i class="fa-solid fa-network-wired fa-lg"></i>
             {{t:settings-page.nav.transports}}
           </button>
           <button class="settings-nav-item" data-tab="themes" type="button">
+            <i class="fa-solid fa-palette fa-lg"></i>
             {{t:settings-page.nav.themes}}
           </button>
           <button class="settings-nav-item" data-tab="store" type="button">
+            <i class="fa-solid fa-store fa-lg"></i>
             {{t:settings-page.nav.store}}
           </button>
         </nav>
 
         <main class="settings-page-main">
           <div class="settings-tab-panel active" id="tab-general">
-            <section class="settings-section">
+            <section class="settings-section ext-card">
+              <div class="floating-section-icon">
+                <i class="fa-solid fa-palette"></i>
+              </div>
               <h2 class="settings-section-heading">
                 {{t:settings-page.appearance.heading}}
               </h2>
               <p class="settings-desc">{{t:settings-page.appearance.desc}}</p>
-              <fieldset class="settings-fieldset">
+              <fieldset class="settings-fieldset ext-card-main">
                 <div class="theme-select-wrap">
                   <select id="theme-select" class="theme-select">
                     <option value="system">
                       {{t:settings-page.theme.system}}
                     </option>
-                    <option value="light">{{t:settings-page.theme.light}}</option>
+                    <option value="light">
+                      {{t:settings-page.theme.light}}
+                    </option>
                     <option value="dark">{{t:settings-page.theme.dark}}</option>
                   </select>
                 </div>
-                <div class="settings-page-actions">
-                  <button
-                    class="btn btn--secondary"
-                    id="save-default-theme"
-                    type="button"
-                  >
-                    {{t:settings-page.appearance.save-defaults}}
-                  </button>
-                </div>
+                <button
+                  class="btn btn--secondary"
+                  id="save-default-theme"
+                  type="button"
+                >
+                  {{t:settings-page.appearance.save-defaults}}
+                </button>
               </fieldset>
             </section>
 
-            <section class="settings-section">
+            <section class="settings-section ext-card">
+              <div class="floating-section-icon">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </div>
               <h2 class="settings-section-heading">
                 {{t:settings-page.search-options.heading}}
               </h2>
@@ -203,7 +207,10 @@
               </fieldset>
             </section>
 
-            <section class="settings-section">
+            <section class="settings-section ext-card">
+              <div class="floating-section-icon">
+                <i class="fa-solid fa-download"></i>
+              </div>
               <h2 class="settings-section-heading">
                 {{t:settings-page.install.heading}}
               </h2>
@@ -233,8 +240,12 @@
           <div class="settings-tab-panel" id="tab-themes">
             <div id="themes-content"></div>
           </div>
+
           <div class="settings-tab-panel" id="tab-server">
-            <section class="settings-section">
+            <section class="settings-section ext-card">
+              <div class="floating-section-icon">
+                <i class="fa-solid fa-memory"></i>
+              </div>
               <h2 class="settings-section-heading">
                 {{t:settings-page.server.cache-heading}}
               </h2>
@@ -248,7 +259,13 @@
               </button>
             </section>
 
-            <section class="settings-section" id="settings-section-streaming">
+            <section
+              class="settings-section ext-card"
+              id="settings-section-streaming"
+            >
+              <div class="floating-section-icon">
+                <i class="fa-solid fa-arrow-down-1-9"></i>
+              </div>
               <h2 class="settings-section-heading">
                 {{t:settings-page.server.streaming-heading}}
               </h2>
@@ -276,7 +293,9 @@
                   id="settings-streaming-options"
                   style="display: none"
                 >
-                  <fieldset class="settings-fieldset settings-fieldset--compact">
+                  <fieldset
+                    class="settings-fieldset settings-fieldset--compact"
+                  >
                     <label class="settings-toggle-wrap">
                       <input
                         type="checkbox"
@@ -313,7 +332,10 @@
               </fieldset>
             </section>
 
-            <section class="settings-section">
+            <section class="settings-section ext-card">
+              <div class="floating-section-icon">
+                <i class="fa-solid fa-language"></i>
+              </div>
               <h2 class="settings-section-heading">
                 {{t:settings-page.server.languages-heading}}
               </h2>
@@ -354,9 +376,12 @@
             </section>
 
             <section
-              class="settings-section"
+              class="settings-section ext-card"
               id="settings-section-domain-block"
             >
+              <div class="floating-section-icon">
+                <i class="fa-solid fa-ban"></i>
+              </div>
               <h2 class="settings-section-heading">
                 {{t:settings-page.server.domain-block-heading}}
               </h2>
@@ -381,7 +406,9 @@
                   id="settings-domain-block-wrap"
                   style="display: none"
                 >
-                  <fieldset class="settings-fieldset settings-fieldset--compact">
+                  <fieldset
+                    class="settings-fieldset settings-fieldset-inverse settings-fieldset--compact"
+                  >
                     <label
                       for="settings-domain-block-list"
                       class="settings-proxy-urls-label"
@@ -416,9 +443,12 @@
             </section>
 
             <section
-              class="settings-section"
+              class="settings-section ext-card"
               id="settings-section-domain-replace"
             >
+              <div class="floating-section-icon">
+                <i class="fa-solid fa-arrow-right-arrow-left"></i>
+              </div>
               <h2 class="settings-section-heading">
                 {{t:settings-page.server.domain-replace-heading}}
               </h2>
@@ -443,7 +473,9 @@
                   id="settings-domain-replace-wrap"
                   style="display: none"
                 >
-                  <fieldset class="settings-fieldset settings-fieldset--compact">
+                  <fieldset
+                    class="settings-fieldset settings-fieldset-inverse settings-fieldset--compact"
+                  >
                     <label
                       for="settings-domain-replace-list"
                       class="settings-proxy-urls-label"
@@ -475,9 +507,12 @@
             </section>
 
             <section
-              class="settings-section"
+              class="settings-section ext-card"
               id="settings-section-domain-score"
             >
+              <div class="floating-section-icon">
+                <i class="fa-solid fa-star"></i>
+              </div>
               <h2 class="settings-section-heading">
                 {{t:settings-page.server.domain-score-heading}}
               </h2>
@@ -501,7 +536,9 @@
                   id="settings-domain-score-wrap"
                   style="display: none"
                 >
-                  <fieldset class="settings-fieldset settings-fieldset--compact">
+                  <fieldset
+                    class="settings-fieldset settings-fieldset-inverse settings-fieldset--compact"
+                  >
                     <span class="settings-proxy-urls-label"
                       >{{t:settings-page.server.domain-score-list-label}}</span
                     >
@@ -535,7 +572,13 @@
               </fieldset>
             </section>
 
-            <section class="settings-section" id="settings-section-proxy">
+            <section
+              class="settings-section ext-card"
+              id="settings-section-proxy"
+            >
+              <div class="floating-section-icon">
+                <i class="fa-solid fa-network-wired"></i>
+              </div>
               <h2 class="settings-section-heading">
                 {{t:settings-page.server.proxy-heading}}
               </h2>
@@ -558,7 +601,9 @@
                   id="settings-proxy-urls-wrap"
                   style="display: none"
                 >
-                  <fieldset class="settings-fieldset settings-fieldset--compact">
+                  <fieldset
+                    class="settings-fieldset settings-fieldset-inverse settings-fieldset--compact"
+                  >
                     <label
                       for="settings-proxy-urls"
                       class="settings-proxy-urls-label"
@@ -587,7 +632,13 @@
               </fieldset>
             </section>
 
-            <section class="settings-section" id="settings-section-rate-limit">
+            <section
+              class="settings-section ext-card"
+              id="settings-section-rate-limit"
+            >
+              <div class="floating-section-icon">
+                <i class="fa-solid fa-clock"></i>
+              </div>
               <h2 class="settings-section-heading">
                 {{t:settings-page.server.rate-limit-heading}}
               </h2>
@@ -616,7 +667,9 @@
                     id="settings-rate-limit-options"
                     style="display: none"
                   >
-                    <fieldset class="settings-fieldset settings-fieldset--compact">
+                    <fieldset
+                      class="settings-fieldset settings-fieldset-inverse settings-fieldset--compact"
+                    >
                       <p class="settings-rate-limit-defaults">
                         {{t:settings-page.server.rate-limit-defaults}}
                       </p>
@@ -679,27 +732,34 @@
             </section>
 
             <section
-              class="settings-section"
+              class="settings-section ext-card"
               id="settings-section-custom-css"
             >
+              <div class="floating-section-icon">
+                <i class="fa-solid fa-code"></i>
+              </div>
               <h2 class="settings-section-heading">
                 {{t:settings-page.server.custom-css-heading}}
               </h2>
-              <p class="settings-desc">
-                {{t:settings-page.server.custom-css-desc}}
-              </p>
-              <label
-                for="settings-custom-css"
-                class="settings-proxy-urls-label"
-                >{{t:settings-page.server.custom-css-label}}</label
+              <fieldset
+                class="settings-fieldset settings-fieldset-inverse settings-fieldset--compact"
               >
-              <textarea
-                id="settings-custom-css"
-                class="settings-proxy-urls settings-custom-css"
-                rows="12"
-                spellcheck="false"
-                placeholder=".result-title { color: hotpink !important; }"
-              ></textarea>
+                <p class="settings-desc">
+                  {{t:settings-page.server.custom-css-desc}}
+                </p>
+                <label
+                  for="settings-custom-css"
+                  class="settings-proxy-urls-label"
+                  >{{t:settings-page.server.custom-css-label}}</label
+                >
+                <textarea
+                  id="settings-custom-css"
+                  class="settings-proxy-urls settings-custom-css"
+                  rows="12"
+                  spellcheck="false"
+                  placeholder=".result-title { color: hotpink !important; }"
+                ></textarea>
+              </fieldset>
             </section>
 
             <div class="settings-page-actions">

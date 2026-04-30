@@ -21,7 +21,7 @@ const _renderTransportCard = (transport: ExtensionMeta): string => {
     : "";
   const toggle = transport.configurable
     ? `<label class="engine-toggle">
-        <input type="checkbox" class="transport-toggle-input" data-id="${escapeHtml(transport.id)}" ${isEnabled ? "checked" : ""}>
+        <input type="checkbox" class="transport-toggle-input" id="transport-toggle-${escapeHtml(transport.id)}" data-id="${escapeHtml(transport.id)}" ${isEnabled ? "checked" : ""}>
         <span class="toggle-slider"></span>
       </label>`
     : "";
@@ -30,7 +30,7 @@ const _renderTransportCard = (transport: ExtensionMeta): string => {
     <div class="ext-card" data-id="${escapeHtml(transport.id)}">
       <div class="ext-card-main">
         <div class="ext-card-info">
-          <span class="ext-card-name">${escapeHtml(transport.displayName)}</span>
+          <label for="transport-toggle-${escapeHtml(transport.id)}" class="ext-card-name transport-toggle-label">${escapeHtml(transport.displayName)}</label>
           ${desc}
         </div>
         <div class="ext-card-actions">

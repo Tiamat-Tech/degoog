@@ -66,10 +66,14 @@
   display: flex;
   gap: $space-3;
   align-items: center;
-  background: var(--bg-light);
+  background: var(--bg-hover);
   border-radius: $radius-lg;
   padding: $space-3 $space-4;
   margin-bottom: $space-3;
+
+  .store-repo-img {
+    background: var(--bg-light);
+  }
 }
 
 .store-repo-detail-body {

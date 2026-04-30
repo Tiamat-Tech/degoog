@@ -29,7 +29,7 @@ const _renderPluginCard = (plugin: ExtensionMeta): string => {
     plugin.id.startsWith("slot-");
   const toggle = canDisable
     ? `<label class="engine-toggle">
-        <input type="checkbox" class="plugin-toggle-input" data-id="${escapeHtml(plugin.id)}" ${isEnabled ? "checked" : ""}>
+        <input type="checkbox" class="plugin-toggle-input" id="plugin-toggle-${escapeHtml(plugin.id)}" data-id="${escapeHtml(plugin.id)}" ${isEnabled ? "checked" : ""}>
         <span class="toggle-slider"></span>
       </label>`
     : "";
@@ -38,7 +38,7 @@ const _renderPluginCard = (plugin: ExtensionMeta): string => {
     <div class="ext-card" data-id="${escapeHtml(plugin.id)}">
       <div class="ext-card-main">
         <div class="ext-card-info">
-          <span class="ext-card-name">${escapeHtml(plugin.displayName)}</span>
+          <label for="plugin-toggle-${escapeHtml(plugin.id)}" class="ext-card-name plugin-toggle-label">${escapeHtml(plugin.displayName)}</label>
           ${trigger}
           ${desc}
         </div>
