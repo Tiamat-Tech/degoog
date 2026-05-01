@@ -48,7 +48,9 @@ import { extensionReadmeExists } from "../utils/extension-docs";
 
 const router = new Hono();
 
-async function getSlotExtensionMeta(coreT?: Translate): Promise<ExtensionMeta[]> {
+async function getSlotExtensionMeta(
+  coreT?: Translate,
+): Promise<ExtensionMeta[]> {
   const slots = getSlotPlugins();
   const out: ExtensionMeta[] = [];
   for (const slot of slots) {
@@ -58,11 +60,14 @@ async function getSlotExtensionMeta(coreT?: Translate): Promise<ExtensionMeta[]>
     if (hasPositionChoice) {
       fullSchema.push({
         key: SLOT_POSITION_SETTING_KEY,
-        label: coreT ? coreT("settings-page.schema.slot-position.label") || "Position" : "Position",
+        label: coreT
+          ? coreT("settings-page.schema.slot-position.label") || "Position"
+          : "Position",
         type: "select",
         options: [...slot.slotPositions!],
         description: coreT
-          ? coreT("settings-page.schema.slot-position.description") || "Where the slot content appears on the page."
+          ? coreT("settings-page.schema.slot-position.description") ||
+            "Where the slot content appears on the page."
           : "Where the slot content appears on the page.",
       });
     }
@@ -124,7 +129,12 @@ router.post("/api/extensions/:id/settings", async (c) => {
   if (!(await validateSettingsToken(token)))
     return c.json({ error: "Unauthorized" }, 401);
   const id = c.req.param("id");
-  const body = await c.req.json<Record<string, unknown>>();
+  let body: Record<string, unknown>;
+  try {
+    body = await c.req.json<Record<string, unknown>>();
+  } catch {
+    return c.json({ error: "Invalid JSON" }, 400);
+  }
 
   const locale = getLocale(c);
   const coreT = await getCoreTranslator();

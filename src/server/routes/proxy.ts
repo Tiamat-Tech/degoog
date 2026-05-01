@@ -56,6 +56,10 @@ router.get("/api/proxy/image", async (c) => {
     return c.body("Invalid protocol", 400);
   }
 
+  if (!isUrlAllowedForOutgoing(url)) {
+    return c.body("URL not allowed for outgoing fetch", 403);
+  }
+
   const authId = c.req.query("auth_id");
   const headers: Record<string, string> = {
     "User-Agent": getRandomUserAgent(),
