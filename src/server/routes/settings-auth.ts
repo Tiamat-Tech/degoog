@@ -6,6 +6,7 @@ import { defaultEnginesFile } from "../utils/paths";
 import { asString, getSettings, setSettings } from "../utils/plugin-settings";
 import { isPublicInstance } from "../utils/public-instance";
 import { getRandomUserAgent } from "../utils/user-agents";
+import { logger } from "../utils/logger";
 
 const DEGOOG_SETTINGS_ID = "degoog-settings";
 
@@ -19,21 +20,47 @@ const SETTINGS_GATE_KEY = "settingsGate";
 
 function getTokenFromCookie(c: Context): string | undefined {
   const raw = c.req.header("cookie");
-  if (!raw) return undefined;
+  if (!raw) {
+    logger.debug("settings-auth", "no cookie header present");
+    return undefined;
+  }
   const match = raw
     .split(";")
     .find((s) => s.trim().startsWith(COOKIE_NAME + "="));
-  if (!match) return undefined;
+  if (!match) {
+    logger.debug("settings-auth", `cookie header present but '${COOKIE_NAME}' not found`);
+    return undefined;
+  }
   const value = match.split("=")[1]?.trim();
+  logger.debug("settings-auth", `'${COOKIE_NAME}' cookie found (length: ${value?.length ?? 0})`);
   return value || undefined;
 }
 
 export function getSettingsTokenFromRequest(c: Context): string | undefined {
-  return (
-    c.req.header("x-settings-token") ??
-    c.req.query("token") ??
-    getTokenFromCookie(c)
-  );
+  const fromHeader = c.req.header("x-settings-token");
+  if (fromHeader) {
+    logger.debug("settings-auth", "token source: x-settings-token header");
+    return fromHeader;
+  }
+  const fromQuery = c.req.query("token");
+  if (fromQuery) {
+    logger.debug("settings-auth", "token source: query param");
+    return fromQuery;
+  }
+  return getTokenFromCookie(c);
+}
+
+async function guardRoute(
+  c: Context,
+  route: string,
+): Promise<Response | null> {
+  const token = getSettingsTokenFromRequest(c);
+  const valid = await validateSettingsToken(token);
+  if (!valid) {
+    logger.debug("settings-auth", `401 on ${route}`);
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  return null;
 }
 
 export async function shouldServeSettingsGate(c: Context): Promise<boolean> {
@@ -77,12 +104,22 @@ export async function validateSettingsToken(
   if (isPublicInstance()) return false;
   const required = await isAuthRequired();
   if (!required) return true;
-  if (!token) return false;
-  const expiresAt = validTokens.get(token);
-  if (!expiresAt || Date.now() > expiresAt) {
-    if (expiresAt) validTokens.delete(token);
+  if (!token) {
+    logger.debug("settings-auth", "token validation failed: no token provided");
     return false;
   }
+  const expiresAt = validTokens.get(token);
+  if (!expiresAt) {
+    logger.debug("settings-auth", `token validation failed: token not found in store (${validTokens.size} active tokens)`);
+    return false;
+  }
+  if (Date.now() > expiresAt) {
+    validTokens.delete(token);
+    logger.debug("settings-auth", "token validation failed: token expired");
+    return false;
+  }
+  const ttlMs = expiresAt - Date.now();
+  logger.debug("settings-auth", `token valid (expires in ${Math.round(ttlMs / 1000 / 60)}m)`);
   return true;
 }
 
@@ -167,19 +204,15 @@ router.post("/api/settings/auth", async (c) => {
 });
 
 router.get("/api/settings/general", async (c) => {
-  const token = getSettingsTokenFromRequest(c);
-  if (!(await validateSettingsToken(token))) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
+  const denied = await guardRoute(c, "GET /api/settings/general");
+  if (denied) return denied;
   const settings = await getSettings(DEGOOG_SETTINGS_ID);
   return c.json(settings);
 });
 
 router.post("/api/settings/general", async (c) => {
-  const token = getSettingsTokenFromRequest(c);
-  if (!(await validateSettingsToken(token))) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
+  const denied = await guardRoute(c, "POST /api/settings/general");
+  if (denied) return denied;
   let body: Record<string, string>;
   try {
     body = await c.req.json<Record<string, string>>();
@@ -275,10 +308,8 @@ const _upsertScore = (
 };
 
 router.post("/api/settings/domain-action", async (c) => {
-  const token = getSettingsTokenFromRequest(c);
-  if (!(await validateSettingsToken(token))) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
+  const denied = await guardRoute(c, "POST /api/settings/domain-action");
+  if (denied) return denied;
 
   let body: {
     kind?: string;
@@ -361,10 +392,8 @@ async function fetchIp(useFn: typeof fetch): Promise<string | null> {
 }
 
 router.get("/api/settings/proxy-test", async (c) => {
-  const token = getSettingsTokenFromRequest(c);
-  if (!(await validateSettingsToken(token))) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
+  const denied = await guardRoute(c, "GET /api/settings/proxy-test");
+  if (denied) return denied;
 
   const settings = await getSettings(DEGOOG_SETTINGS_ID);
   const enabled = asString(settings.proxyEnabled) === "true";
@@ -399,10 +428,8 @@ router.get("/api/settings/appearance", async (c) => {
 });
 
 router.get("/api/settings/default-engines", async (c) => {
-  const token = getSettingsTokenFromRequest(c);
-  if (!(await validateSettingsToken(token))) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
+  const denied = await guardRoute(c, "GET /api/settings/default-engines");
+  if (denied) return denied;
   try {
     const raw = await readFile(defaultEnginesFile(), "utf-8");
     return c.json(JSON.parse(raw));
@@ -412,10 +439,8 @@ router.get("/api/settings/default-engines", async (c) => {
 });
 
 router.post("/api/settings/default-engines", async (c) => {
-  const token = getSettingsTokenFromRequest(c);
-  if (!(await validateSettingsToken(token))) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
+  const denied = await guardRoute(c, "POST /api/settings/default-engines");
+  if (denied) return denied;
   let body: Record<string, boolean>;
   try {
     body = await c.req.json<Record<string, boolean>>();
