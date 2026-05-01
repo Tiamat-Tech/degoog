@@ -189,6 +189,16 @@ const _buildAcceptLanguage = (lang?: string): string => {
   return `${lang},${lang}-${lang.toUpperCase()};q=0.9,en;q=0.8`;
 };
 
+const _pickRandomUserAgentFromTextarea = (raw: string | undefined): string => {
+  if (!raw) return "";
+  const lines = raw
+    .split(/\r?\n/g)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return "";
+  return lines[Math.floor(Math.random() * lines.length)] ?? "";
+};
+
 export const createSearchEngineContext = (
   engineSettingsId: string | undefined,
   lang?: string,
@@ -205,16 +215,22 @@ export const createSearchEngineContext = (
   return {
     fetch: async (url, init) => {
       let raw: string | undefined;
+      let customUa = "";
       if (engineSettingsId !== undefined) {
-        raw =
-          asString((await getSettings(engineSettingsId)).outgoingTransport) ||
-          undefined;
+        const settings = await getSettings(engineSettingsId);
+        raw = asString(settings.outgoingTransport) || undefined;
+        customUa = _pickRandomUserAgentFromTextarea(
+          asString(settings.customUserAgents) || undefined,
+        );
       }
       if (!raw && engineSettingsId !== undefined) {
         raw = getEngineDefaultTransport(engineSettingsId) ?? undefined;
       }
       const transport = parseOutgoingTransport(raw);
-      return outgoingFetch(url, init ?? {}, transport);
+      const baseInit = init ?? {};
+      if (!customUa) return outgoingFetch(url, baseInit, transport);
+      const headers = { ...(baseInit.headers ?? {}), "User-Agent": customUa };
+      return outgoingFetch(url, { ...baseInit, headers }, transport);
     },
     lang: resolvedLang,
     dateFrom: dateFrom || undefined,

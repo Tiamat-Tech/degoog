@@ -100,7 +100,7 @@ const BUILTIN_DEFINITIONS: EngineDefinition[] = [
     EngineClass: GoogleImagesEngine,
     disabledByDefault: true,
     outgoingHosts: ["www.google.com", "google.com"],
-    defaultTransport: "curl",
+    defaultTransport: "fplay",
   },
   {
     id: "bing-images",
@@ -390,6 +390,16 @@ const OUTGOING_TRANSPORT_FIELD: SettingField = {
   advanced: true,
 };
 
+const CUSTOM_USER_AGENTS_FIELD: SettingField = {
+  key: "customUserAgents",
+  label: "Custom user agents",
+  type: "textarea",
+  default: "",
+  description:
+    "One user agent per line. A random one will be used per request for this engine.",
+  advanced: true,
+};
+
 export function getEngineIdByInstance(
   instance: SearchEngine,
 ): string | undefined {
@@ -518,6 +528,7 @@ export async function getEngineExtensionMeta(
     const schema: SettingField[] = [
       scoreField,
       transportField,
+      CUSTOM_USER_AGENTS_FIELD,
       ...translatedEngineSchema,
     ];
     const rawSettings = await getSettings(def.id);

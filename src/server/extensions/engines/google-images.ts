@@ -28,8 +28,9 @@ interface GoogleImageResult {
 }
 
 export class GoogleImagesEngine implements SearchEngine {
-  name = "Google Images (BROKEN)";
+  name = "Google Images (NEEDS FPLAY TRANSPORT)";
   safeSearch: string = "off";
+  disabledByDefault: boolean = true;
   settingsSchema: SettingField[] = [
     {
       key: "safeSearch",
