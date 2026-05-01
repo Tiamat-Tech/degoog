@@ -125,6 +125,7 @@
   display: flex;
   align-items: center;
   gap: $space-2;
+  cursor: pointer;
 
   &:hover {
     color: var(--text-primary);
@@ -389,7 +390,7 @@
   font-size: $font-size-base;
   color: var(--text-primary);
   background: var(--bg-light);
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: $radius-md;
   outline: none;
 
@@ -500,7 +501,7 @@
   font-size: $font-size-base;
   color: var(--text-primary);
   background: var(--bg-light);
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: $radius-md;
   outline: none;
   box-sizing: border-box;
