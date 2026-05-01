@@ -18,6 +18,7 @@ import { getTransportNames } from "../transports/registry";
 import { enginesDir, defaultEnginesFile } from "../../utils/paths";
 import { readFileSync } from "fs";
 import { createRegistry } from "../registry-factory";
+import { extensionReadmeExists } from "../../utils/extension-docs";
 import { BingEngine } from "./bing";
 import { BingImagesEngine } from "./bing-images";
 import { BingNewsEngine } from "./bing-news";
@@ -533,6 +534,7 @@ export async function getEngineExtensionMeta(
     ];
     const rawSettings = await getSettings(def.id);
     const maskedSettings = maskSecrets(rawSettings, schema);
+    const { exists } = await extensionReadmeExists(def.id);
 
     results.push({
       id: def.id,
@@ -542,6 +544,7 @@ export async function getEngineExtensionMeta(
       configurable: true,
       settingsSchema: schema,
       settings: maskedSettings,
+      extensionDocsAvailable: exists,
       defaultEnabled: defaults[def.id],
     });
   }
