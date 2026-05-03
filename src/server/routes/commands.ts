@@ -4,6 +4,7 @@ import {
   matchBangCommand,
   setCommandsLocale,
 } from "../extensions/commands/registry";
+import { getEngineSearchType } from "../extensions/engines/registry";
 import { searchSingleEngine } from "../search";
 import type { TimeFilter } from "../types";
 import { getLocale } from "../utils/hono";
@@ -55,6 +56,7 @@ router.get("/api/command", async (c) => {
     return c.json({
       type: "engine",
       engineId: match.engineId,
+      searchType: getEngineSearchType(match.engineId) ?? "web",
       results: results.map((r, i) => ({
         ...r,
         score: Math.max(10 - i, 1),

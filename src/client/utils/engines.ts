@@ -21,3 +21,12 @@ export const getEngines = async (): Promise<EngineRecord> => {
   }
   return merged;
 };
+
+export const getEnabledSearchTypes = async (): Promise<Set<string>> => {
+  const [engines, reg] = await Promise.all([getEngines(), getRegistry()]);
+  const types = new Set<string>();
+  for (const { id, searchType } of reg.engines) {
+    if (engines[id] && searchType) types.add(searchType);
+  }
+  return types;
+};

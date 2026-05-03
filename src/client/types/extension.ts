@@ -61,6 +61,6 @@ export interface Command {
 }
 
 export interface EngineRegistry {
-  engines: Array<{ id: string; displayName: string }>;
+  engines: Array<{ id: string; displayName: string; searchType?: string }>;
   defaults?: Record<string, boolean>;
 }

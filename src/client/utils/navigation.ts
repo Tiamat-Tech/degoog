@@ -46,3 +46,37 @@ export function setActiveTab(type: string): void {
     tab.classList.toggle("active", match);
   });
 }
+
+function _updateTabVisibility(tab: HTMLElement): void {
+  const hidden =
+    tab.dataset.bangHidden === "true" || tab.dataset.typeDisabled === "true";
+  tab.style.display = hidden ? "none" : "";
+}
+
+export function setTabsForBang(matchType: string | null): void {
+  document.querySelectorAll<HTMLElement>(".results-tab").forEach((tab) => {
+    const tabType = tab.dataset.type ?? "";
+    const visible =
+      matchType !== null &&
+      (tabType === matchType || tabType === `tab:engine:${matchType}`);
+    tab.dataset.bangHidden = visible ? "" : "true";
+    _updateTabVisibility(tab);
+  });
+}
+
+export function showAllTabs(): void {
+  document.querySelectorAll<HTMLElement>(".results-tab").forEach((tab) => {
+    delete tab.dataset.bangHidden;
+    _updateTabVisibility(tab);
+  });
+}
+
+export function setTabTypeDisabled(type: string, disabled: boolean): void {
+  document.querySelectorAll<HTMLElement>(".results-tab").forEach((tab) => {
+    const tabType = tab.dataset.type ?? "";
+    if (tabType === type || tabType === `tab:engine:${type}`) {
+      tab.dataset.typeDisabled = disabled ? "true" : "";
+      _updateTabVisibility(tab);
+    }
+  });
+}

@@ -26,7 +26,7 @@ import {
 import { hideAcDropdown } from "../autocomplete";
 import { triggerSearchQueryEggs } from "../uovadipasqua";
 import { getEngines } from "../engines";
-import { setActiveTab } from "../navigation";
+import { setActiveTab, setTabsForBang, showAllTabs } from "../navigation";
 import { buildPaginationHtml } from "../pagination";
 import {
   getNaturalLanguageBangQuery,
@@ -161,6 +161,7 @@ export async function performSearch(
   const engines = await getEngines();
   const url = buildSearchUrl(query, engines, resolvedType, resolvedPage);
 
+  showAllTabs();
   setActiveTab(resolvedType);
   closeMediaPreview();
   hideAcDropdown(document.getElementById("ac-dropdown-home"));
@@ -402,6 +403,7 @@ async function _performBangCommand(
     if (!res.ok) throw new Error("not found");
     const data = (await res.json()) as {
       type: string;
+      searchType?: string;
       results?: ScoredResult[];
       totalTime?: number;
       title?: string;
@@ -410,13 +412,18 @@ async function _performBangCommand(
       page?: number;
     };
     if (data.type === "engine") {
+      const engineType = data.searchType ?? "web";
       state.currentResults = data.results ?? [];
       state.currentData = data as unknown as SearchResponse;
+      state.currentType = engineType;
+      setActiveTab(engineType);
+      setTabsForBang(engineType);
       if (resultsMeta)
         resultsMeta.textContent = `About ${data.results?.length ?? 0} results (${((data.totalTime ?? 0) / 1000).toFixed(2)} seconds)`;
       renderResults(data.results ?? []);
       return;
     }
+    setTabsForBang(null);
     if (resultsMeta) resultsMeta.textContent = data.title ?? "";
     if (resultsList) resultsList.innerHTML = data.html || "";
     runScriptsInContainer(resultsList);

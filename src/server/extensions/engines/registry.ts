@@ -265,6 +265,13 @@ export function getCustomEngineTypes(): string[] {
   return [...types];
 }
 
+export function getEngineSearchType(engineId: string): string | null {
+  const builtin = BUILTIN_DEFINITIONS.find((d) => d.id === engineId);
+  if (builtin) return builtin.searchType;
+  const plugin = engineRegistry.items().find((e) => e.id === engineId);
+  return plugin?.searchType ?? null;
+}
+
 function engineRequiresConfig(engine: SearchEngine): boolean {
   const schema = engine.settingsSchema ?? [];
   return schema.some((f) => f.required === true);
