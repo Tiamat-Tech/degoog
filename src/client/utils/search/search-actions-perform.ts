@@ -45,6 +45,7 @@ import {
   performStreamingSearch,
 } from "../streaming-search";
 import { buildSearchBody, buildSearchUrl } from "../url";
+import { searchAuthHeaders, appendSearchAuthParams } from "../request";
 
 let commandsCache: Command[] | null = null;
 let _streamingConfig: { enabled: boolean } | null = null;
@@ -245,9 +246,9 @@ export async function performSearch(
           body: JSON.stringify(
             buildSearchBody(query, engines, resolvedType, resolvedPage),
           ),
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...searchAuthHeaders() },
         })
-      : await fetch(url);
+      : await fetch(appendSearchAuthParams(url));
 
     const data = (await res.json()) as SearchResponse;
     state.currentResults = data.results;

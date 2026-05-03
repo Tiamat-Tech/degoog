@@ -6,6 +6,7 @@ import {
 import { getEngines } from "../engines";
 import { state } from "../../state";
 import { buildSearchBody, buildSearchUrl } from "../url";
+import { searchAuthHeaders, appendSearchAuthParams } from "../request";
 import type { SearchResponse } from "../../types";
 import { renderResults } from "../../modules/renderer/render";
 import { fetchGlancePanels, fetchSlotPanels } from "../search-utils";
@@ -47,9 +48,9 @@ export async function goToPage(pageNum: number): Promise<void> {
               pageNum,
             ),
           ),
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...searchAuthHeaders() },
         })
-      : await fetch(url);
+      : await fetch(appendSearchAuthParams(url));
 
     const data = (await res.json()) as SearchResponse;
     state.currentResults = data.results;

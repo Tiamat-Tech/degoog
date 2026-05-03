@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { SuggestPostBody } from "../types/search";
 import { _applyRateLimit } from "../utils/search";
+import { guardApiKey } from "../utils/api-key-guard";
 
 const router = new Hono();
 
@@ -43,6 +44,8 @@ async function getSuggestions(query: string): Promise<string[]> {
 router.get("/api/suggest", async (c) => {
   const limitRes = await _applyRateLimit(c);
   if (limitRes) return limitRes;
+  const authRes = await guardApiKey(c, "apiKeySuggestEnabled");
+  if (authRes) return authRes;
   const query = c.req.query("q") ?? "";
   return c.json(await getSuggestions(query));
 });
@@ -50,6 +53,8 @@ router.get("/api/suggest", async (c) => {
 router.post("/api/suggest", async (c) => {
   const limitRes = await _applyRateLimit(c);
   if (limitRes) return limitRes;
+  const authRes = await guardApiKey(c, "apiKeySuggestEnabled");
+  if (authRes) return authRes;
   let body: SuggestPostBody;
   try {
     body = await c.req.json<SuggestPostBody>();
@@ -62,6 +67,8 @@ router.post("/api/suggest", async (c) => {
 router.get("/api/suggest/opensearch", async (c) => {
   const limitRes = await _applyRateLimit(c);
   if (limitRes) return limitRes;
+  const authRes = await guardApiKey(c, "apiKeySuggestEnabled");
+  if (authRes) return authRes;
   const query = c.req.query("q") ?? "";
   const suggestions = await getSuggestions(query);
   return c.json([query, suggestions], 200, {

@@ -4,6 +4,7 @@ import { getEngines } from "../engines";
 import { renderMediaEngineBar } from "../../modules/renderer/render-media";
 import { renderSidebar, renderResults } from "../../modules/renderer/render";
 import { performSearch } from "./search-actions-perform";
+import { searchAuthHeaders, appendSearchAuthParams } from "../request";
 
 export async function retryEngine(engineName: string): Promise<void> {
   if (!state.currentQuery || !state.currentData) return;
@@ -43,9 +44,9 @@ export async function retryEngine(engineName: string): Promise<void> {
                 ? state.currentTimeFilter
                 : undefined,
           }),
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...searchAuthHeaders() },
         })
-      : await fetch(`/api/search/retry?${params.toString()}`);
+      : await fetch(appendSearchAuthParams(`/api/search/retry?${params.toString()}`));
     const data = (await res.json()) as SearchResponse & {
       results: ScoredResult[];
     };

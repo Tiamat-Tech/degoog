@@ -90,7 +90,7 @@ function getPasswords(): string[] {
     .filter(Boolean);
 }
 
-function isPasswordRequired(): boolean {
+export function isPasswordRequired(): boolean {
   return getPasswords().length > 0;
 }
 

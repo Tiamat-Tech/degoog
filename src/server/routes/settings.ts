@@ -5,7 +5,8 @@ import { defaultEnginesFile } from "../utils/paths";
 import { asString, getSettings, setSettings } from "../utils/plugin-settings";
 import { getRandomUserAgent } from "../utils/user-agents";
 import { DEFAULT_LANGUAGES, DEGOOG_SETTINGS_ID } from "../utils/search";
-import { guardSettingsRoute } from "./settings-auth";
+import { getServerKeyHex, regenerateServerKey } from "../utils/server-key";
+import { guardSettingsRoute, isPasswordRequired } from "./settings-auth";
 
 const router = new Hono();
 
@@ -34,6 +35,8 @@ const GENERAL_ALLOWED_KEYS = [
   "domainScoreList",
   "domainScoreUiEnabled",
   "customCss",
+  "apiKeySearchEnabled",
+  "apiKeySuggestEnabled",
 ] as const;
 
 const _normalizeHostname = (raw: string): string =>
@@ -216,6 +219,29 @@ router.post("/api/settings/domain-action", async (c) => {
 
   await setSettings(DEGOOG_SETTINGS_ID, { ...existing, ...updates });
   return c.json({ ok: true });
+});
+
+router.get("/api/settings/api-key", async (c) => {
+  if (!isPasswordRequired()) return c.json({ error: "Forbidden" }, 403);
+  const denied = await guardSettingsRoute(c, "GET /api/settings/api-key");
+  if (denied) return denied;
+  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  return c.json({
+    key: getServerKeyHex() ?? "",
+    searchEnabled: asString(settings.apiKeySearchEnabled) === "true",
+    suggestEnabled: asString(settings.apiKeySuggestEnabled) === "true",
+  });
+});
+
+router.post("/api/settings/api-key/regenerate", async (c) => {
+  if (!isPasswordRequired()) return c.json({ error: "Forbidden" }, 403);
+  const denied = await guardSettingsRoute(
+    c,
+    "POST /api/settings/api-key/regenerate",
+  );
+  if (denied) return denied;
+  await regenerateServerKey();
+  return c.json({ key: getServerKeyHex() ?? "" });
 });
 
 router.get("/api/settings/proxy-test", async (c) => {

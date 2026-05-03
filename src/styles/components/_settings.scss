@@ -339,6 +339,14 @@
   flex: 1;
 }
 
+#settings-api-key-value {
+  overflow-x: auto;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 .settings-proxy-urls-wrap {
   margin-top: 0;
 }

@@ -25,6 +25,7 @@ import {
   isValidQuery,
   parseEngineConfig,
 } from "../utils/search";
+import { guardApiKey } from "../utils/api-key-guard";
 import { applyDomainRules } from "./search/_domain-rules";
 import { signResultThumbnails } from "../utils/proxy-sign";
 import { parsePage } from "./search/_parsers";
@@ -34,6 +35,8 @@ const router = new Hono();
 router.get("/api/search/stream", async (c) => {
   const limitRes = await _applyRateLimit(c);
   if (limitRes) return limitRes;
+  const authRes = await guardApiKey(c, "apiKeySearchEnabled");
+  if (authRes) return authRes;
 
   const query = c.req.query("q") ?? "";
 
