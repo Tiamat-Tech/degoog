@@ -70,20 +70,27 @@ export async function loadMoreMedia(type: string): Promise<void> {
     sentinel.innerHTML =
       '<div class="loading-dots"><span></span><span></span><span></span></div>';
 
-  const engines = await getEngines();
-  const url = buildSearchUrl(state.currentQuery, engines, type, nextPage);
+  const bangQuery = state.currentBangQuery;
+  let res: Response;
   try {
-    const res = state.postMethodEnabled
-      ? await fetch("/api/search", {
-          method: "POST",
-          body: JSON.stringify(
-            buildSearchBody(state.currentQuery, engines, type, nextPage),
-          ),
-          headers: { "Content-Type": "application/json" },
-        })
-      : await fetch(url);
+    if (bangQuery) {
+      const params = new URLSearchParams({ q: bangQuery, page: String(nextPage) });
+      res = await fetch(`/api/command?${params.toString()}`);
+    } else {
+      const engines = await getEngines();
+      res = state.postMethodEnabled
+        ? await fetch("/api/search", {
+            method: "POST",
+            body: JSON.stringify(
+              buildSearchBody(state.currentQuery, engines, type, nextPage),
+            ),
+            headers: { "Content-Type": "application/json" },
+          })
+        : await fetch(buildSearchUrl(state.currentQuery, engines, type, nextPage));
+    }
 
-    const data = (await res.json()) as { results: ScoredResult[] };
+    const raw = (await res.json()) as { results?: ScoredResult[]; type?: string };
+    const data = { results: raw.results ?? [] };
     if (data.results.length === 0) {
       if (type === "images") state.imageLastPage = page;
       else state.videoLastPage = page;

@@ -161,6 +161,7 @@ export async function performSearch(
   const engines = await getEngines();
   const url = buildSearchUrl(query, engines, resolvedType, resolvedPage);
 
+  state.currentBangQuery = "";
   showAllTabs();
   setActiveTab(resolvedType);
   closeMediaPreview();
@@ -405,6 +406,7 @@ async function _performBangCommand(
       type: string;
       searchType?: string;
       results?: ScoredResult[];
+      engineTimings?: { name: string; time: number; resultCount: number }[];
       totalTime?: number;
       title?: string;
       html?: string;
@@ -413,11 +415,24 @@ async function _performBangCommand(
     };
     if (data.type === "engine") {
       const engineType = data.searchType ?? "web";
+      const isMedia = engineType === "images" || engineType === "videos";
       state.currentResults = data.results ?? [];
       state.currentData = data as unknown as SearchResponse;
       state.currentType = engineType;
+      state.imagePage = 1;
+      state.imageLastPage = MAX_PAGE;
+      state.videoPage = 1;
+      state.videoLastPage = MAX_PAGE;
+      destroyMediaObserver();
       setActiveTab(engineType);
       setTabsForBang(engineType);
+      if (isMedia) {
+        const glanceEl = document.getElementById("at-a-glance");
+        if (glanceEl) glanceEl.innerHTML = "";
+        const sidebar = document.getElementById("results-sidebar");
+        if (sidebar) sidebar.innerHTML = "";
+        renderMediaEngineBar(data.engineTimings ?? []);
+      }
       if (resultsMeta)
         resultsMeta.textContent = `About ${data.results?.length ?? 0} results (${((data.totalTime ?? 0) / 1000).toFixed(2)} seconds)`;
       renderResults(data.results ?? []);

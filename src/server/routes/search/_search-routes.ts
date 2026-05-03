@@ -40,6 +40,33 @@ export function registerSearchRoutes(router: Hono): void {
     const limitRes = await _applyRateLimit(c);
     if (limitRes) return limitRes;
 
+    const contentType = c.req.header("content-type") ?? "";
+
+    if (contentType.includes("application/x-www-form-urlencoded")) {
+      let form: FormData;
+      try {
+        form = await c.req.formData();
+      } catch {
+        return c.json({ error: "Invalid form data" }, 400);
+      }
+      const query = (form.get("q") as string | null) ?? "";
+      if (!isValidQuery(query))
+        return c.json({ error: "Missing or invalid query parameter 'q'" }, 400);
+
+      const result = await handleSearch({
+        query,
+        engines: parseEnginesFromBody(undefined),
+        searchType: ((form.get("type") as string | null) || "web") as SearchType,
+        page: parsePage(form.get("page")),
+        timeFilter: ((form.get("time") as string | null) || "any") as TimeFilter,
+        lang: (form.get("lang") as string | null) || "",
+        dateFrom: (form.get("dateFrom") as string | null) || "",
+        dateTo: (form.get("dateTo") as string | null) || "",
+      });
+
+      return c.json(result);
+    }
+
     let body: SearchBody;
     try {
       body = await c.req.json<SearchBody>();
