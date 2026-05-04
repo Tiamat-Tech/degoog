@@ -10,6 +10,7 @@ import { initTransportsTab } from "../../settings/transports-tab";
 import { initThemesTab } from "../../settings/themes-tab";
 import { initServerTab } from "../../settings/server-tab";
 import { initStoreTab } from "../../settings/store-tab";
+import { initGlobalSearch } from "../../settings/settings-search";
 import "../modals/settings-modal/modal";
 import { SETTINGS_TABS } from "../../../shared/settings-tabs";
 import type { AllExtensions } from "../../types";
@@ -137,7 +138,7 @@ function _showAuthGate(): void {
     });
 }
 
-function _switchSettingsTab(value: string, updateUrl = true): void {
+export function switchSettingsTab(value: string, updateUrl = true): void {
   document
     .querySelectorAll<HTMLElement>(".settings-tab-panel")
     .forEach((p) => p.classList.remove("active"));
@@ -161,10 +162,10 @@ function _initTabs(): void {
     "settings-tab-select",
   ) as HTMLSelectElement | null;
   const nav = document.getElementById("settings-tabs-nav");
-  select?.addEventListener("change", () => _switchSettingsTab(select.value));
+  select?.addEventListener("change", () => switchSettingsTab(select.value));
   nav?.querySelectorAll<HTMLElement>(".settings-nav-item").forEach((btn) => {
     btn.addEventListener("click", () =>
-      _switchSettingsTab(btn.dataset.tab ?? "general"),
+      switchSettingsTab(btn.dataset.tab ?? "general"),
     );
   });
 
@@ -173,7 +174,7 @@ function _initTabs(): void {
   if (match) {
     const tab = match[1];
     if ((SETTINGS_TABS as readonly string[]).includes(tab)) {
-      _switchSettingsTab(tab, false);
+      switchSettingsTab(tab, false);
     }
   }
 }
@@ -202,6 +203,7 @@ async function _initSettings(): Promise<void> {
     await initThemesTab(themesData, allExtensions.themes ?? []);
     const storeEl = document.getElementById("store-content");
     if (storeEl) void initStoreTab(storeEl, getStoredToken);
+    initGlobalSearch();
   } catch {
     const enginesEl = document.getElementById("engines-content");
     const pluginsEl = document.getElementById("plugins-content");

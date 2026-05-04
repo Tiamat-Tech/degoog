@@ -272,8 +272,8 @@
   -webkit-appearance: none;
   flex: 1;
   min-width: 0;
-  background: var(--search-bar-bg);
-  border-radius: $search-bar-radius;
+  background: var(--bg-hover);
+  border-radius: $radius-lg;
   color: var(--text-primary);
   font-size: $font-size-base;
   padding: $space-3;

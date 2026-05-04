@@ -17,6 +17,10 @@
       "themes": "Themes",
       "store": "Store"
     },
+    "tab-search": {
+      "placeholder": "Search settings...",
+      "no-results": "No results"
+    },
     "appearance": {
       "heading": "Appearance",
       "desc": "Choose your preferred theme.",
