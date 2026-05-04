@@ -10,6 +10,7 @@ import {
   isValidQuery,
   parseEngineConfig,
 } from "../../utils/search";
+import { guardApiKey } from "../../utils/api-key-guard";
 import { parseEnginesFromBody, parsePage } from "./_parsers";
 import { handleRetry, handleSearch } from "./_search-handlers";
 
@@ -17,6 +18,8 @@ export function registerSearchRoutes(router: Hono): void {
   router.get("/api/search", async (c) => {
     const limitRes = await _applyRateLimit(c);
     if (limitRes) return limitRes;
+    const authRes = await guardApiKey(c, "apiKeySearchEnabled");
+    if (authRes) return authRes;
 
     const query = c.req.query("q") ?? "";
     if (!isValidQuery(query))
@@ -39,6 +42,8 @@ export function registerSearchRoutes(router: Hono): void {
   router.post("/api/search", async (c) => {
     const limitRes = await _applyRateLimit(c);
     if (limitRes) return limitRes;
+    const authRes = await guardApiKey(c, "apiKeySearchEnabled");
+    if (authRes) return authRes;
 
     const contentType = c.req.header("content-type") ?? "";
 
@@ -94,6 +99,8 @@ export function registerSearchRoutes(router: Hono): void {
   router.get("/api/search/retry", async (c) => {
     const limitRes = await _applyRateLimit(c);
     if (limitRes) return limitRes;
+    const authRes = await guardApiKey(c, "apiKeySearchEnabled");
+    if (authRes) return authRes;
 
     const query = c.req.query("q");
     const engineName = c.req.query("engine");
@@ -118,6 +125,8 @@ export function registerSearchRoutes(router: Hono): void {
   router.post("/api/search/retry", async (c) => {
     const limitRes = await _applyRateLimit(c);
     if (limitRes) return limitRes;
+    const authRes = await guardApiKey(c, "apiKeySearchEnabled");
+    if (authRes) return authRes;
 
     let body: RetryPostBody;
     try {

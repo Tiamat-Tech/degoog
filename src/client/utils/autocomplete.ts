@@ -1,5 +1,6 @@
 import { state } from "../state";
 import { escapeHtml } from "./dom";
+import { searchAuthHeaders } from "./request";
 
 let acController: AbortController | null = null;
 let acTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -32,10 +33,11 @@ async function _fetchSuggestions(
       ? await fetch("/api/suggest", {
           method: "POST",
           body: JSON.stringify({ query }),
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...searchAuthHeaders() },
           signal: acController.signal,
         })
       : await fetch(`/api/suggest?q=${encodeURIComponent(query)}`, {
+          headers: searchAuthHeaders(),
           signal: acController.signal,
         });
 

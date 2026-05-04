@@ -37,9 +37,11 @@ import {
 } from "../utils/translation";
 import {
   getSettingsTokenFromRequest,
+  isPasswordRequired,
   shouldServeSettingsGate,
   validateSettingsToken,
 } from "./settings-auth";
+import { generateSearchNonce } from "../utils/search-nonce";
 
 const DEFAULT_THEME_DIR = "src/public/themes/degoog-theme";
 const CORE_LOCALES_ROOT = "src";
@@ -210,7 +212,16 @@ async function applyPagePlaceholders(
   }
   result = result.replaceAll("__APP_VERSION__", pkg.version);
 
-  // Inject translations before </head> so t() is available to all scripts
+  const pageSettings = await getSettings(_DEGOOG_SETTINGS_ID);
+  const anyApiKeyEnabled =
+    asString(pageSettings.apiKeySearchEnabled) === "true" ||
+    asString(pageSettings.apiKeySuggestEnabled) === "true";
+  if (anyApiKeyEnabled) {
+    const auth = generateSearchNonce();
+    const nonceScript = `<script>window.__DEGOOG_SEARCH_AUTH__=${JSON.stringify(auth)}</script>`;
+    result = result.replace("</head>", `${nonceScript}\n  </head>`);
+  }
+
   result = result.replace("</head>", `${translationsScript}\n  </head>`);
 
   return translateHTML(result, t);
@@ -254,8 +265,21 @@ async function buildThemedLayoutPage(
   return applyPagePlaceholders(html, t);
 }
 
+const _apiKeySection = `<code id="settings-api-key-value" class="settings-toggle-label"></code>
+  <div>
+    <button type="button" id="settings-api-key-reveal" class="btn btn--secondary" aria-label="{{t:settings-page.server.api-key-reveal}}"><i class="fa-solid fa-eye fa-lg"></i></button>
+    <button type="button" id="settings-api-key-copy" class="btn btn--secondary" aria-label="{{t:settings-page.server.api-key-copy}}"><i class="fa-solid fa-copy fa-lg"></i></button>
+    <button type="button" id="settings-api-key-regenerate" class="btn btn--secondary" aria-label="{{t:settings-page.server.api-key-regenerate}}"><i class="fa-solid fa-rotate-right fa-lg"></i></button>
+  </div>`;
+
+const _apiKeySectionLocked = `<p class="settings-desc">{{t:settings-page.server.api-key-no-password}}</p>`;
+
 async function buildPage(filename: string, locale?: string): Promise<string> {
-  const html = await Bun.file(`src/public/${filename}`).text();
+  let html = await Bun.file(`src/public/${filename}`).text();
+  if (html.includes("__API_KEY_SECTION__")) {
+    const content = isPasswordRequired() ? _apiKeySection : _apiKeySectionLocked;
+    html = html.replace("__API_KEY_SECTION__", content);
+  }
   const t = await getTranslator(locale);
   return applyPagePlaceholders(html, t);
 }

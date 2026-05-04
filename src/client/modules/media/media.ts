@@ -8,6 +8,7 @@ import {
   proxyImageUrl,
 } from "../../utils/url";
 import { openLightbox } from "./lightbox";
+import { searchAuthHeaders, appendSearchAuthParams } from "../../utils/request";
 
 let mediaObserver: IntersectionObserver | null = null;
 let appendMediaCardsRef:
@@ -84,9 +85,9 @@ export async function loadMoreMedia(type: string): Promise<void> {
             body: JSON.stringify(
               buildSearchBody(state.currentQuery, engines, type, nextPage),
             ),
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...searchAuthHeaders() },
           })
-        : await fetch(buildSearchUrl(state.currentQuery, engines, type, nextPage));
+        : await fetch(appendSearchAuthParams(buildSearchUrl(state.currentQuery, engines, type, nextPage)));
     }
 
     const raw = (await res.json()) as { results?: ScoredResult[]; type?: string };

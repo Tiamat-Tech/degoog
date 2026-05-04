@@ -16,27 +16,12 @@ import { initMediaPreview } from "./media/media-preview";
 import { performTabSearch } from "./tabs/tab-search";
 import { initTabs } from "./tabs/tabs";
 
+import { copyTextToClipboard } from "../utils/clipboard";
 import { initInstallPrompt } from "../utils/install-prompt";
 import { focusInput, initKeyboardShortcuts } from "../utils/keyboard-shortcuts";
 import { initSearchBarActions } from "../utils/search-bar-actions";
 import { renderPageTemplates } from "./renderer/render-page";
 import { initResultActions } from "./result-actions";
-
-function _copyToClipboard(text: string, onSuccess: () => void): void {
-  const el = document.createElement("textarea");
-  el.value = text;
-  el.setAttribute("readonly", "");
-  el.style.position = "fixed";
-  el.style.left = "-9999px";
-  document.body.appendChild(el);
-  el.select();
-  try {
-    document.execCommand("copy");
-    onSuccess();
-  } finally {
-    document.body.removeChild(el);
-  }
-}
 
 export function init(): void {
   renderPageTemplates();
@@ -150,16 +135,9 @@ export function init(): void {
         btn.textContent = "Copy";
       }, 1500);
     };
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard
-        .writeText(uuid)
-        .then(done)
-        .catch(() => {
-          _copyToClipboard(uuid, done);
-        });
-    } else {
-      _copyToClipboard(uuid, done);
-    }
+    void copyTextToClipboard(uuid).then((ok) => {
+      if (ok) done();
+    });
   });
 
   const params = new URLSearchParams(window.location.search);
