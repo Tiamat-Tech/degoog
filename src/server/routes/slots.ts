@@ -6,6 +6,7 @@ import {
   SlotPanelResult,
   SlotPluginContext,
 } from "../types";
+import { createCache } from "../utils/cache";
 import { getLocale } from "../utils/hono";
 import { logger } from "../utils/logger";
 import { outgoingFetch } from "../utils/outgoing";
@@ -70,6 +71,7 @@ router.post("/api/slots/glance", async (c) => {
         results: body.results,
         fetch: outgoingFetch as SlotPluginContext["fetch"],
         signProxyUrl: buildSignedProxyUrl,
+        createCache,
       };
       const t0 = performance.now();
       const out = await plugin.execute(body.query!.trim(), context);

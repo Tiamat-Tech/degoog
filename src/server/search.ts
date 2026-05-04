@@ -19,6 +19,7 @@ import type {
 } from "./types";
 import { extractImageUrl } from "./utils/extract-image";
 import { outgoingFetch, parseOutgoingTransport } from "./utils/outgoing";
+import { stripHtml } from "./utils/text";
 import { asString, getSettings } from "./utils/plugin-settings";
 import { buildSignedProxyUrl } from "./utils/proxy-sign";
 
@@ -100,8 +101,9 @@ const _mergeIntoMap = (
       if (!existing.sources.includes(r.source)) {
         existing.sources.push(r.source);
       }
-      if (r.snippet.length > existing.snippet.length) {
-        existing.snippet = r.snippet;
+      const cleanSnippet = stripHtml(r.snippet);
+      if (cleanSnippet.length > existing.snippet.length) {
+        existing.snippet = cleanSnippet;
       }
       if (r.thumbnail && !existing.thumbnail) {
         existing.thumbnail = r.thumbnail;
@@ -110,6 +112,8 @@ const _mergeIntoMap = (
     } else {
       urlMap.set(normalized, {
         ...r,
+        title: stripHtml(r.title),
+        snippet: stripHtml(r.snippet),
         url: normalized,
         score: positionScore,
         sources: [r.source],
@@ -304,10 +308,10 @@ export const search = async (
     type === "web"
       ? await getActiveWebEngines(config)
       : getEnginesForSearchType(type, config).map((e) => ({
-          id: e.id,
-          instance: e.instance,
-          score: 1,
-        }));
+        id: e.id,
+        instance: e.instance,
+        score: 1,
+      }));
 
   if (rawActiveEngines.length === 0) {
     return {

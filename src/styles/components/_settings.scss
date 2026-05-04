@@ -10,7 +10,7 @@
   min-height: 100vh;
 
   @media (min-width: 768px) {
-    max-width: 60rem;
+    max-width: 70rem;
   }
 }
 
@@ -61,7 +61,7 @@
   margin-bottom: $space-6;
 
   @media (min-width: 768px) {
-    width: 11.25rem;
+    width: 14rem;
     flex-shrink: 0;
     align-self: flex-start;
     position: sticky;

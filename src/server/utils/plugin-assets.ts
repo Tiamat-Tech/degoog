@@ -68,6 +68,7 @@ export function getScriptFolderSource(
 
 import { join } from "path";
 import type { PluginContext, SettingField } from "../types";
+import { createCache } from "./cache";
 import { outgoingFetch } from "./outgoing";
 import { buildSignedProxyUrl } from "./proxy-sign";
 import {
@@ -117,6 +118,7 @@ export async function initPlugin(
         readFile(join(entryPath, filename), "utf-8"),
       signProxyUrl: buildSignedProxyUrl,
       fetch: outgoingFetch as PluginContext["fetch"],
+      createCache,
     };
     await Promise.resolve(plugin.init(ctx));
   }
