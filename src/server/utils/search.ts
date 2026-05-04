@@ -204,7 +204,7 @@ export async function runSlotPlugins(
         position: effectivePosition,
         gridSize: plugin.gridSize,
       });
-    } catch {}
+    } catch { }
   }
   return panels;
 }

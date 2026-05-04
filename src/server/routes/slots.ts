@@ -90,7 +90,7 @@ router.post("/api/slots/glance", async (c) => {
         position: plugin.position,
         gridSize: plugin.gridSize,
       });
-    } catch {}
+    } catch { }
   }
   return c.json({ panels });
 });
