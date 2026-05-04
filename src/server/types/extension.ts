@@ -1,3 +1,4 @@
+import type { CreateCache } from "../utils/cache";
 import type {
   SearchResult,
   ScoredResult,
@@ -80,6 +81,7 @@ export interface PluginContext {
   readFile: (filename: string) => Promise<string>;
   signProxyUrl: (url: string) => string;
   fetch?: (url: string, init?: RequestInit) => Promise<Response>;
+  createCache: CreateCache;
 }
 
 export interface SearchEngine {
@@ -120,6 +122,7 @@ export interface SlotPluginContext {
   results?: ScoredResult[];
   fetch?: (url: string, init?: RequestInit) => Promise<Response>;
   signProxyUrl?: (url: string) => string;
+  createCache: CreateCache;
 }
 
 export interface SlotPlugin {

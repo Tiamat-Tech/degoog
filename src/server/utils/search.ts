@@ -11,6 +11,7 @@ import {
   SlotPluginContext,
   TimeFilter,
 } from "../types";
+import { createCache } from "./cache";
 import { logger } from "./logger";
 import { outgoingFetch } from "./outgoing";
 import { asString, getSettings, isDisabled } from "./plugin-settings";
@@ -184,6 +185,7 @@ export async function runSlotPlugins(
         results: plugin.waitForResults ? results : undefined,
         fetch: outgoingFetch as SlotPluginContext["fetch"],
         signProxyUrl: buildSignedProxyUrl,
+        createCache,
       };
       const t0 = performance.now();
       const out = await plugin.execute(query, context);
@@ -202,7 +204,7 @@ export async function runSlotPlugins(
         position: effectivePosition,
         gridSize: plugin.gridSize,
       });
-    } catch {}
+    } catch { }
   }
   return panels;
 }
