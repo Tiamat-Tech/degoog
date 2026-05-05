@@ -36,7 +36,7 @@ const _getOrCreateNoResults = (main: HTMLElement): HTMLElement => {
   if (!el) {
     el = document.createElement("p");
     el.id = "settings-search-no-results";
-    el.className="ext-card settings-desc degoog-panel";
+    el.className="ext-card settings-desc degoog-panel degoog-panel--ext-card";
     main.appendChild(el);
   }
   return el;

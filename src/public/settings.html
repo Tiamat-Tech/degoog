@@ -53,11 +53,11 @@
 
       <div class="settings-layout">
         <div class="settings-sidebar">
-          <div class="settings-nav-search degoog-search-bar">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="settings-global-search" class="settings-nav-search-input" placeholder="{{t:settings-page.tab-search.placeholder}}" autocomplete="off" />
+          <div class="settings-nav-search degoog-search-bar degoog-search-bar--square">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="settings-global-search" class="settings-nav-search-input search-input" placeholder="{{t:settings-page.tab-search.placeholder}}" autocomplete="off" />
           </div>
-          <div class="settings-nav-mobile degoog-select-wrap">
+          <div class="settings-nav-mobile degoog-select-wrap degoog-select-wrap--mobile-only">
           <select
             id="settings-tab-select"
             class="settings-tab-select"
@@ -117,7 +117,7 @@
 
         <main class="settings-page-main">
           <div class="settings-tab-panel active" id="tab-general">
-<section class="settings-section ext-card degoog-panel">
+<section class="settings-section ext-card degoog-panel degoog-panel--ext-card">
               <div class="setting-section-heading-wrapper">
                 <h2 class="settings-section-heading">
                   {{t:settings-page.appearance.heading}}
@@ -128,7 +128,7 @@
               </div>
               <p class="settings-desc">{{t:settings-page.appearance.desc}}</p>
               <fieldset class="settings-fieldset ext-card-main">
-                <div class="theme-select-wrap degoog-select-wrap">
+                <div class="theme-select-wrap degoog-select-wrap degoog-select-wrap--flex">
                   <select id="theme-select" class="theme-select">
                     <option value="system">
                       {{t:settings-page.theme.system}}
@@ -149,7 +149,7 @@
               </fieldset>
             </section>
 
-            <section class="settings-section ext-card degoog-panel">
+            <section class="settings-section ext-card degoog-panel degoog-panel--ext-card">
               <div class="setting-section-heading-wrapper">
                 <h2 class="settings-section-heading">
                   {{t:settings-page.search-options.heading}}
@@ -217,7 +217,7 @@
               </fieldset>
             </section>
 
-            <section class="settings-section ext-card degoog-panel">
+            <section class="settings-section ext-card degoog-panel degoog-panel--ext-card">
               <div class="setting-section-heading-wrapper">
                 <h2 class="settings-section-heading">
                   {{t:settings-page.install.heading}}
@@ -254,7 +254,7 @@
           </div>
 
           <div class="settings-tab-panel" id="tab-server">
-<section class="settings-section ext-card degoog-panel">
+<section class="settings-section ext-card degoog-panel degoog-panel--ext-card">
               <div class="setting-section-heading-wrapper">
                 <h2 class="settings-section-heading">
                   {{t:settings-page.server.cache-heading}}
@@ -274,7 +274,7 @@
             </section>
 
             <section
-              class="settings-section ext-card degoog-panel"
+              class="settings-section ext-card degoog-panel degoog-panel--ext-card"
               id="settings-section-api-key"
             >
               <div class="setting-section-heading-wrapper">
@@ -327,7 +327,7 @@
             </section>
 
             <section
-              class="settings-section ext-card degoog-panel"
+              class="settings-section ext-card degoog-panel degoog-panel--ext-card"
               id="settings-section-streaming"
             >
               <div class="setting-section-heading-wrapper">
@@ -401,7 +401,7 @@
               </fieldset>
             </section>
 
-            <section class="settings-section ext-card degoog-panel">
+            <section class="settings-section ext-card degoog-panel degoog-panel--ext-card">
               <div class="setting-section-heading-wrapper">
                 <h2 class="settings-section-heading">
                   {{t:settings-page.server.languages-heading}}
@@ -447,7 +447,7 @@
             </section>
 
             <section
-              class="settings-section ext-card degoog-panel"
+              class="settings-section ext-card degoog-panel degoog-panel--ext-card"
               id="settings-section-domain-block"
             >
               <div class="setting-section-heading-wrapper">
@@ -516,7 +516,7 @@
             </section>
 
             <section
-              class="settings-section ext-card degoog-panel"
+              class="settings-section ext-card degoog-panel degoog-panel--ext-card"
               id="settings-section-domain-replace"
             >
               <div class="setting-section-heading-wrapper">
@@ -582,7 +582,7 @@
             </section>
 
             <section
-              class="settings-section ext-card degoog-panel"
+              class="settings-section ext-card degoog-panel degoog-panel--ext-card"
               id="settings-section-domain-score"
             >
               <div class="setting-section-heading-wrapper">
@@ -650,7 +650,7 @@
             </section>
 
             <section
-              class="settings-section ext-card degoog-panel"
+              class="settings-section ext-card degoog-panel degoog-panel--ext-card"
               id="settings-section-proxy"
             >
               <div class="setting-section-heading-wrapper">
@@ -712,7 +712,7 @@
             </section>
 
             <section
-              class="settings-section ext-card degoog-panel"
+              class="settings-section ext-card degoog-panel degoog-panel--ext-card"
               id="settings-section-rate-limit"
             >
               <div class="setting-section-heading-wrapper">
@@ -813,7 +813,7 @@
             </section>
 
             <section
-              class="settings-section ext-card degoog-panel"
+              class="settings-section ext-card degoog-panel degoog-panel--ext-card"
               id="settings-section-custom-css"
             >
               <div class="setting-section-heading-wrapper">

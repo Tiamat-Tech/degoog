@@ -14,7 +14,7 @@
   display: flex;
   align-items: center;
   background: var(--search-bar-bg);
-  border-radius: $search-bar-radius;
+  border-radius: var(--degoog-search-bar-radius, #{$search-bar-radius});
   height: $search-bar-height;
   padding: 0 $space-3;
   transition: box-shadow $transition-fast, border-color $transition-fast;
@@ -25,7 +25,11 @@
   }
 
   &.ac-open {
-    border-radius: $search-bar-radius $search-bar-radius 0 0;
+    border-radius: var(--degoog-search-bar-radius, #{$search-bar-radius}) var(
+        --degoog-search-bar-radius,
+        #{$search-bar-radius}
+      )
+      0 0;
   }
 }
 

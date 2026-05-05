@@ -15,21 +15,6 @@
   background: rgba(0, 0, 0, 0.92);
 }
 
-.img-lightbox-close {
-  @include button-reset;
-  position: absolute;
-  top: $space-4;
-  right: $space-5;
-  z-index: 2;
-  font-size: $space-7;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.7);
-
-  &:hover {
-    color: #fff;
-  }
-}
-
 .img-lightbox-wrap {
   position: absolute;
   inset: 0;
@@ -201,20 +186,6 @@
       transform: none;
       width: 26.25rem;
     }
-  }
-}
-
-.media-preview-close {
-  @include button-reset;
-  position: absolute;
-  top: $space-3;
-  right: $space-3;
-  font-size: $space-6;
-  color: var(--text-secondary);
-  z-index: 1;
-
-  &:hover {
-    color: var(--text-primary);
   }
 }
 

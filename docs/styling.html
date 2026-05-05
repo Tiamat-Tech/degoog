@@ -268,7 +268,18 @@
             perfectly.
           </p>
 
-          <h3>Bang command and result output</h3>
+          <h3>Generic UI classes (degoog-*)</h3>
+          <p>
+            The main UI is moving toward a small set of generic <code>degoog-*</code>
+            classes. Templates often keep the older specific classes for
+            backwards compatibility, but the styling should be driven by these
+            generic classes and their modifiers.
+          </p>
+          <p>
+            Modifiers follow a BEM-like pattern:
+            <code>.degoog-thing</code> + <code>.degoog-thing--variant</code>.
+          </p>
+
           <table>
             <thead>
               <tr>
@@ -278,119 +289,92 @@
             </thead>
             <tbody>
               <tr>
-                <td><code>.command-result</code></td>
-                <td>Wrapper for bang command HTML injected into results</td>
+                <td><code>.degoog-panel</code></td>
+                <td>Card/panel wrapper (background, border, shadow)</td>
               </tr>
               <tr>
-                <td><code>.result-item</code></td>
-                <td>Single result row like list items in a command</td>
+                <td><code>.degoog-panel--accordion</code></td>
+                <td>Accordion wrapper panel (no default padding)</td>
               </tr>
               <tr>
-                <td><code>.result-item-inner</code></td>
-                <td>Inner wrapper of a result row</td>
+                <td><code>.degoog-panel--slot</code></td>
+                <td>Slot panel wrapper (grid sizing, no default padding)</td>
               </tr>
               <tr>
-                <td><code>.result-body</code></td>
-                <td>Result text block</td>
+                <td><code>.degoog-panel--slot-title</code></td>
+                <td>Slot panel title block</td>
               </tr>
               <tr>
-                <td><code>.result-title</code></td>
-                <td>Result title or link</td>
+                <td><code>.degoog-panel--slot-body</code></td>
+                <td>Slot panel body typography (no padding by default)</td>
               </tr>
               <tr>
-                <td><code>.result-snippet</code></td>
-                <td>Result snippet or description</td>
+                <td><code>.degoog-panel--slot-body-padded</code></td>
+                <td>Slot body padding when the content needs it</td>
               </tr>
               <tr>
-                <td><code>.result-cite</code></td>
-                <td>URL or citation line</td>
+                <td><code>.degoog-search-bar</code></td>
+                <td>Search bar shell (icon + input)</td>
               </tr>
               <tr>
-                <td><code>.result-url-row</code></td>
-                <td>Row showing the URL and favicon</td>
+                <td><code>.degoog-search-bar--square</code></td>
+                <td>Less-rounded search bar variant</td>
               </tr>
               <tr>
-                <td><code>.result-thumbnail-wrap</code></td>
-                <td>Thumbnail container</td>
+                <td><code>.degoog-dropdown</code></td>
+                <td>Floating dropdown container</td>
+              </tr>
+              <tr>
+                <td><code>.degoog-dropdown--menu</code></td>
+                <td>Menu sizing for dropdowns</td>
+              </tr>
+              <tr>
+                <td><code>.degoog-dropdown--submenu</code></td>
+                <td>Submenu sizing for dropdowns</td>
+              </tr>
+              <tr>
+                <td><code>.degoog-menu-item</code></td>
+                <td>Button-like list item (hover/focus)</td>
+              </tr>
+              <tr>
+                <td><code>.degoog-menu-item--option</code></td>
+                <td>Option rows (active checkmark)</td>
+              </tr>
+              <tr>
+                <td><code>.degoog-input</code></td>
+                <td>Text input styling</td>
+              </tr>
+              <tr>
+                <td><code>.degoog-input--tools</code></td>
+                <td>Tools dropdown input variant</td>
+              </tr>
+              <tr>
+                <td><code>.degoog-badge</code></td>
+                <td>Small badge/pill</td>
+              </tr>
+              <tr>
+                <td><code>.degoog-icon-btn</code></td>
+                <td>Icon-only button</td>
               </tr>
             </tbody>
           </table>
 
-          <h3>At a glance and slot panels</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Class</th>
-                <th>Use</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>.glance-box</code></td>
-                <td>At a glance panel container</td>
-              </tr>
-              <tr>
-                <td><code>.glance-snippet</code></td>
-                <td>Glance content area</td>
-              </tr>
-              <tr>
-                <td><code>.glance-link</code></td>
-                <td>Link inside a glance panel</td>
-              </tr>
-              <tr>
-                <td><code>.results-slot</code></td>
-                <td>Slot wrapper within results</td>
-              </tr>
-              <tr>
-                <td><code>.results-slot--above-sidebar</code></td>
-                <td>Slot positioned above the main sidebar content</td>
-              </tr>
-              <tr>
-                <td><code>.results-slot--below-sidebar</code></td>
-                <td>Slot positioned below the main sidebar content</td>
-              </tr>
-              <tr>
-                <td><code>.results-slot-panel</code></td>
-                <td>Slot panel container</td>
-              </tr>
-              <tr>
-                <td><code>.results-slot-panel-title</code></td>
-                <td>Slot panel heading</td>
-              </tr>
-              <tr>
-                <td><code>.results-slot-panel-body</code></td>
-                <td>Slot panel content</td>
-              </tr>
-            </tbody>
-          </table>
+          <p>
+            Note: the app still contains older, more specific classnames (for example
+            <code>.result-*</code>, <code>.glance-*</code>, <code>.btn*</code>) and they may
+            still have styling while the transition is ongoing. They are not considered
+            a stable styling API for themes/plugins. Prefer the <code>degoog-*</code> classes
+            and modifiers above.
+          </p>
 
-          <h3>Buttons</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Class</th>
-                <th>Use</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>.btn</code></td>
-                <td>Base button styling</td>
-              </tr>
-              <tr>
-                <td><code>.btn--primary</code></td>
-                <td>Primary action button</td>
-              </tr>
-              <tr>
-                <td><code>.btn--secondary</code></td>
-                <td>Secondary action button</td>
-              </tr>
-              <tr>
-                <td><code>.btn--danger</code></td>
-                <td>Destructive action button</td>
-              </tr>
-            </tbody>
-          </table>
+          <h3>Theme template migration (append-only)</h3>
+          <p>
+            Theme templates can keep their legacy classes and append the generic
+            <code>degoog-*</code> classes (and modifiers) so they pick up the built-in UI
+            styling without breaking older selectors.
+          </p>
+          <pre><code>DRY_RUN=1 bash scripts/theme-append-degoog-classes.sh data/themes/MyTheme
+bash scripts/theme-append-degoog-classes.sh data/themes/MyTheme</code></pre>
 
           <h3>Forms and extension settings</h3>
           <p>
@@ -406,157 +390,32 @@
             </thead>
             <tbody>
               <tr>
-                <td><code>.ext-field</code></td>
-                <td>Field wrapper</td>
+                <td><code>.degoog-input</code></td>
+                <td>Text inputs and textareas</td>
               </tr>
               <tr>
-                <td><code>.ext-field-label</code></td>
-                <td>Field label</td>
+                <td><code>.degoog-select-wrap</code></td>
+                <td>Select wrappers (adds chevron)</td>
               </tr>
               <tr>
-                <td><code>.ext-field-input</code></td>
-                <td>Text input</td>
+                <td><code>.degoog-toggle-wrap</code></td>
+                <td>Toggle rows</td>
               </tr>
               <tr>
-                <td><code>.ext-field-desc</code></td>
-                <td>Field description</td>
+                <td><code>.degoog-toggle</code></td>
+                <td>Toggle slider (pill)</td>
               </tr>
               <tr>
-                <td><code>.ext-modal</code></td>
-                <td>Modal container</td>
-              </tr>
-              <tr>
-                <td><code>.ext-modal-header</code></td>
-                <td>Modal header</td>
-              </tr>
-              <tr>
-                <td><code>.ext-modal-body</code></td>
-                <td>Modal body</td>
-              </tr>
-              <tr>
-                <td><code>.ext-modal-footer</code></td>
-                <td>Modal footer</td>
+                <td><code>.degoog-panel</code></td>
+                <td>Panels/cards used across settings and modals</td>
               </tr>
             </tbody>
           </table>
 
           <h3>Layout and chrome</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Class</th>
-                <th>Use</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>.header</code></td>
-                <td>Top header bar</td>
-              </tr>
-              <tr>
-                <td><code>.header-link</code></td>
-                <td>Header link</td>
-              </tr>
-              <tr>
-                <td><code>.search-bar</code></td>
-                <td>Search bar container</td>
-              </tr>
-              <tr>
-                <td><code>.search-bar-action-btn</code></td>
-                <td>Search bar action button</td>
-              </tr>
-              <tr>
-                <td><code>.sidebar-panel</code></td>
-                <td>Sidebar panel</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <h3>Media elements</h3>
           <p>
-            You can use these classes for plugins that display image or video
-            grids.
-          </p>
-          <table>
-            <thead>
-              <tr>
-                <th>Class</th>
-                <th>Use</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>.image-grid</code></td>
-                <td>Image grid container</td>
-              </tr>
-              <tr>
-                <td><code>.image-card</code></td>
-                <td>Single image card</td>
-              </tr>
-              <tr>
-                <td><code>.image-thumb-wrap</code></td>
-                <td>Thumbnail wrapper</td>
-              </tr>
-              <tr>
-                <td><code>.image-title</code></td>
-                <td>Image title</td>
-              </tr>
-              <tr>
-                <td><code>.video-grid</code></td>
-                <td>Video grid</td>
-              </tr>
-              <tr>
-                <td><code>.video-card</code></td>
-                <td>Single video card</td>
-              </tr>
-              <tr>
-                <td><code>.video-duration</code></td>
-                <td>Duration label</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <h3>Help and tables</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Class</th>
-                <th>Use</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>.command-help-table</code></td>
-                <td>Table layout for help menus</td>
-              </tr>
-              <tr>
-                <td><code>.help-row</code></td>
-                <td>Row within a help list</td>
-              </tr>
-              <tr>
-                <td><code>.help-trigger</code></td>
-                <td>Trigger text element</td>
-              </tr>
-              <tr>
-                <td><code>.help-name</code></td>
-                <td>Command name</td>
-              </tr>
-              <tr>
-                <td><code>.pagination</code></td>
-                <td>Pagination wrapper</td>
-              </tr>
-              <tr>
-                <td><code>.pagination-link</code></td>
-                <td>Page link</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <p>
-            Make sure to use <code>.command-result</code> as the outer wrapper
-            for your bang command HTML so the spacing matches the rest of the
-            results page perfectly. You can easily scope your own classes
-            underneath it to avoid any styling clashes.
+            Use the <code>degoog-*</code> classes above for UI elements you want
+            to look consistent with the built-in theme.
           </p>
         </main>
       </div>

@@ -49,7 +49,7 @@
           </button>
           <div
             id="result-actions-menu-{{ index }}"
-            class="result-actions-menu degoog-dropdown"
+            class="result-actions-menu degoog-dropdown degoog-dropdown--menu degoog-dropdown--actions-menu"
             role="menu"
             hidden
           >
@@ -97,7 +97,7 @@
       <p class="result-snippet">{{ snippet }}</p>
       <div class="result-engines">
         {{#each sources}}
-        <span class="result-engine-tag degoog-badge">{{ . }}</span>
+        <span class="result-engine-tag degoog-badge degoog-badge--engine-tag">{{ . }}</span>
         {{/each sources}}
       </div>
     </div>

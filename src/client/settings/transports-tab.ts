@@ -23,14 +23,14 @@ const _renderTransportCard = (transport: ExtensionMeta): string => {
     ? `<button class="ext-card-configure btn btn--secondary" data-id="${escapeHtml(transport.id)}" type="button">${escapeHtml(t("settings-page.extensions.configure"))}</button>`
     : "";
   const toggle = transport.configurable
-    ? `<label class="engine-toggle degoog-toggle-wrap">
+    ? `<label class="engine-toggle degoog-toggle-wrap degoog-toggle-wrap--transparent">
         <input type="checkbox" class="transport-toggle-input" id="transport-toggle-${escapeHtml(transport.id)}" data-id="${escapeHtml(transport.id)}" ${isEnabled ? "checked" : ""}>
         <span class="toggle-slider degoog-toggle"></span>
       </label>`
     : "";
 
   return `
-    <div class="ext-card degoog-panel" data-id="${escapeHtml(transport.id)}">
+    <div class="ext-card degoog-panel degoog-panel--ext-card" data-id="${escapeHtml(transport.id)}">
       <div class="ext-card-main">
         <div class="ext-card-info">
           <label for="transport-toggle-${escapeHtml(transport.id)}" class="ext-card-name transport-toggle-label">${escapeHtml(transport.displayName)}</label>

@@ -56,10 +56,10 @@ export async function fetchGlancePanels(
       const parts: string[] = [];
       for (const panel of glancePanels) {
         const titleHtml = panel.title
-          ? `<div class="results-slot-panel-title">${escapeHtml(panel.title)}</div>`
+          ? `<div class="results-slot-panel-title degoog-panel--slot-title">${escapeHtml(panel.title)}</div>`
           : "";
         parts.push(
-          `<div class="results-slot-panel degoog-panel">${titleHtml}<div class="results-slot-panel-body">${panel.html}</div></div>`,
+          `<div class="results-slot-panel degoog-panel degoog-panel--slot degoog-panel--stack-item">${titleHtml}<div class="results-slot-panel-body degoog-panel--slot-body degoog-panel--slot-body-padded">${panel.html}</div></div>`,
         );
       }
       glanceEl.innerHTML = parts.join("");

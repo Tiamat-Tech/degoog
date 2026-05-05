@@ -16,17 +16,17 @@ if ! has_bin perl; then
 fi
 
 declare -A MAP=(
-  ["ext-card"]="degoog-panel"
-  ["sidebar-panel"]="degoog-panel"
-  ["results-slot-panel"]="degoog-panel"
+  ["ext-card"]="degoog-panel degoog-panel--ext-card"
+  ["sidebar-panel"]="degoog-panel degoog-panel--stack-item"
+  ["results-slot-panel"]="degoog-panel degoog-panel--slot degoog-panel--stack-item"
 
-  ["tools-dropdown"]="degoog-dropdown"
-  ["tools-submenu"]="degoog-dropdown"
-  ["result-actions-menu"]="degoog-dropdown"
+  ["tools-dropdown"]="degoog-dropdown degoog-dropdown--menu"
+  ["tools-submenu"]="degoog-dropdown degoog-dropdown--submenu"
+  ["result-actions-menu"]="degoog-dropdown degoog-dropdown--menu degoog-dropdown--actions-menu"
 
   ["search-bar"]="degoog-search-bar"
-  ["results-search-bar"]="degoog-search-bar"
-  ["settings-nav-search"]="degoog-search-bar"
+  ["results-search-bar"]="degoog-search-bar degoog-search-bar--results"
+  ["settings-nav-search"]="degoog-search-bar degoog-search-bar--square"
 
   ["store-input-url"]="degoog-input"
   ["ext-field-input"]="degoog-input"
@@ -36,38 +36,38 @@ declare -A MAP=(
   ["settings-score-domain"]="degoog-input"
   ["settings-score-value"]="degoog-input"
   ["store-search-input"]="degoog-input"
-  ["tools-date-input"]="degoog-input"
-  ["tools-lang-filter"]="degoog-input"
+  ["tools-date-input"]="degoog-input degoog-input--sm degoog-input--tools degoog-input--tools-date"
+  ["tools-lang-filter"]="degoog-input degoog-input--sm degoog-input--tools degoog-input--tools-filter"
 
-  ["theme-select-wrap"]="degoog-select-wrap"
-  ["settings-nav-mobile"]="degoog-select-wrap"
+  ["theme-select-wrap"]="degoog-select-wrap degoog-select-wrap--flex"
+  ["settings-nav-mobile"]="degoog-select-wrap degoog-select-wrap--mobile-only"
   ["ext-field-select-wrap"]="degoog-select-wrap"
 
   ["settings-toggle-wrap"]="degoog-toggle-wrap"
-  ["engine-toggle"]="degoog-toggle-wrap"
+  ["engine-toggle"]="degoog-toggle-wrap degoog-toggle-wrap--transparent"
 
   ["toggle-slider"]="degoog-toggle"
 
-  ["sidebar-accordion-toggle"]="degoog-accordion-toggle"
+  ["sidebar-accordion-toggle"]="degoog-accordion-toggle degoog-accordion-toggle--sidebar"
   ["store-updates-toggle"]="degoog-accordion-toggle"
 
   ["results-tab"]="degoog-tab"
   ["tools-toggle"]="degoog-tab"
 
-  ["tools-menu-item"]="degoog-menu-item"
-  ["tools-option"]="degoog-menu-item"
+  ["tools-menu-item"]="degoog-menu-item degoog-menu-item--lg"
+  ["tools-option"]="degoog-menu-item degoog-menu-item--option"
   ["result-actions-item"]="degoog-menu-item"
 
-  ["result-engine-tag"]="degoog-badge"
-  ["store-type-badge"]="degoog-badge"
+  ["result-engine-tag"]="degoog-badge degoog-badge--engine-tag"
+  ["store-type-badge"]="degoog-badge degoog-badge--store-type"
   ["store-subtype-badge"]="degoog-badge"
   ["glance-ai-badge"]="degoog-badge"
 
   ["search-submit-btn"]="degoog-icon-btn"
-  ["settings-gear"]="degoog-icon-btn"
-  ["img-lightbox-close"]="degoog-icon-btn"
+  ["settings-gear"]="degoog-icon-btn degoog-icon-btn--padded degoog-icon-btn--results-gear"
+  ["img-lightbox-close"]="degoog-icon-btn degoog-icon-btn--lightbox-close"
   ["ext-modal-close"]="degoog-icon-btn"
-  ["media-preview-close"]="degoog-icon-btn"
+  ["media-preview-close"]="degoog-icon-btn degoog-icon-btn--media-preview-close"
 )
 
 append_for_file() {
@@ -87,7 +87,12 @@ append_for_file() {
         my @c = grep { length } split(/\s+/, $v);
         my %seen; @c = grep { !$seen{$_}++ } @c;
         my %has = map { $_ => 1 } @c;
-        if ($has{$old} && !$has{$new}) { push @c, $new; }
+        if ($has{$old}) {
+          for my $cls (split(/\s+/, $new)) {
+            next if !$cls;
+            push @c, $cls if !$has{$cls}++;
+          }
+        }
         return join(" ", @c);
       }
     ' -- "$tmp"

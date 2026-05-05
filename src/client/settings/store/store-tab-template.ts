@@ -1,6 +1,6 @@
 export function getStoreTabHtml(): string {
   return `
-    <section class="store-repos-section settings-section ext-card degoog-panel">
+    <section class="store-repos-section settings-section ext-card degoog-panel degoog-panel--ext-card">
       <div class="store-repos-header">
         <h2 class="settings-section-heading">Repositories</h2>
         <div class="header-actions">
