@@ -1,0 +1,277 @@
+.ext-card:not(.degoog-panel) {
+  @extend .degoog-panel;
+  @extend .degoog-panel--ext-card;
+}
+
+.sidebar-panel:not(.degoog-panel) {
+  @extend .degoog-panel;
+  @extend .degoog-panel--stack-item;
+}
+
+.results-slot-panel:not(.degoog-panel) {
+  @extend .degoog-panel;
+  @extend .degoog-panel--slot;
+  @extend .degoog-panel--stack-item;
+}
+
+.tools-dropdown:not(.degoog-dropdown) {
+  @extend .degoog-dropdown;
+  @extend .degoog-dropdown--menu;
+}
+
+.tools-submenu:not(.degoog-dropdown) {
+  @extend .degoog-dropdown;
+  @extend .degoog-dropdown--submenu;
+}
+
+.result-actions-menu:not(.degoog-dropdown) {
+  @extend .degoog-dropdown;
+  @extend .degoog-dropdown--menu;
+  @extend .degoog-dropdown--actions-menu;
+}
+
+.search-bar:not(.degoog-search-bar) {
+  @extend .degoog-search-bar;
+}
+
+.results-search-bar:not(.degoog-search-bar) {
+  @extend .degoog-search-bar;
+  @extend .degoog-search-bar--results;
+}
+
+.settings-nav-search:not(.degoog-search-bar),
+.store-search-input:not(.degoog-search-bar) {
+  @extend .degoog-search-bar;
+  @extend .degoog-search-bar--square-advanced;
+}
+
+.store-input-url:not(.degoog-input),
+.ext-field-input:not(.degoog-input),
+.ext-field-urllist-input:not(.degoog-input),
+.settings-rate-limit-input:not(.degoog-input),
+.settings-proxy-urls:not(.degoog-input),
+.settings-score-domain:not(.degoog-input),
+.settings-score-value:not(.degoog-input),
+.glance-ai-input:not(.degoog-input) {
+  @extend .degoog-input;
+}
+
+.tools-date-input:not(.degoog-input) {
+  @extend .degoog-input;
+  @extend .degoog-input--sm;
+  @extend .degoog-input--tools;
+  @extend .degoog-input--tools-date;
+}
+
+.tools-lang-filter:not(.degoog-input) {
+  @extend .degoog-input;
+  @extend .degoog-input--sm;
+  @extend .degoog-input--tools;
+  @extend .degoog-input--tools-filter;
+}
+
+.theme-select-wrap:not(.degoog-select-wrap) {
+  @extend .degoog-select-wrap;
+  @extend .degoog-select-wrap--flex;
+}
+
+.settings-nav-mobile:not(.degoog-select-wrap) {
+  @extend .degoog-select-wrap;
+  @extend .degoog-select-wrap--mobile-only;
+}
+
+.ext-field-select-wrap:not(.degoog-select-wrap) {
+  @extend .degoog-select-wrap;
+}
+
+.settings-toggle-wrap:not(.degoog-toggle-wrap) {
+  @extend .degoog-toggle-wrap;
+}
+
+.engine-toggle:not(.degoog-toggle-wrap) {
+  @extend .degoog-toggle-wrap;
+  @extend .degoog-toggle-wrap--transparent;
+}
+
+.toggle-slider:not(.degoog-toggle) {
+  @extend .degoog-toggle;
+}
+
+.sidebar-accordion:not(.degoog-accordion) {
+  @extend .degoog-accordion;
+}
+
+.sidebar-accordion-body:not(.degoog-accordion-body) {
+  @extend .degoog-accordion-body;
+}
+
+.sidebar-accordion-toggle:not(.degoog-accordion-toggle) {
+  @extend .degoog-accordion-toggle;
+  @extend .degoog-accordion-toggle--sidebar;
+}
+
+.store-updates-panel:not(.degoog-accordion) {
+  @extend .degoog-accordion;
+}
+
+.store-updates-body:not(.degoog-accordion-body) {
+  @extend .degoog-accordion-body;
+  @extend .degoog-accordion-body--flex;
+}
+
+.store-updates-toggle:not(.degoog-accordion-toggle) {
+  @extend .degoog-accordion-toggle;
+}
+
+.results-tab:not(.degoog-tab),
+.tools-toggle:not(.degoog-tab) {
+  @extend .degoog-tab;
+}
+
+.tools-menu-item:not(.degoog-menu-item) {
+  @extend .degoog-menu-item;
+  @extend .degoog-menu-item--lg;
+}
+
+.tools-option:not(.degoog-menu-item) {
+  @extend .degoog-menu-item;
+  @extend .degoog-menu-item--option;
+}
+
+.result-actions-item:not(.degoog-menu-item) {
+  @extend .degoog-menu-item;
+}
+
+.result-engine-tag:not(.degoog-badge) {
+  @extend .degoog-badge;
+  @extend .degoog-badge--engine-tag;
+}
+
+.store-type-badge:not(.degoog-badge) {
+  @extend .degoog-badge;
+  @extend .degoog-badge--store-type;
+}
+
+.store-subtype-badge:not(.degoog-badge),
+.glance-ai-badge:not(.degoog-badge) {
+  @extend .degoog-badge;
+}
+
+.search-submit-btn:not(.degoog-icon-btn),
+.settings-gear:not(.degoog-icon-btn),
+.img-lightbox-close:not(.degoog-icon-btn),
+.ext-modal-close:not(.degoog-icon-btn),
+.media-preview-close:not(.degoog-icon-btn) {
+  @extend .degoog-icon-btn;
+}
+
+.settings-gear:not(.degoog-icon-btn) {
+  @extend .degoog-icon-btn--padded;
+  @extend .degoog-icon-btn--results-gear;
+}
+
+.img-lightbox-close:not(.degoog-icon-btn) {
+  @extend .degoog-icon-btn--lightbox-close;
+}
+
+.media-preview-close:not(.degoog-icon-btn) {
+  @extend .degoog-icon-btn--media-preview-close;
+}
+
+.btn:not(.degoog-btn) {
+  @extend .degoog-btn;
+}
+
+.btn--primary:not(.degoog-btn--primary) {
+  @extend .degoog-btn--primary;
+}
+
+.btn--secondary:not(.degoog-btn--secondary) {
+  @extend .degoog-btn--secondary;
+}
+
+.btn--danger:not(.degoog-btn--danger) {
+  @extend .degoog-btn--danger;
+}
+
+.result-item:not(.degoog-result) {
+  @extend .degoog-result;
+}
+
+.result-item-inner:not(.degoog-result--inner) {
+  @extend .degoog-result--inner;
+}
+
+.result-body:not(.degoog-result--body) {
+  @extend .degoog-result--body;
+}
+
+.result-thumbnail-wrap:not(.degoog-result--thumb) {
+  @extend .degoog-result--thumb;
+}
+
+.result-url-row:not(.degoog-result--url-row) {
+  @extend .degoog-result--url-row;
+}
+
+.result-favicon:not(.degoog-result--favicon) {
+  @extend .degoog-result--favicon;
+}
+
+.result-cite:not(.degoog-result--cite) {
+  @extend .degoog-result--cite;
+}
+
+.result-actions:not(.degoog-result--actions) {
+  @extend .degoog-result--actions;
+}
+
+.result-actions-toggle:not(.degoog-result--actions-toggle) {
+  @extend .degoog-result--actions-toggle;
+}
+
+.result-title:not(.degoog-result--title) {
+  @extend .degoog-result--title;
+}
+
+.result-snippet:not(.degoog-result--snippet) {
+  @extend .degoog-result--snippet;
+}
+
+.result-engines:not(.degoog-result--engines) {
+  @extend .degoog-result--engines;
+}
+
+.glance-box:not(.degoog-panel) {
+  @extend .degoog-panel;
+  @extend .degoog-panel--slot;
+  @extend .degoog-panel--slot-body-padded;
+  @extend .degoog-vstack;
+}
+
+.glance-ai:not(.degoog-panel) {
+  @extend .degoog-panel;
+  @extend .degoog-panel--slot;
+  @extend .degoog-panel--slot-body-padded;
+  @extend .degoog-vstack;
+}
+
+.glance-snippet:not(.degoog-text) {
+  @extend .degoog-text;
+  @extend .degoog-text--md;
+}
+
+.glance-link:not(.degoog-link) {
+  @extend .degoog-link;
+}
+
+.glance-sources:not(.degoog-text) {
+  @extend .degoog-text;
+  @extend .degoog-text--sm;
+  @extend .degoog-text--secondary;
+  @extend .degoog-text--spaced;
+}
+
+.glance-ai-dive:not(.degoog-link-btn) {
+  @extend .degoog-link-btn;
+}

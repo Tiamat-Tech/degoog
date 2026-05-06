@@ -24,7 +24,7 @@ export function getStoreTabHtml(): string {
       </div>
       <div class="store-updates-panel degoog-accordion" style="display:none"></div>
       <div class="store-filter-bar">
-        <input type="text" class="store-search-input degoog-input" placeholder="Search…" id="store-search-input">
+        <input type="text" class="store-search-input degoog-search-bar degoog-search-bar--square-advanced" placeholder="Search…" id="store-search-input">
         <select class="store-filter-select store-filter-type" aria-label="Filter by type"></select>
         <select class="store-filter-select store-filter-subtype" aria-label="Filter by sub-type" style="display:none"></select>
       </div>

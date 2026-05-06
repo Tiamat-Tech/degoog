@@ -39,6 +39,12 @@
     box-shadow: none;
   }
 
+  &--square-advanced {
+    --degoog-search-bar-radius: #{$radius-lg};
+    background: var(--bg-hover);
+    box-shadow: $box-shadow;
+  }
+
   &--results {
     flex: none;
     width: 100%;
