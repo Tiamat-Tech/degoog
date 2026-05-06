@@ -2,6 +2,7 @@ import { stat } from "fs/promises";
 import { join } from "path";
 import type { Uovadipasqua, UovadipasquaMatch } from "../../types";
 import { createRegistry } from "../registry-factory";
+import { getBasePath } from "../../utils/base-url";
 
 const builtinsDir = join(
   process.cwd(),
@@ -76,11 +77,12 @@ export const matchSearchQueryEggs = (query: string): UovadipasquaMatch[] => {
     ) {
       continue;
     }
+    const basePath = getBasePath();
     matches.push({
       id: egg.id,
-      scriptUrl: `/uovadipasqua/${egg.id}/script.js`,
+      scriptUrl: `${basePath}/uovadipasqua/${egg.id}/script.js`,
       styleUrl: _hasStyle.get(egg.id)
-        ? `/uovadipasqua/${egg.id}/style.css`
+        ? `${basePath}/uovadipasqua/${egg.id}/style.css`
         : null,
       waitForResults: !!egg.waitForResults,
     });

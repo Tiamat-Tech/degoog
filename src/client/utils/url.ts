@@ -4,7 +4,7 @@ import { getBase } from "./base-url";
 
 export const proxyImageUrl = (url: string): string => {
   if (!url) return "";
-  if (url.startsWith("/api/proxy/")) return url;
+  if (url.includes("/api/proxy/")) return url;
   return `${getBase()}/api/proxy/image?url=${encodeURIComponent(url)}`;
 };
 
