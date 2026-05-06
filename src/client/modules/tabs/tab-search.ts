@@ -138,14 +138,15 @@ export async function performTabSearch(
           ? `${data.results?.length ?? 0} results (${(totalTime / 1000).toFixed(2)}s)`
           : `${data.results?.length ?? 0} results`;
 
-    state.currentData = {
+    const currentData: SearchResponse = {
       results: state.currentResults,
       query,
       totalTime,
       type: `tab:${tabId}`,
       engineTimings: timings,
       relatedSearches: [],
-    } satisfies SearchResponse;
+    };
+    state.currentData = currentData;
     _renderTabResults(data.results || [], resultsList);
 
     const isMediaTab = tabId === "engine:images" || tabId === "engine:videos";
@@ -161,6 +162,9 @@ export async function performTabSearch(
     return;
   }
 
+  const currentData = state.currentData;
+  if (!currentData) return;
+
   void (async () => {
     const panels = await fetchSlotPanels(query, state.currentResults);
     const kpPanels = panels.filter(
@@ -168,7 +172,7 @@ export async function performTabSearch(
     );
     try {
       renderSidebar(
-        state.currentData,
+        currentData,
         (q) => void performTabSearch(q, tabId),
         kpPanels.length > 0 ? { sidebarTopPanels: kpPanels } : undefined,
       );

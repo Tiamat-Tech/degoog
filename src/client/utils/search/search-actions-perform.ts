@@ -251,6 +251,11 @@ export async function performSearch(
         })
       : await fetch(appendSearchAuthParams(url));
 
+    if (!res.ok) {
+      const body = await res.text().catch(() => "(unreadable)");
+      console.error("[search] non-ok response", res.status, body);
+      throw new Error(`Search request failed with status ${res.status}`);
+    }
     const data = (await res.json()) as SearchResponse;
     state.currentResults = data.results;
     state.currentData = data;
