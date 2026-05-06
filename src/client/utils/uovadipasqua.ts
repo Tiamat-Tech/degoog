@@ -1,4 +1,5 @@
 import { logger } from "../../server/utils/logger";
+import { getBase } from "./base-url";
 
 interface UovadipasquaMatch {
   id: string;
@@ -48,7 +49,7 @@ export async function triggerSearchQueryEggs(query: string): Promise<void> {
   if (!trimmed) return;
   try {
     const res = await fetch(
-      `/api/uovadipasqua/match?q=${encodeURIComponent(trimmed)}`,
+      `${getBase()}/api/uovadipasqua/match?q=${encodeURIComponent(trimmed)}`,
     );
     if (!res.ok) return;
     const data = (await res.json()) as { matches: UovadipasquaMatch[] };

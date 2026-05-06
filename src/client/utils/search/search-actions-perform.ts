@@ -251,6 +251,18 @@ export async function performSearch(
         })
       : await fetch(appendSearchAuthParams(url));
 
+    if (!res.ok) {
+      const body = await res.text().catch(() => "(unreadable)");
+      console.error("[search] non-ok response", res.status, body);
+      const msg =
+        res.status === 429
+          ? "Too many requests. Please slow down."
+          : "Search failed. Please try again.";
+      if (resultsMeta) resultsMeta.textContent = "";
+      if (resultsList)
+        resultsList.innerHTML = `<div class="no-results">${msg}</div>`;
+      return;
+    }
     const data = (await res.json()) as SearchResponse;
     state.currentResults = data.results;
     state.currentData = data;
@@ -279,7 +291,8 @@ export async function performSearch(
       if (glanceEl) glanceEl.innerHTML = "";
     }
     renderResults(data.results);
-  } catch {
+  } catch (err) {
+    console.error("[search] search failed", err);
     if (resultsMeta) resultsMeta.textContent = "";
     if (resultsList)
       resultsList.innerHTML =
@@ -344,7 +357,8 @@ async function _performSearchWithBang(
         runScriptsInContainer(glanceEl);
       }
     }
-  } catch {
+  } catch (err) {
+    console.error("[search] bang search failed", err);
     if (resultsMeta) resultsMeta.textContent = "";
     if (resultsList)
       resultsList.innerHTML =
