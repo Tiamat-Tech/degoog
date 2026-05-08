@@ -11,6 +11,7 @@ import { reloadMiddlewareRegistry } from "../middleware/registry";
 import { reloadThemes } from "../themes/registry";
 import { reloadEngines } from "../engines/registry";
 import { reloadTransports } from "../transports/registry";
+import { reloadAutocomplete } from "../autocomplete/registry";
 import {
   ExtensionStoreType,
   type StoreItem,
@@ -23,6 +24,7 @@ import {
   themesDir,
   enginesDir,
   transportsDir,
+  autocompleteDir,
 } from "../../utils/paths";
 import {
   normalizeRepoUrl,
@@ -113,6 +115,7 @@ function getDestDir(type: ExtensionStoreType): string {
   if (type === ExtensionStoreType.Plugin) return pluginsDir();
   if (type === ExtensionStoreType.Theme) return themesDir();
   if (type === ExtensionStoreType.Transport) return transportsDir();
+  if (type === ExtensionStoreType.Autocomplete) return autocompleteDir();
   return enginesDir();
 }
 
@@ -133,6 +136,7 @@ function getEntriesForType(
   if (type === ExtensionStoreType.Plugin) return pkg.plugins;
   if (type === ExtensionStoreType.Theme) return pkg.themes;
   if (type === ExtensionStoreType.Transport) return pkg.transports;
+  if (type === ExtensionStoreType.Autocomplete) return pkg.autocomplete;
   return pkg.engines;
 }
 
@@ -148,6 +152,8 @@ async function reloadAfterAction(type: ExtensionStoreType): Promise<void> {
     await reloadThemes();
   } else if (type === ExtensionStoreType.Transport) {
     await reloadTransports();
+  } else if (type === ExtensionStoreType.Autocomplete) {
+    await reloadAutocomplete();
   } else {
     await reloadEngines();
   }
@@ -168,6 +174,10 @@ function parseDependencyUrl(depUrl: string): {
     {
       type: ExtensionStoreType.Transport,
       pattern: /^(.+?)\/(transports\/[^/]+)$/,
+    },
+    {
+      type: ExtensionStoreType.Autocomplete,
+      pattern: /^(.+?)\/(autocomplete\/[^/]+)$/,
     },
   ];
   for (const { type, pattern } of typePatterns) {
@@ -315,6 +325,8 @@ export async function listRepoItems(repoUrl?: string): Promise<StoreItem[]> {
     if (pkg.engines) await push(ExtensionStoreType.Engine, pkg.engines);
     if (pkg.transports)
       await push(ExtensionStoreType.Transport, pkg.transports);
+    if (pkg.autocomplete)
+      await push(ExtensionStoreType.Autocomplete, pkg.autocomplete);
   }
 
   return items;
@@ -413,6 +425,8 @@ export async function uninstallItem(
     settingsIds.push(`theme-${inst.installedAs}`);
   } else if (type === ExtensionStoreType.Transport) {
     settingsIds.push(`transport-${inst.installedAs}`);
+  } else if (type === ExtensionStoreType.Autocomplete) {
+    settingsIds.push(`autocomplete-${inst.installedAs}`);
   } else {
     settingsIds.push(`engine-${inst.installedAs}`);
   }

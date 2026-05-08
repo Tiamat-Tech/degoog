@@ -38,6 +38,7 @@ export enum ExtensionStoreType {
   Theme = "theme",
   Engine = "engine",
   Transport = "transport",
+  Autocomplete = "autocomplete",
 }
 
 export interface SettingField {
@@ -96,6 +97,30 @@ export interface SearchEngine {
     context?: EngineContext,
   ): Promise<SearchResult[]>;
   t?: Translate;
+}
+
+export interface AutocompleteContext {
+  fetch: typeof fetch;
+  lang?: string;
+  createCache: CreateCache;
+}
+
+export interface RichSuggestion {
+  description?: string;
+  thumbnail?: string;
+  type?: string;
+}
+
+export type AutocompleteSuggestion = string | { text: string; rich?: RichSuggestion };
+
+export interface AutocompleteProvider {
+  name: string;
+  settingsSchema?: SettingField[];
+  configure?(settings: Record<string, string | string[]>): void;
+  getSuggestions(
+    query: string,
+    context?: AutocompleteContext,
+  ): Promise<AutocompleteSuggestion[]>;
 }
 
 export enum SlotPanelPosition {

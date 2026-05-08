@@ -16,6 +16,7 @@ import { initSearchResultTabs } from "./extensions/search-result-tabs/registry";
 import { initSlotPlugins } from "./extensions/slots/registry";
 import { initThemes } from "./extensions/themes/registry";
 import { initTransports } from "./extensions/transports/registry";
+import { initAutocomplete } from "./extensions/autocomplete/registry";
 import globalRouter from "./routes";
 import { setOutgoingAllowlist } from "./utils/outgoing";
 import { initServerKey } from "./utils/server-key";
@@ -83,6 +84,7 @@ Promise.all([
   initMiddlewareRegistry(),
   initThemes(),
   initUovadipasquas(),
+  initAutocomplete(),
 ]).then(() => {
   setOutgoingAllowlist(getOutgoingAllowlist());
   Bun.serve({ port, fetch: app.fetch, idleTimeout: 120 });

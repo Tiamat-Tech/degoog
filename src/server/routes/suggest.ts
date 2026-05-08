@@ -5,6 +5,7 @@ import { DEGOOG_SETTINGS_ID } from "../utils/search";
 import { asString, getSettings } from "../utils/plugin-settings";
 import { checkRateLimit } from "../utils/rate-limit";
 import { getClientIp } from "../utils/request";
+import { getSuggestionsFromProviders } from "../extensions/autocomplete/registry";
 
 async function _applySuggestRateLimit(c: Parameters<typeof getClientIp>[0]) {
   const settings = await getSettings(DEGOOG_SETTINGS_ID);
@@ -12,7 +13,8 @@ async function _applySuggestRateLimit(c: Parameters<typeof getClientIp>[0]) {
   const ip = getClientIp(c) ?? "unknown";
   const opts = {
     rateLimitEnabled: "true",
-    rateLimitBurstWindow: asString(settings.rateLimitSuggestBurstWindow) || "20",
+    rateLimitBurstWindow:
+      asString(settings.rateLimitSuggestBurstWindow) || "20",
     rateLimitBurstMax: asString(settings.rateLimitSuggestBurstMax) || "60",
     rateLimitLongWindow: asString(settings.rateLimitSuggestLongWindow) || "60",
     rateLimitLongMax: asString(settings.rateLimitSuggestLongMax) || "120",
@@ -30,49 +32,14 @@ async function _applySuggestRateLimit(c: Parameters<typeof getClientIp>[0]) {
 
 const router = new Hono();
 
-async function getSuggestions(query: string): Promise<string[]> {
-  if (!query.trim()) return [];
-  const encoded = encodeURIComponent(query);
-  const [googleRes, ddgRes] = await Promise.allSettled([
-    fetch(
-      `https://suggestqueries.google.com/complete/search?client=firefox&q=${encoded}`,
-    )
-      .then((r) => r.arrayBuffer())
-      .then((buf) => JSON.parse(new TextDecoder("iso-8859-1").decode(buf))),
-    fetch(`https://duckduckgo.com/ac/?q=${encoded}&type=list`).then((r) =>
-      r.json(),
-    ),
-  ]);
-  const googleSuggestions: string[] =
-    googleRes.status === "fulfilled"
-      ? (googleRes.value as [unknown, string[]])[1] || []
-      : [];
-  const ddgSuggestions: string[] =
-    ddgRes.status === "fulfilled"
-      ? (ddgRes.value as [unknown, string[]])[1] || []
-      : [];
-
-  const seen = new Set<string>();
-  const merged: string[] = [];
-  const lower = query.toLowerCase();
-  for (const s of [...googleSuggestions, ...ddgSuggestions]) {
-    const key = String(s).toLowerCase();
-    if (key !== lower && !seen.has(key)) {
-      seen.add(key);
-      merged.push(String(s));
-    }
-    if (merged.length >= 10) break;
-  }
-  return merged;
-}
-
 router.get("/api/suggest", async (c) => {
   const limitRes = await _applySuggestRateLimit(c);
   if (limitRes) return limitRes;
   const authRes = await guardApiKey(c, "apiKeySuggestEnabled");
   if (authRes) return authRes;
   const query = c.req.query("q") ?? "";
-  return c.json(await getSuggestions(query));
+  if (!query.trim()) return c.json([]);
+  return c.json(await getSuggestionsFromProviders(query));
 });
 
 router.post("/api/suggest", async (c) => {
@@ -86,7 +53,9 @@ router.post("/api/suggest", async (c) => {
   } catch {
     return c.json({ error: "Invalid JSON" }, 400);
   }
-  return c.json(await getSuggestions(body.query ?? ""));
+  const query = body.query ?? "";
+  if (!query.trim()) return c.json([]);
+  return c.json(await getSuggestionsFromProviders(query));
 });
 
 router.get("/api/suggest/opensearch", async (c) => {
@@ -95,8 +64,8 @@ router.get("/api/suggest/opensearch", async (c) => {
   const authRes = await guardApiKey(c, "apiKeySuggestEnabled");
   if (authRes) return authRes;
   const query = c.req.query("q") ?? "";
-  const suggestions = await getSuggestions(query);
-  return c.json([query, suggestions], 200, {
+  const results = await getSuggestionsFromProviders(query);
+  return c.json([query, results.map((r) => r.text)], 200, {
     "Content-Type": "application/x-suggestions+json",
   });
 });

@@ -14,6 +14,7 @@
       "engines": "Engines",
       "plugins": "Plugins",
       "transports": "Transports",
+      "autocomplete": "Autocomplete",
       "themes": "Themes",
       "store": "Store"
     },
@@ -100,8 +101,8 @@
       "rate-limit-long-window": "Long window (seconds)",
       "rate-limit-long-max": "Long max requests",
       "rate-limit-search-group": "Search",
-      "rate-limit-suggest-group": "Suggestions",
-      "rate-limit-suggest-enable": "Rate limit suggestions",
+      "rate-limit-suggest-group": "Autocomplete",
+      "rate-limit-suggest-enable": "Enable autocomplete rate limiting",
       "rate-limit-suggest-defaults": "Defaults: 60 requests per 20s, 120 per min per IP.",
       "ac-debounce": "Autocomplete delay (ms)",
       "domain-block-heading": "Domain blocking",
@@ -180,6 +181,8 @@
       "group-builtin-commands": "Built-in commands",
       "group-transports": "Transports",
       "group-builtin-transports": "Built-in transports",
+      "group-autocomplete": "Autocomplete providers",
+      "group-builtin-autocomplete": "Built-in providers",
       "group-themes": "Themes",
       "apply-failed": "Failed",
       "save-defaults": "Save as instance defaults"
@@ -187,6 +190,7 @@
     "errors": {
       "load-extensions": "Failed to load extensions.",
       "load-transports": "Failed to load transports.",
+      "load-autocomplete": "Failed to load autocomplete providers.",
       "load-themes": "Failed to load themes.",
       "load-engines": "Failed to load engines."
     },
@@ -223,10 +227,12 @@
       "filter-themes": "Themes",
       "filter-engines": "Engines",
       "filter-transports": "Transports",
+      "filter-autocomplete": "Autocomplete",
       "type-plugin": "Plugin",
       "type-engine": "Engine",
       "type-transport": "Transport",
       "type-theme": "Theme",
+      "type-autocomplete": "Autocomplete",
       "plugin-type-bang": "Bang",
       "plugin-type-slot": "Slot",
       "plugin-type-search-tab": "Search tab",

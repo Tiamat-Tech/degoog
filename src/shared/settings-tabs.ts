@@ -4,6 +4,7 @@ export const SETTINGS_TABS = [
   "engines",
   "plugins",
   "transports",
+  "autocomplete",
   "themes",
   "store",
 ] as const;

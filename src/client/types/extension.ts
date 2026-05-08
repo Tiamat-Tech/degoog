@@ -41,6 +41,7 @@ export interface AllExtensions {
   plugins: ExtensionMeta[];
   themes: ExtensionMeta[];
   transports: ExtensionMeta[];
+  autocomplete: ExtensionMeta[];
 }
 
 export interface SearchBarAction {
