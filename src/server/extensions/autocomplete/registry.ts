@@ -245,7 +245,9 @@ export async function getSuggestionsFromProviders(query: string): Promise<
     for (const s of results) {
       const text = typeof s === "string" ? s : s.text;
       const rich = typeof s === "object" ? s.rich : undefined;
+
       if (text.toLowerCase() === lower) continue;
+
       if (rich && (rich.description || rich.thumbnail)) {
         const key = text.toLowerCase();
         const existing = richItems.get(key);
