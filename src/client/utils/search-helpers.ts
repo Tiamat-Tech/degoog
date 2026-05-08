@@ -44,6 +44,6 @@ export const getNaturalLanguageBangQuery = (
   const firstWord = trimmed.split(/\s+/)[0].toLowerCase();
   const rest = trimmed.slice(firstWord.length).trim();
   const canonical = firstWordMap.get(firstWord);
-  if (canonical && rest.length > 0) return "!" + canonical + " " + rest;
+  if (canonical) return "!" + canonical + (rest ? " " + rest : "");
   return null;
 };
