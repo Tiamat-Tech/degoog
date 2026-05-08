@@ -4,10 +4,7 @@ import {
   getEngineMap,
   setEnginesLocale,
 } from "../extensions/engines/registry";
-import {
-  getSettingsTokenFromRequest,
-  validateSettingsToken,
-} from "./settings-auth";
+import { canBalrogPass, gandalf } from "./settings-auth";
 import {
   getPluginExtensionMeta,
   getCommandInstanceById,
@@ -185,9 +182,9 @@ router.get("/api/extensions", async (c) => {
 });
 
 router.post("/api/extensions/:id/settings", async (c) => {
-  const token = getSettingsTokenFromRequest(c);
-  if (!(await validateSettingsToken(token)))
-    return c.json({ error: "Unauthorized" }, 401);
+  const token = canBalrogPass(c);
+  if (!(await gandalf(token)))
+    return c.json({ error: "You shall not pass!" }, 401);
   const id = c.req.param("id");
   let body: Record<string, unknown>;
   try {
@@ -302,9 +299,9 @@ router.post("/api/extensions/:id/settings", async (c) => {
 });
 
 router.post("/api/extensions/transports/:name/test", async (c) => {
-  const token = getSettingsTokenFromRequest(c);
-  if (!(await validateSettingsToken(token)))
-    return c.json({ error: "Unauthorized" }, 401);
+  const token = canBalrogPass(c);
+  if (!(await gandalf(token)))
+    return c.json({ error: "You shall not pass!" }, 401);
 
   const name = c.req.param("name");
   if (!getTransport(name))
@@ -321,9 +318,9 @@ router.post("/api/extensions/transports/:name/test", async (c) => {
 });
 
 router.get("/api/extensions/:id/readme", async (c) => {
-  const token = getSettingsTokenFromRequest(c);
-  if (!(await validateSettingsToken(token)))
-    return c.json({ error: "Unauthorized" }, 401);
+  const token = canBalrogPass(c);
+  if (!(await gandalf(token)))
+    return c.json({ error: "You shall not pass!" }, 401);
 
   const id = c.req.param("id");
   const { exists, readmePath } = await extensionReadmeExists(id);

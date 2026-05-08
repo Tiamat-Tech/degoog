@@ -36,10 +36,10 @@ import {
   withFallback,
 } from "../utils/translation";
 import {
-  getSettingsTokenFromRequest,
+  canBalrogPass,
   isPasswordRequired,
   shouldServeSettingsGate,
-  validateSettingsToken,
+  gandalf,
 } from "./settings-auth";
 import { generateSearchNonce } from "../utils/search-nonce";
 import { getBasePath, getBaseUrl } from "../utils/base-url";
@@ -48,7 +48,8 @@ const DEFAULT_THEME_DIR = "src/public/themes/degoog-theme";
 const CORE_LOCALES_ROOT = "src";
 const BASE_URL = getBaseUrl();
 const BASE_PATH = getBasePath();
-const BASE_PREFIX = BASE_PATH || (BASE_URL && !/^https?:\/\//i.test(BASE_URL) ? BASE_URL : "");
+const BASE_PREFIX =
+  BASE_PATH || (BASE_URL && !/^https?:\/\//i.test(BASE_URL) ? BASE_URL : "");
 
 interface DefaultThemeManifest {
   templates?: Record<string, string>;
@@ -231,7 +232,8 @@ async function applyPagePlaceholders(
   result = translateHTML(result, t);
 
   const acDebounceMs = parseInt(asString(pageSettings.acDebounceMs), 10);
-  const acDebounce = Number.isFinite(acDebounceMs) && acDebounceMs >= 0 ? acDebounceMs : 150;
+  const acDebounce =
+    Number.isFinite(acDebounceMs) && acDebounceMs >= 0 ? acDebounceMs : 150;
   const acScript = `<script>window.__DEGOOG_AC_DEBOUNCE__=${acDebounce}</script>`;
   result = result.replace("</head>", `${acScript}\n  </head>`);
 
@@ -315,7 +317,10 @@ router.get("/", async (c) => {
   const q = c.req.query("q");
   if (q?.trim()) {
     const params = new URLSearchParams(c.req.url.split("?")[1] || "");
-    return c.redirect(`${BASE_URL || BASE_PATH}/search?${params.toString()}`, 302);
+    return c.redirect(
+      `${BASE_URL || BASE_PATH}/search?${params.toString()}`,
+      302,
+    );
   }
   const locale = getLocale(c);
   const override = await getThemeHtml("index");
@@ -330,8 +335,8 @@ router.get("/", async (c) => {
 });
 
 const _buildResultActionsScript = async (c: Context): Promise<string> => {
-  const token = getSettingsTokenFromRequest(c);
-  const authenticated = await validateSettingsToken(token);
+  const token = canBalrogPass(c);
+  const authenticated = await gandalf(token);
   let blockUi = false;
   let replaceUi = false;
   let scoreUi = false;
@@ -375,7 +380,9 @@ router.get("/search", async (c) => {
   return c.html(_injectIntoHead(html, actionsScript));
 });
 
-router.get("/settings/", (c) => c.redirect(`${BASE_URL || BASE_PATH}/settings`, 301));
+router.get("/settings/", (c) =>
+  c.redirect(`${BASE_URL || BASE_PATH}/settings`, 301),
+);
 router.get("/settings", async (c) => {
   const locale = getLocale(c);
   if (isPublicInstance())
@@ -387,7 +394,8 @@ router.get("/settings", async (c) => {
 });
 
 router.get("/settings/:tab", async (c) => {
-  if (isPublicInstance()) return c.redirect(`${BASE_URL || BASE_PATH}/settings`, 302);
+  if (isPublicInstance())
+    return c.redirect(`${BASE_URL || BASE_PATH}/settings`, 302);
   const tab = c.req.param("tab");
   if (!(SETTINGS_TABS as readonly string[]).includes(tab)) {
     return c.redirect(`${BASE_URL || BASE_PATH}/settings`, 302);
@@ -429,9 +437,9 @@ router.get("/opensearch.xml", (c) => {
 });
 
 router.post("/api/cache/clear", async (c) => {
-  const token = getSettingsTokenFromRequest(c);
-  if (!(await validateSettingsToken(token)))
-    return c.json({ error: "Unauthorized" }, 401);
+  const token = canBalrogPass(c);
+  if (!(await gandalf(token)))
+    return c.json({ error: "You shall not pass!" }, 401);
   cache.clear();
   return c.json({ ok: true });
 });

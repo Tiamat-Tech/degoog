@@ -1,8 +1,8 @@
 import { describe, test, expect } from "bun:test";
-import { getSettingsTokenFromRequest } from "../../src/server/routes/settings-auth";
+import { canBalrogPass } from "../../src/server/routes/settings-auth";
 
 describe("routes/settings-auth", () => {
-  test("getSettingsTokenFromRequest returns undefined when no cookie or header", () => {
+  test("canBalrogPass returns undefined when no cookie or header", () => {
     const req = new Request("http://localhost/", { headers: {} });
     const c = {
       req: Object.assign(req, {
@@ -11,13 +11,13 @@ describe("routes/settings-auth", () => {
           new URL(req.url).searchParams.get(name) ?? undefined,
       }),
     };
-    const token = getSettingsTokenFromRequest(
-      c as unknown as Parameters<typeof getSettingsTokenFromRequest>[0],
+    const token = canBalrogPass(
+      c as unknown as Parameters<typeof canBalrogPass>[0],
     );
     expect(token).toBeUndefined();
   });
 
-  test("getSettingsTokenFromRequest returns token from x-settings-token header", () => {
+  test("canBalrogPass returns token from x-settings-token header", () => {
     const req = new Request("http://localhost/", {
       headers: { "x-settings-token": "abc123" },
     });
@@ -28,8 +28,8 @@ describe("routes/settings-auth", () => {
           new URL(req.url).searchParams.get(name) ?? undefined,
       }),
     };
-    const token = getSettingsTokenFromRequest(
-      c as unknown as Parameters<typeof getSettingsTokenFromRequest>[0],
+    const token = canBalrogPass(
+      c as unknown as Parameters<typeof canBalrogPass>[0],
     );
     expect(token).toBe("abc123");
   });
