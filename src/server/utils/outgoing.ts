@@ -60,6 +60,18 @@ function parseProxyUrls(raw: string): string[] {
     .filter(Boolean);
 }
 
+function parseProxyUrlsList(rawList: string[]): string[] {
+  const out: string[] = [];
+  for (const raw of rawList) {
+    if (typeof raw !== "string") continue;
+    for (const line of raw.split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed) out.push(trimmed);
+    }
+  }
+  return out;
+}
+
 export function isUrlAllowedForOutgoing(url: string): boolean {
   try {
     const parsed = new URL(url);
@@ -122,14 +134,30 @@ function _buildProxyFetch(
 
 async function buildTransportContext(
   transportName: string,
+  opts?: {
+    proxyOverrideEnabled?: boolean;
+    proxyOverrideUrls?: string | string[];
+  },
 ): Promise<{ transport: Transport; context: TransportContext }> {
   const settings = await getSettings(DEGOOG_SETTINGS_ID);
-  const enabled = settings.proxyEnabled === "true";
-  const proxyUrlsRaw = settings.proxyUrls;
-  const urls = parseProxyUrls(
-    typeof proxyUrlsRaw === "string" ? proxyUrlsRaw : "",
+  const proxyOverrideEnabled = opts?.proxyOverrideEnabled === true;
+  const proxyOverrideRaw = opts?.proxyOverrideUrls;
+
+  const globalEnabled = settings.proxyEnabled === "true";
+  const globalProxyUrlsRaw = settings.proxyUrls;
+  const globalUrls = parseProxyUrls(
+    typeof globalProxyUrlsRaw === "string" ? globalProxyUrlsRaw : "",
   );
-  const useProxy = enabled && urls.length > 0;
+
+  const overrideUrls = Array.isArray(proxyOverrideRaw)
+    ? parseProxyUrlsList(proxyOverrideRaw)
+    : parseProxyUrls(typeof proxyOverrideRaw === "string" ? proxyOverrideRaw : "");
+
+  const useProxy = proxyOverrideEnabled
+    ? overrideUrls.length > 0
+    : globalEnabled && globalUrls.length > 0;
+
+  const urls = proxyOverrideEnabled ? overrideUrls : globalUrls;
   const proxyUrl = useProxy ? urls[proxyIndex++ % urls.length] : undefined;
   const transport = resolveTransport(transportName);
   return {
@@ -145,8 +173,12 @@ export async function outgoingFetch(
   url: string,
   options: TransportFetchOptions = {},
   transportName: string = "fetch",
+  ctx?: {
+    proxyOverrideEnabled?: boolean;
+    proxyOverrideUrls?: string | string[];
+  },
 ): Promise<Response> {
-  const { transport, context } = await buildTransportContext(transportName);
+  const { transport, context } = await buildTransportContext(transportName, ctx);
   const host = new URL(url).hostname;
   if (context.proxyUrl) {
     logger.debug(

@@ -3,6 +3,85 @@ import type { SettingField, ExtensionMeta } from "../../../types";
 
 const t = window.scopedT("core");
 
+const _depMeetsSavedValue = (
+  ext: ExtensionMeta,
+  depKey: string,
+  equals: string,
+): boolean => {
+  const raw = ext.settings[depKey];
+  let v: string;
+  if (raw === undefined || raw === null) {
+    const def = ext.settingsSchema.find((f) => f.key === depKey)?.default;
+    v = def !== undefined && def !== null ? String(def) : "";
+  } else {
+    v = Array.isArray(raw) ? raw.join("\n") : String(raw);
+  }
+  if (equals === "true" || equals === "false") {
+    const norm = v === "true" ? "true" : "false";
+    return norm === equals;
+  }
+  return v === equals;
+};
+
+const _wrapVisibleWhen = (
+  field: SettingField,
+  inner: string,
+  ext: ExtensionMeta,
+): string => {
+  const w = field.visibleWhen;
+  if (!w) return inner;
+  const show = _depMeetsSavedValue(ext, w.key, w.equals);
+  const k = escapeHtml(w.key);
+  const eq = escapeHtml(w.equals);
+  return `<div class="ext-conditional-field"${show ? "" : " hidden"} data-visible-dep-key="${k}" data-visible-dep-equals="${eq}">${inner}</div>`;
+};
+
+export function readLiveSettingFieldValue(
+  container: HTMLElement,
+  depKey: string,
+): string {
+  const escapedKey =
+    typeof CSS !== "undefined" && typeof CSS.escape === "function"
+      ? CSS.escape(depKey)
+      : depKey.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  const fieldEl = container.querySelector<HTMLElement>(
+    `.ext-field[data-key="${escapedKey}"]`,
+  );
+  if (!fieldEl) return "";
+  const type = fieldEl.dataset.type;
+  if (type === "toggle") {
+    const input = fieldEl.querySelector<HTMLInputElement>(
+      "input[type=checkbox]",
+    );
+    return input?.checked ? "true" : "false";
+  }
+  if (type === "select") {
+    return fieldEl.querySelector<HTMLSelectElement>("select")?.value ?? "";
+  }
+  if (type === "urllist") {
+    const hidden = fieldEl.querySelector<HTMLInputElement>(
+      ".ext-field-urllist-value",
+    );
+    return hidden?.value?.trim() ?? "";
+  }
+  const input =
+    fieldEl.querySelector<HTMLTextAreaElement>("textarea") ||
+    fieldEl.querySelector<HTMLInputElement>("input");
+  return input?.value.trim() ?? "";
+}
+
+export function syncConditionalFields(container: HTMLElement): void {
+  container
+    .querySelectorAll<HTMLElement>(".ext-conditional-field")
+    .forEach((wrapper) => {
+      const depKey = wrapper.dataset.visibleDepKey;
+      const equals = wrapper.dataset.visibleDepEquals;
+      if (depKey === undefined || equals === undefined) return;
+      const actual = readLiveSettingFieldValue(container, depKey);
+      wrapper.hidden = actual !== equals;
+    });
+}
+
 const _parseUrlListValue = (
   raw: string | string[] | undefined,
   defaultUrls: string[],
@@ -166,12 +245,14 @@ export const renderField = (
     : "";
 
   if (field.type === "urllist") {
-    return _renderUrlListField(field, ext);
+    return _wrapVisibleWhen(field, _renderUrlListField(field, ext), ext);
   }
 
   if (field.type === "toggle") {
     const checked = currentValue === "true" ? "checked" : "";
-    return `
+    return _wrapVisibleWhen(
+      field,
+      `
       <div class="ext-field" data-key="${escapeHtml(field.key)}" data-type="toggle">
         <label class="ext-field-toggle-row">
           <span class="ext-field-label">${escapeHtml(field.label)}</span>
@@ -181,16 +262,22 @@ export const renderField = (
           </label>
         </label>
         ${descHtml}
-      </div>`;
+      </div>`,
+      ext,
+    );
   }
 
   if (field.type === "textarea") {
-    return `
+    return _wrapVisibleWhen(
+      field,
+      `
       <div class="ext-field" data-key="${escapeHtml(field.key)}" data-type="textarea" data-secret="${isSecret}" data-was-set="${isSet}">
         <label class="ext-field-label" for="field-${escapeHtml(field.key)}">${escapeHtml(field.label)}${field.required ? " <span class='ext-required'>*</span>" : ""}</label>
         <textarea class="ext-field-input ext-field-textarea${configuredClass} degoog-input" id="field-${escapeHtml(field.key)}" placeholder="${escapeHtml(placeholder)}" rows="6" autocomplete="off">${escapeHtml(displayValue)}</textarea>
         ${descHtml}
-      </div>`;
+      </div>`,
+      ext,
+    );
   }
 
   if (
@@ -207,14 +294,18 @@ export const renderField = (
           `<option value="${escapeHtml(v)}"${validValue === v ? " selected" : ""}>${escapeHtml(v.charAt(0).toUpperCase() + v.slice(1))}</option>`,
       )
       .join("");
-    return `
+    return _wrapVisibleWhen(
+      field,
+      `
       <div class="ext-field" data-key="${escapeHtml(field.key)}" data-type="select">
         <label class="ext-field-label" for="field-${escapeHtml(field.key)}">${escapeHtml(field.label)}</label>
         <div class="ext-field-select-wrap degoog-select-wrap">
           <select id="field-${escapeHtml(field.key)}" class="ext-field-input ext-field-select degoog-input">${opts}</select>
         </div>
         ${descHtml}
-      </div>`;
+      </div>`,
+      ext,
+    );
   }
 
   const inputType =
@@ -225,10 +316,14 @@ export const renderField = (
         : field.type === "number"
           ? "number"
           : "text";
-  return `
+  return _wrapVisibleWhen(
+    field,
+    `
     <div class="ext-field" data-key="${escapeHtml(field.key)}" data-type="${escapeHtml(field.type)}" data-secret="${isSecret}" data-was-set="${isSet}">
       <label class="ext-field-label" for="field-${escapeHtml(field.key)}">${escapeHtml(field.label)}${field.required ? " <span class='ext-required'>*</span>" : ""}</label>
       <input class="ext-field-input${configuredClass} degoog-input" type="${inputType}" id="field-${escapeHtml(field.key)}" value="${escapeHtml(displayValue)}" placeholder="${escapeHtml(placeholder)}" autocomplete="off">
       ${descHtml}
-    </div>`;
+    </div>`,
+    ext,
+  );
 };

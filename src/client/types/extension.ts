@@ -19,6 +19,7 @@ export interface SettingField {
   options?: string[];
   default?: string;
   advanced?: boolean;
+  visibleWhen?: { key: string; equals: string };
 }
 
 export interface ExtensionMeta {

@@ -1,4 +1,4 @@
-import { renderField, initUrlList } from "./modal-fields";
+import { renderField, initUrlList, syncConditionalFields } from "./modal-fields";
 import { getBase } from "../../../utils/base-url";
 import { getStoredToken } from "../../settings/settings";
 import { jsonHeaders } from "../../../utils/request";
@@ -16,6 +16,8 @@ const saveBtn = document.getElementById(
 const closeBtn = document.getElementById("ext-modal-close");
 const statusEl = document.getElementById("ext-modal-status");
 const footerEl = document.querySelector<HTMLElement>(".ext-modal-footer");
+
+let modalBodyConditionalChangeBound = false;
 
 let currentExt: ExtensionMeta | null = null;
 let docsBtn: HTMLButtonElement | null = null;
@@ -211,14 +213,20 @@ export function openModal(ext: ExtensionMeta): void {
       </div>`;
     }
     bodyEl.innerHTML = html;
+    if (!modalBodyConditionalChangeBound && bodyEl) {
+      modalBodyConditionalChangeBound = true;
+      bodyEl.addEventListener("change", () => syncConditionalFields(bodyEl));
+    }
     bodyEl
       .querySelector(".ext-advanced-toggle")
       ?.addEventListener("change", (e) => {
         const body = bodyEl.querySelector<HTMLElement>(".ext-advanced-body");
         if (body) body.hidden = !(e.target as HTMLInputElement).checked;
+        syncConditionalFields(bodyEl);
       });
     _initTestButton(bodyEl);
     initUrlList(bodyEl);
+    syncConditionalFields(bodyEl);
     bodyEl
       .querySelectorAll<HTMLElement>(".ext-field-input--configured")
       .forEach((input) => {
