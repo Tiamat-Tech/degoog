@@ -43,6 +43,10 @@ import {
   getTransportExtensionMeta,
   getTransport,
 } from "../extensions/transports/registry";
+import {
+  getAutocompleteExtensionMeta,
+  getAutocompleteProviderById,
+} from "../extensions/autocomplete/registry";
 import { outgoingFetch } from "../utils/outgoing";
 import { readFile } from "fs/promises";
 import { extensionReadmeExists } from "../utils/extension-docs";
@@ -127,6 +131,7 @@ router.get("/api/extensions", async (c) => {
     searchBarMeta,
     themes,
     transports,
+    autocomplete,
     installedItems,
   ] = await Promise.all([
     getEngineExtensionMeta(coreT),
@@ -135,6 +140,7 @@ router.get("/api/extensions", async (c) => {
     getSearchBarActionExtensionMeta(),
     getThemeExtensionMeta(),
     getTransportExtensionMeta(),
+    getAutocompleteExtensionMeta(),
     getInstalledItems(),
   ]);
 
@@ -145,6 +151,7 @@ router.get("/api/extensions", async (c) => {
     ...searchBarMeta,
     ...themes,
     ...transports,
+    ...autocomplete,
   ];
   for (const meta of allMetas) {
     const inst = installedItems.find((i) => {
@@ -155,7 +162,9 @@ router.get("/api/extensions", async (c) => {
             ? ["theme-"]
             : i.type === ExtensionStoreType.Engine
               ? ["engine-"]
-              : ["transport-"];
+              : i.type === ExtensionStoreType.Autocomplete
+                ? ["autocomplete-"]
+                : ["transport-"];
       return prefixes.some((p) => meta.id === p + i.installedAs);
     });
     if (inst?.minDegoogVersion) {
@@ -171,6 +180,7 @@ router.get("/api/extensions", async (c) => {
     plugins: [...plugins, ...slotMeta, ...searchBarMeta],
     themes,
     transports,
+    autocomplete,
   });
 });
 
@@ -193,7 +203,7 @@ router.post("/api/extensions/:id/settings", async (c) => {
     setEnginesLocale(locale);
     coreT.setLocale(locale);
   }
-  const [engines, plugins, slotMeta, searchBarMeta, themes, transportMeta] =
+  const [engines, plugins, slotMeta, searchBarMeta, themes, transportMeta, autocompleteMeta] =
     await Promise.all([
       getEngineExtensionMeta(coreT),
       getPluginExtensionMeta(coreT),
@@ -201,6 +211,7 @@ router.post("/api/extensions/:id/settings", async (c) => {
       getSearchBarActionExtensionMeta(),
       getThemeExtensionMeta(),
       getTransportExtensionMeta(),
+      getAutocompleteExtensionMeta(),
     ]);
   const ext = [
     ...engines,
@@ -209,6 +220,7 @@ router.post("/api/extensions/:id/settings", async (c) => {
     ...searchBarMeta,
     ...themes,
     ...transportMeta,
+    ...autocompleteMeta,
   ].find((e) => e.id === id);
 
   if (!ext) {
@@ -272,6 +284,11 @@ router.post("/api/extensions/:id/settings", async (c) => {
     const transportName = id.slice(10);
     const transportInstance = getTransport(transportName);
     if (transportInstance?.configure) transportInstance.configure(merged);
+  }
+
+  if (id.startsWith("autocomplete-")) {
+    const providerInstance = getAutocompleteProviderById(id);
+    if (providerInstance?.configure) providerInstance.configure(merged);
   }
 
   return c.json({ ok: true });

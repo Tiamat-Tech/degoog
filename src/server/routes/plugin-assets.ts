@@ -56,8 +56,6 @@ router.get("/plugins/:folder/*", async (c) => {
   c.header("Content-Type", mime);
   c.header("Cache-Control", "no-cache");
 
-  // Auto-scope JS files with the plugin's translation namespace
-  // Same as injectScope but done here in the backend to avoid needing to load the entire script in the frontend first
   if (ext === ".js" || ext === ".mjs") {
     const ns = getPluginNamespace(folder);
     if (ns) {
@@ -89,7 +87,7 @@ router.get("/themes/:folder/*", async (c) => {
   if (!(await file.exists())) return c.notFound();
   c.header("Content-Type", mime);
   c.header("Cache-Control", "no-cache");
-  // Auto-scope JS files with the theme's translation namespace
+
   if (ext === ".js" || ext === ".mjs") {
     const ns = `themes/${folder}`;
     const code = await file.text();

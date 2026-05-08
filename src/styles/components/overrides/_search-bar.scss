@@ -84,8 +84,8 @@
   display: none;
   position: absolute;
   top: calc(100%);
-  left: 0;
-  right: 0;
+  left: -1px;
+  right: -1px;
   background: var(--search-bar-bg);
   border-radius: 0 0 var(--degoog-search-bar-radius, #{$search-bar-radius})
     var(--degoog-search-bar-radius, #{$search-bar-radius});
@@ -98,10 +98,35 @@
   font-size: $font-size-md;
   color: var(--text-primary);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
 
   &:hover,
   &.ac-active {
     background: var(--bg-hover);
+  }
+}
+
+.degoog-ac-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.degoog-ac-source {
+  display: none;
+
+  @media (min-width: 768px) {
+    display: block;
+    font-size: $font-size-xs;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 }
 

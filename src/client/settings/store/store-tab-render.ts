@@ -175,6 +175,8 @@ export function renderItemCard(
     subLabel = item.engineType ? engineTypeLabel(item.engineType) : "";
   } else if (item.type === "transport") {
     typeLabel = "Transport";
+  } else if (item.type === "autocomplete") {
+    typeLabel = "Autocomplete";
   } else {
     typeLabel = "Theme";
   }

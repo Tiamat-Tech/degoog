@@ -89,6 +89,14 @@ export interface RepoPackageJson {
     minDegoogVersion?: string;
   }>;
   "repo-image"?: string;
+  autocomplete?: Array<{
+    path: string;
+    name: string;
+    description?: string;
+    version?: string;
+    dependencies?: string[];
+    minDegoogVersion?: string;
+  }>;
 }
 
 export interface AuthorJson {

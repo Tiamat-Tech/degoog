@@ -48,7 +48,8 @@ async function _fetchSuggestions(
           signal: acController.signal,
         });
 
-    const suggestions = (await res.json()) as string[];
+    const raw = (await res.json()) as { text: string; source: string }[];
+    const suggestions = Array.isArray(raw) ? raw : [];
 
     if (!suggestions.length || input.value.trim() !== query) {
       dropdown.innerHTML = "";
@@ -58,7 +59,10 @@ async function _fetchSuggestions(
 
     acSelectedIdx = -1;
     dropdown.innerHTML = suggestions
-      .map((s) => `<div class="ac-item">${escapeHtml(s)}</div>`)
+      .map(
+        (s) =>
+          `<div class="ac-item" data-text="${escapeHtml(s.text)}"><span class="degoog-ac-text">${escapeHtml(s.text)}</span><span class="degoog-ac-source">${escapeHtml(s.source)}</span></div>`,
+      )
       .join("");
     dropdown.style.display = "block";
     dropdown.parentElement?.classList.add("ac-open");
@@ -66,9 +70,10 @@ async function _fetchSuggestions(
     dropdown.querySelectorAll<HTMLElement>(".ac-item").forEach((el) => {
       el.addEventListener("mousedown", (e) => {
         e.preventDefault();
-        input.value = el.textContent ?? "";
+        const text = el.dataset.text ?? el.querySelector(".degoog-ac-text")?.textContent ?? "";
+        input.value = text;
         hideAcDropdown(dropdown);
-        performSearch(el.textContent ?? "");
+        performSearch(text);
       });
     });
   } catch {}
@@ -104,12 +109,12 @@ export function initAutocomplete(
       e.preventDefault();
       acSelectedIdx = Math.min(acSelectedIdx + 1, items.length - 1);
       _updateAcHighlight(items);
-      input.value = items[acSelectedIdx].textContent ?? "";
+      input.value = items[acSelectedIdx].dataset.text ?? items[acSelectedIdx].querySelector(".degoog-ac-text")?.textContent ?? "";
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       acSelectedIdx = Math.max(acSelectedIdx - 1, 0);
       _updateAcHighlight(items);
-      input.value = items[acSelectedIdx].textContent ?? "";
+      input.value = items[acSelectedIdx].dataset.text ?? items[acSelectedIdx].querySelector(".degoog-ac-text")?.textContent ?? "";
     } else if (e.key === "Enter" || e.key === "Escape") {
       hideAcDropdown(dropdown);
     }

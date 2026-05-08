@@ -26,3 +26,6 @@ export const defaultEnginesFile = (): string =>
 
 export const settingsTokensFile = (): string =>
   process.env.DEGOOG_SETTINGS_TOKENS_FILE ?? join(_dataDir(), "settings-tokens.json");
+
+export const autocompleteDir = (): string =>
+  process.env.DEGOOG_AUTOCOMPLETE_DIR ?? join(_dataDir(), "autocomplete");
