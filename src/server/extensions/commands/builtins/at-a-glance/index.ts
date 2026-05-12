@@ -12,7 +12,7 @@ import {
   getSettings,
   isDisabled,
 } from "../../../../utils/plugin-settings";
-import type { TtlCache } from "../../../../utils/cache";
+import { createCache, type TtlCache } from "../../../../utils/cache";
 import { looksLikeProse, stripSnippetPrefix } from "../../../../utils/text";
 import { getRandomUserAgent } from "../../../../utils/user-agents";
 
@@ -20,7 +20,7 @@ const SETTINGS_ID = "slot-at-a-glance";
 const WIKIPEDIA_SETTINGS_ID = "slot-wikipedia";
 const WIKIPEDIA_HOSTNAME = "wikipedia.org";
 
-let _extractCache!: TtlCache<string>;
+let _extractCache: TtlCache<string> = createCache<string>(60 * 60 * 1000);
 
 const _escapeHtml = (s: string): string =>
   s
