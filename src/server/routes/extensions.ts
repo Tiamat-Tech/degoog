@@ -17,6 +17,8 @@ import {
   getSlotPluginById,
   getSlotSource,
 } from "../extensions/slots/registry";
+import { getInterceptorBySettingsId } from "../extensions/interceptors/registry";
+import { getInterceptorMeta } from "../extensions/interceptors/registry";
 import { getSearchBarActionExtensionMeta } from "../extensions/search-bar/registry";
 import { getThemeExtensionMeta } from "../extensions/themes/registry";
 import {
@@ -125,6 +127,7 @@ router.get("/api/extensions", async (c) => {
     engines,
     plugins,
     slotMeta,
+    interceptorMeta,
     searchBarMeta,
     themes,
     transports,
@@ -134,6 +137,7 @@ router.get("/api/extensions", async (c) => {
     getEngineExtensionMeta(coreT),
     getPluginExtensionMeta(coreT),
     getSlotExtensionMeta(coreT),
+    getInterceptorMeta(),
     getSearchBarActionExtensionMeta(),
     getThemeExtensionMeta(),
     getTransportExtensionMeta(),
@@ -145,6 +149,7 @@ router.get("/api/extensions", async (c) => {
     ...engines,
     ...plugins,
     ...slotMeta,
+    ...interceptorMeta,
     ...searchBarMeta,
     ...themes,
     ...transports,
@@ -154,7 +159,7 @@ router.get("/api/extensions", async (c) => {
     const inst = installedItems.find((i) => {
       const prefixes =
         i.type === ExtensionStoreType.Plugin
-          ? ["plugin-", "slot-"]
+          ? ["plugin-", "slot-", "interceptor-"]
           : i.type === ExtensionStoreType.Theme
             ? ["theme-"]
             : i.type === ExtensionStoreType.Engine
@@ -174,7 +179,7 @@ router.get("/api/extensions", async (c) => {
 
   return c.json({
     engines,
-    plugins: [...plugins, ...slotMeta, ...searchBarMeta],
+    plugins: [...plugins, ...slotMeta, ...interceptorMeta, ...searchBarMeta],
     themes,
     transports,
     autocomplete,
@@ -204,6 +209,7 @@ router.post("/api/extensions/:id/settings", async (c) => {
     engines,
     plugins,
     slotMeta,
+    iceptMeta,
     searchBarMeta,
     themes,
     transportMeta,
@@ -212,6 +218,7 @@ router.post("/api/extensions/:id/settings", async (c) => {
     getEngineExtensionMeta(coreT),
     getPluginExtensionMeta(coreT),
     getSlotExtensionMeta(coreT),
+    getInterceptorMeta(),
     getSearchBarActionExtensionMeta(),
     getThemeExtensionMeta(),
     getTransportExtensionMeta(),
@@ -221,6 +228,7 @@ router.post("/api/extensions/:id/settings", async (c) => {
     ...engines,
     ...plugins,
     ...slotMeta,
+    ...iceptMeta,
     ...searchBarMeta,
     ...themes,
     ...transportMeta,
@@ -233,6 +241,7 @@ router.post("/api/extensions/:id/settings", async (c) => {
 
   const schemaKeys = new Set(ext.settingsSchema.map((f) => f.key));
   schemaKeys.add("disabled");
+  schemaKeys.add("priority");
   if (ext.type === ExtensionStoreType.Engine) {
     schemaKeys.add("score");
     schemaKeys.add("outgoingTransport");
@@ -282,6 +291,19 @@ router.post("/api/extensions/:id/settings", async (c) => {
   if (slotMatch) {
     const slotPlugin = getSlotPluginById(slotMatch);
     if (slotPlugin?.configure) slotPlugin.configure(merged);
+    if (slotPlugin && merged.priority !== undefined) {
+      const p = parseInt(String(merged.priority), 10);
+      slotPlugin.priority = isNaN(p) ? 0 : p;
+    }
+  }
+
+  const interceptorMatch = getInterceptorBySettingsId(id);
+  if (interceptorMatch) {
+    if (interceptorMatch.configure) interceptorMatch.configure(merged);
+    if (merged.priority !== undefined) {
+      const p = parseInt(String(merged.priority), 10);
+      interceptorMatch.priority = isNaN(p) ? 0 : p;
+    }
   }
 
   if (id.startsWith("transport-")) {

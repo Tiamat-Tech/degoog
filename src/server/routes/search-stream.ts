@@ -29,6 +29,7 @@ import { guardApiKey } from "../utils/api-key-guard";
 import { applyDomainRules } from "./search/_domain-rules";
 import { signResultThumbnails } from "../utils/proxy-sign";
 import { parsePage } from "./search/_parsers";
+import { runIntercepts } from "../utils/run-interceptors";
 
 const router = new Hono();
 
@@ -38,9 +39,9 @@ router.get("/api/search/stream", async (c) => {
   const authRes = await guardApiKey(c, "apiKeySearchEnabled");
   if (authRes) return authRes;
 
-  const query = c.req.query("q") ?? "";
+  const origQ = c.req.query("q") ?? "";
 
-  if (!isValidQuery(query))
+  if (!isValidQuery(origQ))
     return c.json({ error: "Missing or invalid query parameter 'q'" }, 400);
 
   const searchType = (c.req.query("type") || "web") as SearchType;
@@ -50,6 +51,9 @@ router.get("/api/search/stream", async (c) => {
   const lang = c.req.query("lang") || "";
   const dateFrom = c.req.query("dateFrom") || "";
   const dateTo = c.req.query("dateTo") || "";
+
+  const { query } = await runIntercepts(origQ, lang);
+
   const key = cacheKey(
     query,
     engines,

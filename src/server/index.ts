@@ -17,6 +17,7 @@ import { initSlotPlugins } from "./extensions/slots/registry";
 import { initThemes } from "./extensions/themes/registry";
 import { initTransports } from "./extensions/transports/registry";
 import { initAutocomplete } from "./extensions/autocomplete/registry";
+import { initInterceptors } from "./extensions/interceptors/registry";
 import globalRouter from "./routes";
 import { setOutgoingAllowlist } from "./utils/outgoing";
 import { initServerKey } from "./utils/server-key";
@@ -78,6 +79,7 @@ Promise.all([
   initEngines(),
   initPlugins(),
   initSlotPlugins(),
+  initInterceptors(),
   initSearchResultTabs(),
   initSearchBarActions(),
   initPluginRoutes(),

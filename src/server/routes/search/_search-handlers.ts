@@ -5,10 +5,11 @@ import { cacheKey } from "../../utils/search";
 import { signResultThumbnails } from "../../utils/proxy-sign";
 import { logger } from "../../utils/logger";
 import { applyDomainRules } from "./_domain-rules";
+import { runIntercepts } from "../../utils/run-interceptors";
 
 export async function handleSearch(params: SearchParams) {
   const {
-    query,
+    query: origQ,
     engines,
     searchType,
     page,
@@ -17,6 +18,9 @@ export async function handleSearch(params: SearchParams) {
     dateFrom,
     dateTo,
   } = params;
+
+  const { query } = await runIntercepts(origQ, lang);
+
   const key = cacheKey(
     query,
     engines,

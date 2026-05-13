@@ -4,6 +4,7 @@ import { removeSettings } from "../../utils/plugin-settings";
 import { isVersionAtLeast, getAppVersion } from "../../utils/version";
 import { reloadCommands } from "../commands/registry";
 import { reloadSlotPlugins } from "../slots/registry";
+import { reloadInterceptors } from "../interceptors/registry";
 import { reloadSearchResultTabs } from "../search-result-tabs/registry";
 import { reloadSearchBarActions } from "../search-bar/registry";
 import { reloadPluginRoutes } from "../plugin-routes/registry";
@@ -143,6 +144,7 @@ function getEntriesForType(
 async function reloadAfterAction(type: ExtensionStoreType): Promise<void> {
   if (type === ExtensionStoreType.Plugin) {
     await reloadSlotPlugins();
+    await reloadInterceptors();
     await reloadSearchResultTabs();
     await reloadCommands();
     await reloadSearchBarActions();

@@ -622,6 +622,47 @@
 
 fetch(MY_API).then(r => r.json()).then(data => { /* ... */ });</code></pre>
 
+          <h2 id="interceptors">Query interceptors</h2>
+          <p>
+            Interceptors run <strong>before</strong> the search engines execute.
+            They receive the raw query the user typed and return the query that
+            should actually be searched. The plugin can do anything in between:
+            correct spelling, expand abbreviations, translate, enrich, or replace
+            the query entirely. Export <code>interceptor</code> as an object with
+            a <strong>name</strong>, a <strong>description</strong>, and an
+            <strong>intercept(query, context)</strong> async function that returns
+            <code>{ query: string }</code>.
+          </p>
+          <pre><code>export const interceptor = {
+  name: "My Interceptor",
+  description: "Does something to the query.",
+
+  settingsSchema: [
+    { key: "enabled", label: "Enabled", type: "toggle", default: "true" },
+  ],
+
+  configure(settings) {
+    // called when settings change
+  },
+
+  init(ctx) {
+    // same ctx as other plugin types: ctx.fetch, ctx.createCache, ctx.readFile
+  },
+
+  async intercept(query, context) {
+    // context: { fetch, createCache, lang }
+    // return the query to actually search — may be the original or anything else
+    return { query };
+  },
+};</code></pre>
+          <p>
+            Interceptors are a plugin subtype — they live in the same
+            <code>data/plugins/</code> directory as bang commands and slots. A
+            single plugin folder can export an <code>interceptor</code> alongside
+            a <code>slot</code> or <code>command</code> if needed. There are no
+            builtin interceptors; all interceptors come from plugins.
+          </p>
+
           <h2>Request middleware</h2>
           <p>
             Middleware allows your plugin to hook into specific request flows.

@@ -11,7 +11,7 @@ import {
   lockinNameSpace,
   lockinSettingsId,
 } from "../../utils/plugin-assets";
-import { isDisabledWithFallback } from "../../utils/plugin-settings";
+import { getSettings, isDisabledWithFallback } from "../../utils/plugin-settings";
 import { createTranslatorFromPath } from "../../utils/translation";
 import { createRegistry } from "../registry-factory";
 import { stupidSettingIDtoAvoidConflicts } from "../extension-id";
@@ -81,6 +81,9 @@ const registry = createRegistry<SlotPlugin>({
 
     slot.settingsId = settingsId;
     slot.settingsFallbackIds = fallbackSettingsIds;
+    const rawSettings = await getSettings(settingsId);
+    const p = parseInt(String(rawSettings["priority"] ?? "0"), 10);
+    slot.priority = isNaN(p) ? 0 : p;
     slotSourceMap.set(id, source);
     slot.t = await createTranslatorFromPath(entryPath);
 
@@ -117,7 +120,7 @@ export function getSlotSource(slotId: string): "builtin" | "plugin" {
 }
 
 export function getSlotPlugins(): SlotPlugin[] {
-  return registry.items();
+  return registry.items().sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 }
 
 export function getSlotPluginById(slotId: string): SlotPlugin | null {

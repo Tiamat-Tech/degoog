@@ -5,11 +5,24 @@ import { getBase } from "../utils/base-url";
 
 const t = window.scopedT("core");
 
-const _renderPluginCard = (plugin: ExtensionMeta): string => {
+const _priority = (plugin: ExtensionMeta): number => {
+  const v = plugin.settings["priority"];
+  const n = parseInt(typeof v === "string" ? v : "0", 10);
+  return isNaN(n) ? 0 : n;
+};
+
+const _renderPluginCard = (
+  plugin: ExtensionMeta,
+  orderable: boolean,
+): string => {
   const isEnabled = plugin.settings["disabled"] !== "true";
   const trigger =
     plugin.settingsSchema.length === 0
       ? `<span class="ext-card-trigger">!${escapeHtml(plugin.id)}</span>`
+      : "";
+  const builtinBadge =
+    plugin.source === "builtin"
+      ? `<span class="degoog-badge">Built-in</span>`
       : "";
   const desc = plugin.description
     ? `<span class="ext-card-desc">${escapeHtml(plugin.description)}</span>`
@@ -38,11 +51,21 @@ const _renderPluginCard = (plugin: ExtensionMeta): string => {
       </label>`
     : "";
 
+  const orderBtns = orderable
+    ? `<div class="degoog-card-order">
+        <button class="degoog-icon-btn degoog-card-order-btn" data-id="${escapeHtml(plugin.id)}" data-dir="up" title="Move up" type="button"><i class="fa-solid fa-chevron-up"></i></button>
+        <button class="degoog-icon-btn degoog-card-order-btn" data-id="${escapeHtml(plugin.id)}" data-dir="down" title="Move down" type="button"><i class="fa-solid fa-chevron-down"></i></button>
+      </div>`
+    : "";
+
   return `
     <div class="ext-card degoog-panel degoog-panel--ext-card" data-id="${escapeHtml(plugin.id)}">
       <div class="ext-card-main">
         <div class="ext-card-info">
-          <label for="plugin-toggle-${escapeHtml(plugin.id)}" class="ext-card-name plugin-toggle-label">${escapeHtml(plugin.displayName)}</label>
+          <div class="ext-card-name-row">
+            <label for="plugin-toggle-${escapeHtml(plugin.id)}" class="ext-card-name plugin-toggle-label">${escapeHtml(plugin.displayName)}</label>
+            ${builtinBadge}
+          </div>
           ${trigger}
           ${desc}
           ${versionWarning}
@@ -51,31 +74,58 @@ const _renderPluginCard = (plugin: ExtensionMeta): string => {
           ${badge}
           ${configureBtn}
           ${toggle}
+          ${orderBtns}
         </div>
       </div>
     </div>`;
+};
+
+const _refreshOrderBtns = (group: HTMLElement): void => {
+  const cards = group.querySelectorAll<HTMLElement>(".ext-card");
+  cards.forEach((card, i) => {
+    const up = card.querySelector<HTMLButtonElement>('[data-dir="up"]');
+    const down = card.querySelector<HTMLButtonElement>('[data-dir="down"]');
+    if (up) up.disabled = i === 0;
+    if (down) down.disabled = i === cards.length - 1;
+  });
+};
+
+const _savePriorities = async (group: HTMLElement): Promise<void> => {
+  const cards = group.querySelectorAll<HTMLElement>(".ext-card");
+  const total = cards.length;
+  await Promise.all(
+    Array.from(cards).map((card, i) => {
+      const id = card.dataset.id;
+      if (!id) return Promise.resolve();
+      return fetch(
+        `${getBase()}/api/extensions/${encodeURIComponent(id)}/settings`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ priority: String(total - 1 - i) }),
+        },
+      );
+    }),
+  );
+  window.dispatchEvent(new CustomEvent("extensions-saved"));
 };
 
 export function initPluginsTab(allExtensions: AllExtensions): void {
   const container = document.getElementById("plugins-content");
   if (!container) return;
 
-  const custom = allExtensions.plugins.filter((p) => p.source === "plugin");
+  const all = [...allExtensions.plugins].sort(
+    (a, b) => _priority(b) - _priority(a),
+  );
 
-  const builtin = allExtensions.plugins.filter((p) => p.source !== "plugin");
-
-  let html = "";
-  if (custom.length > 0) {
-    html += `<div class="ext-group"><h3 class="ext-group-label">${escapeHtml(t("settings-page.extensions.group-plugins"))}</h3><div class="ext-cards">`;
-    for (const plugin of custom) html += _renderPluginCard(plugin);
-    html += `</div></div>`;
-  }
-  if (builtin.length > 0) {
-    html += `<div class="ext-group"><h3 class="ext-group-label">${escapeHtml(t("settings-page.extensions.group-builtin-commands"))}</h3><div class="ext-cards">`;
-    for (const plugin of builtin) html += _renderPluginCard(plugin);
-    html += `</div></div>`;
-  }
+  let html = `<div class="ext-group"><div class="ext-cards ext-cards--orderable">`;
+  for (const plugin of all) html += _renderPluginCard(plugin, true);
+  html += `</div></div>`;
   container.innerHTML = html;
+
+  container
+    .querySelectorAll<HTMLElement>(".ext-cards--orderable")
+    .forEach(_refreshOrderBtns);
 
   container
     .querySelectorAll<HTMLInputElement>(".plugin-toggle-input")
@@ -103,6 +153,25 @@ export function initPluginsTab(allExtensions: AllExtensions): void {
         const id = btn.dataset.id;
         const ext = allExtensions.plugins.find((p) => p.id === id);
         if (ext) openModal(ext);
+      });
+    });
+
+  container
+    .querySelectorAll<HTMLButtonElement>(".degoog-card-order-btn")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const card = btn.closest<HTMLElement>(".ext-card");
+        const cardsEl = btn.closest<HTMLElement>(".ext-cards--orderable");
+        if (!card || !cardsEl) return;
+        if (btn.dataset.dir === "up") {
+          const prev = card.previousElementSibling as HTMLElement | null;
+          if (prev) cardsEl.insertBefore(card, prev);
+        } else {
+          const next = card.nextElementSibling as HTMLElement | null;
+          if (next) cardsEl.insertBefore(next, card);
+        }
+        _refreshOrderBtns(cardsEl);
+        void _savePriorities(cardsEl);
       });
     });
 }
