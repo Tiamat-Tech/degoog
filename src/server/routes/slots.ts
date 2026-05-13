@@ -60,6 +60,13 @@ router.post("/api/slots/glance", async (c) => {
   );
   const panels: SlotPanelResult[] = [];
   for (const plugin of glancePlugins) {
+    if (!plugin.id) {
+      logger.warn(
+        "slots",
+        `Skipping slot plugin: missing id (name="${plugin.name}")`,
+      );
+      continue;
+    }
     try {
       const slotSettingsId = plugin.settingsId ?? `slot-${plugin.id}`;
       if (await isDisabled(slotSettingsId)) continue;
@@ -90,7 +97,9 @@ router.post("/api/slots/glance", async (c) => {
         position: plugin.position,
         gridSize: plugin.gridSize,
       });
-    } catch { }
+    } catch (err) {
+      logger.warn("plugin", `${plugin.id} slot failed`, err);
+    }
   }
   return c.json({ panels });
 });

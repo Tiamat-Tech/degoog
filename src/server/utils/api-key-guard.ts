@@ -11,7 +11,8 @@ const _verifyNonce = (c: Context): boolean => {
 };
 
 const _bearerMatches = (c: Context): boolean => {
-  const raw = c.req.header("Authorization") ?? c.req.header("authorization") ?? "";
+  const raw =
+    c.req.header("Authorization") ?? c.req.header("authorization") ?? "";
   const m = /^Bearer\s+(\S+)/i.exec(raw.trim());
   if (!m) return false;
   return verifyServerKeyHex(m[1]);
@@ -24,5 +25,5 @@ export async function guardApiKey(
   const settings = await getSettings(DEGOOG_SETTINGS_ID);
   if (asString(settings[settingKey]) !== "true") return null;
   if (_verifyNonce(c) || _bearerMatches(c)) return null;
-  return c.json({ error: "Unauthorized" }, 401);
+  return c.json({ error: "You shall not pass!" }, 401);
 }

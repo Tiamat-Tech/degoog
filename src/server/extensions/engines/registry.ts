@@ -396,6 +396,27 @@ const CUSTOM_USER_AGENTS_FIELD: SettingField = {
   advanced: true,
 };
 
+const PROXY_OVERRIDE_ENABLED_FIELD: SettingField = {
+  key: "proxyOverrideEnabled",
+  label: "Override proxies",
+  type: "toggle",
+  default: "false",
+  description:
+    "When enabled, this engine uses its own proxy list and ignores global proxy settings.",
+  advanced: true,
+};
+
+const PROXY_OVERRIDE_URLS_FIELD: SettingField = {
+  key: "proxyOverrideUrls",
+  label: "Proxy override list",
+  type: "textarea",
+  default: "",
+  description:
+    "One proxy URL per line. Used only when override is enabled for this engine.",
+  advanced: true,
+  visibleWhen: { key: "proxyOverrideEnabled", equals: "true" },
+};
+
 export function getEngineIdByInstance(
   instance: SearchEngine,
 ): string | undefined {
@@ -525,6 +546,8 @@ export async function getEngineExtensionMeta(
       scoreField,
       transportField,
       CUSTOM_USER_AGENTS_FIELD,
+      PROXY_OVERRIDE_ENABLED_FIELD,
+      PROXY_OVERRIDE_URLS_FIELD,
       ...translatedEngineSchema,
     ];
     const rawSettings = await getSettings(def.id);

@@ -12,7 +12,7 @@ import {
   getSettings,
   isDisabled,
 } from "../../../../utils/plugin-settings";
-import type { TtlCache } from "../../../../utils/cache";
+import { createCache, type TtlCache } from "../../../../utils/cache";
 import { looksLikeProse, stripSnippetPrefix } from "../../../../utils/text";
 import { getRandomUserAgent } from "../../../../utils/user-agents";
 
@@ -20,7 +20,7 @@ const SETTINGS_ID = "slot-at-a-glance";
 const WIKIPEDIA_SETTINGS_ID = "slot-wikipedia";
 const WIKIPEDIA_HOSTNAME = "wikipedia.org";
 
-let _extractCache!: TtlCache<string>;
+let _extractCache: TtlCache<string> = createCache<string>(60 * 60 * 1000);
 
 const _escapeHtml = (s: string): string =>
   s
@@ -328,10 +328,10 @@ const atAGlanceSlot: SlotPlugin = {
 
     return {
       html:
-        '<div class="glance-box">' +
-        `<div class="glance-snippet">${_escapeHtml(snippet)}</div>` +
-        `<a class="glance-link" href="${_escapeHtml(best.url)}" target="_blank">${_escapeHtml(best.title)}</a>` +
-        `<div class="glance-sources">${_escapeHtml(foundOn)}</div>` +
+        '<div class="glance-box degoog-panel degoog-panel--slot degoog-panel--slot-body-padded degoog-vstack">' +
+        `<div class="glance-snippet degoog-text degoog-text--md">${_escapeHtml(snippet)}</div>` +
+        `<a class="glance-link degoog-link" href="${_escapeHtml(best.url)}" target="_blank">${_escapeHtml(best.title)}</a>` +
+        `<div class="glance-sources degoog-text degoog-text--sm degoog-text--secondary degoog-text--spaced">${_escapeHtml(foundOn)}</div>` +
         "</div>",
     };
   },

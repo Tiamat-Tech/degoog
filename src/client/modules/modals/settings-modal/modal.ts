@@ -1,4 +1,4 @@
-import { renderField, initUrlList } from "./modal-fields";
+import { renderField, initUrlList, syncConditionalFields } from "./modal-fields";
 import { getBase } from "../../../utils/base-url";
 import { getStoredToken } from "../../settings/settings";
 import { jsonHeaders } from "../../../utils/request";
@@ -17,6 +17,8 @@ const closeBtn = document.getElementById("ext-modal-close");
 const statusEl = document.getElementById("ext-modal-status");
 const footerEl = document.querySelector<HTMLElement>(".ext-modal-footer");
 
+let modalBodyConditionalChangeBound = false;
+
 let currentExt: ExtensionMeta | null = null;
 let docsBtn: HTMLButtonElement | null = null;
 
@@ -25,7 +27,7 @@ function _ensureDocsButton(): HTMLButtonElement | null {
   if (docsBtn) return docsBtn;
   docsBtn = document.createElement("button");
   docsBtn.type = "button";
-  docsBtn.className = "btn btn--secondary ext-docs-btn";
+  docsBtn.className = "btn btn--secondary degoog-btn degoog-btn--secondary ext-docs-btn";
   docsBtn.textContent = "Docs";
   docsBtn.style.display = "none";
   footerEl.insertBefore(docsBtn, footerEl.firstChild);
@@ -187,9 +189,9 @@ export function openModal(ext: ExtensionMeta): void {
       html += `<div class="ext-advanced-section">
         <label class="ext-field-toggle-row ext-advanced-header">
           <span class="ext-field-label">${t("settings-page.modal.advanced")}</span>
-          <label class="engine-toggle">
+          <label class="engine-toggle degoog-toggle-wrap degoog-toggle-wrap--transparent">
             <input type="checkbox" class="ext-advanced-toggle"${showAdvanced ? " checked" : ""}>
-            <span class="toggle-slider"></span>
+            <span class="toggle-slider degoog-toggle"></span>
           </label>
         </label>
         <div class="ext-advanced-body"${showAdvanced ? "" : " hidden"}>${advancedFields
@@ -211,14 +213,20 @@ export function openModal(ext: ExtensionMeta): void {
       </div>`;
     }
     bodyEl.innerHTML = html;
+    if (!modalBodyConditionalChangeBound && bodyEl) {
+      modalBodyConditionalChangeBound = true;
+      bodyEl.addEventListener("change", () => syncConditionalFields(bodyEl));
+    }
     bodyEl
       .querySelector(".ext-advanced-toggle")
       ?.addEventListener("change", (e) => {
         const body = bodyEl.querySelector<HTMLElement>(".ext-advanced-body");
         if (body) body.hidden = !(e.target as HTMLInputElement).checked;
+        syncConditionalFields(bodyEl);
       });
     _initTestButton(bodyEl);
     initUrlList(bodyEl);
+    syncConditionalFields(bodyEl);
     bodyEl
       .querySelectorAll<HTMLElement>(".ext-field-input--configured")
       .forEach((input) => {
@@ -252,7 +260,7 @@ async function _save(): Promise<void> {
   if (statusEl) statusEl.textContent = t("settings-page.modal.saving");
   try {
     const res = await fetch(
-      `/api/extensions/${encodeURIComponent(currentExt.id)}/settings`,
+      `${getBase()}/api/extensions/${encodeURIComponent(currentExt.id)}/settings`,
       {
         method: "POST",
         headers: jsonHeaders(getStoredToken),

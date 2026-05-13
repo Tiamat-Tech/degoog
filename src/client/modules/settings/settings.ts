@@ -8,6 +8,7 @@ import {
 import { initEnginesTab } from "../../settings/engines-tab";
 import { initPluginsTab } from "../../settings/plugins-tab";
 import { initTransportsTab } from "../../settings/transports-tab";
+import { initAutocompleteTab } from "../../settings/autocomplete-tab";
 import { initThemesTab } from "../../settings/themes-tab";
 import { initServerTab } from "../../settings/server-tab";
 import { initStoreTab } from "../../settings/store-tab";
@@ -201,6 +202,7 @@ async function _initSettings(): Promise<void> {
     await initEnginesTab(allExtensions);
     initPluginsTab(allExtensions);
     initTransportsTab(allExtensions);
+    initAutocompleteTab(allExtensions);
     await initThemesTab(themesData, allExtensions.themes ?? []);
     const storeEl = document.getElementById("store-content");
     if (storeEl) void initStoreTab(storeEl, getStoredToken);
@@ -209,6 +211,7 @@ async function _initSettings(): Promise<void> {
     const enginesEl = document.getElementById("engines-content");
     const pluginsEl = document.getElementById("plugins-content");
     const transportsEl = document.getElementById("transports-content");
+    const autocompleteEl = document.getElementById("autocomplete-content");
     const themesEl = document.getElementById("themes-content");
     if (enginesEl)
       enginesEl.innerHTML = `<p>${t("settings-page.errors.load-extensions")}</p>`;
@@ -216,6 +219,8 @@ async function _initSettings(): Promise<void> {
       pluginsEl.innerHTML = `<p>${t("settings-page.errors.load-extensions")}</p>`;
     if (transportsEl)
       transportsEl.innerHTML = `<p>${t("settings-page.errors.load-transports")}</p>`;
+    if (autocompleteEl)
+      autocompleteEl.innerHTML = `<p>${t("settings-page.errors.load-autocomplete")}</p>`;
     if (themesEl)
       themesEl.innerHTML = `<p>${t("settings-page.errors.load-themes")}</p>`;
   }
@@ -236,6 +241,7 @@ window.addEventListener("extensions-saved", async () => {
     await initEnginesTab(allExtensions);
     initPluginsTab(allExtensions);
     initTransportsTab(allExtensions);
+    initAutocompleteTab(allExtensions);
     await initThemesTab(themesData, allExtensions.themes ?? []);
   } catch {}
 });

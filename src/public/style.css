@@ -1737,6 +1737,22 @@ input:checked + .toggle-slider::after {
   color: var(--text-secondary);
   font-weight: 500;
 }
+.degoog-card-order {
+  flex-shrink: 0;
+}
+.degoog-card-order-btn {
+  display: block;
+}
+.degoog-card-order-btn:disabled {
+  opacity: 0.2;
+  cursor: default;
+  pointer-events: none;
+}
+.ext-card-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 
 .ext-modal {
   background: var(--bg-light);

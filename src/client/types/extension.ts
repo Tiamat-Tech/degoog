@@ -19,6 +19,7 @@ export interface SettingField {
   options?: string[];
   default?: string;
   advanced?: boolean;
+  visibleWhen?: { key: string; equals: string };
 }
 
 export interface ExtensionMeta {
@@ -41,6 +42,7 @@ export interface AllExtensions {
   plugins: ExtensionMeta[];
   themes: ExtensionMeta[];
   transports: ExtensionMeta[];
+  autocomplete: ExtensionMeta[];
 }
 
 export interface SearchBarAction {

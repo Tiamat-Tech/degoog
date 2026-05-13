@@ -1,6 +1,7 @@
 import { escapeHtml, getConfigStatus } from "../utils/dom";
 import { openModal } from "../modules/modals/settings-modal/modal";
 import type { ExtensionMeta, AllExtensions } from "../types";
+import { getBase } from "../utils/base-url";
 
 const t = window.scopedT("core");
 
@@ -20,17 +21,17 @@ const _renderTransportCard = (transport: ExtensionMeta): string => {
         ? '<span class="ext-needs-config-badge"></span>'
         : "";
   const configureBtn = transport.configurable
-    ? `<button class="ext-card-configure btn btn--secondary" data-id="${escapeHtml(transport.id)}" type="button">${escapeHtml(t("settings-page.extensions.configure"))}</button>`
+    ? `<button class="ext-card-configure btn btn--secondary degoog-btn degoog-btn--secondary" data-id="${escapeHtml(transport.id)}" type="button">${escapeHtml(t("settings-page.extensions.configure"))}</button>`
     : "";
   const toggle = transport.configurable
-    ? `<label class="engine-toggle">
+    ? `<label class="engine-toggle degoog-toggle-wrap degoog-toggle-wrap--transparent">
         <input type="checkbox" class="transport-toggle-input" id="transport-toggle-${escapeHtml(transport.id)}" data-id="${escapeHtml(transport.id)}" ${isEnabled ? "checked" : ""}>
-        <span class="toggle-slider"></span>
+        <span class="toggle-slider degoog-toggle"></span>
       </label>`
     : "";
 
   return `
-    <div class="ext-card" data-id="${escapeHtml(transport.id)}">
+    <div class="ext-card degoog-panel degoog-panel--ext-card" data-id="${escapeHtml(transport.id)}">
       <div class="ext-card-main">
         <div class="ext-card-info">
           <label for="transport-toggle-${escapeHtml(transport.id)}" class="ext-card-name transport-toggle-label">${escapeHtml(transport.displayName)}</label>
@@ -85,7 +86,7 @@ export function initTransportsTab(allExtensions: AllExtensions): void {
         if (!id) return;
         const disabled = !input.checked;
         const res = await fetch(
-          `/api/extensions/${encodeURIComponent(id)}/settings`,
+          `${getBase()}/api/extensions/${encodeURIComponent(id)}/settings`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

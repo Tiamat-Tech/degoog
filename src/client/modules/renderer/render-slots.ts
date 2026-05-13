@@ -38,17 +38,19 @@ function _renderSlotPanelsInto(panels: SlotPanel[], clearFirst: boolean): void {
       container.innerHTML = panel.html;
     } else {
       const block = document.createElement("div");
-      block.className = "results-slot-panel";
+      block.className =
+        "results-slot-panel degoog-panel degoog-panel--slot degoog-panel--stack-item";
       const grid = panel.gridSize ?? 4;
       block.dataset.grid = String(grid);
       if (panel.title) {
         const titleEl = document.createElement("div");
-        titleEl.className = "results-slot-panel-title";
+        titleEl.className = "results-slot-panel-title degoog-panel--slot-title";
         titleEl.textContent = panel.title;
         block.appendChild(titleEl);
       }
       const body = document.createElement("div");
-      body.className = "results-slot-panel-body";
+      body.className =
+        "results-slot-panel-body degoog-panel--slot-body degoog-panel--slot-body-padded";
       body.innerHTML = panel.html;
       block.appendChild(body);
       container.appendChild(block);

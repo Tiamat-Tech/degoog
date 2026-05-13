@@ -1,24 +1,24 @@
 document.addEventListener("DOMContentLoaded", function () {
   var page = window.location.pathname.split("/").pop() || "index.html";
   if (!page || page === "") page = "index.html";
-  document.querySelectorAll(".ade-nav-item").forEach(function (link) {
+  document.querySelectorAll(".degoog-docs-nav-item").forEach(function (link) {
     if (link.getAttribute("href") === page) {
-      link.classList.add("ade-nav-active");
+      link.classList.add("degoog-docs-nav-active");
     }
   });
 
-  var burger = document.getElementById("ade-burger");
-  var sidebar = document.querySelector(".ade-sidebar");
-  var backdrop = document.getElementById("ade-backdrop");
+  var burger = document.getElementById("degoog-docs-burger");
+  var sidebar = document.querySelector(".degoog-docs-sidebar");
+  var backdrop = document.getElementById("degoog-docs-backdrop");
 
   if (burger && sidebar && backdrop) {
     burger.addEventListener("click", function () {
-      var isOpen = sidebar.classList.toggle("ade-sidebar-open");
+      var isOpen = sidebar.classList.toggle("degoog-docs-sidebar-open");
       backdrop.style.display = isOpen ? "block" : "none";
     });
 
     backdrop.addEventListener("click", function () {
-      sidebar.classList.remove("ade-sidebar-open");
+      sidebar.classList.remove("degoog-docs-sidebar-open");
       backdrop.style.display = "none";
     });
   }

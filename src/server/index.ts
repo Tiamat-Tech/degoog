@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
+import { trimTrailingSlash } from "hono/trailing-slash";
 import pkg from "../../package.json";
 import { getBasePath } from "./utils/base-url";
 import { initPlugins } from "./extensions/commands/registry";
@@ -15,6 +16,8 @@ import { initSearchResultTabs } from "./extensions/search-result-tabs/registry";
 import { initSlotPlugins } from "./extensions/slots/registry";
 import { initThemes } from "./extensions/themes/registry";
 import { initTransports } from "./extensions/transports/registry";
+import { initAutocomplete } from "./extensions/autocomplete/registry";
+import { initInterceptors } from "./extensions/interceptors/registry";
 import globalRouter from "./routes";
 import { setOutgoingAllowlist } from "./utils/outgoing";
 import { initServerKey } from "./utils/server-key";
@@ -22,6 +25,8 @@ import { initServerKey } from "./utils/server-key";
 const BASE_PATH = getBasePath();
 
 const app = new Hono();
+
+app.use(trimTrailingSlash());
 
 app.use("*", async (c, next) => {
   await next();
@@ -74,12 +79,14 @@ Promise.all([
   initEngines(),
   initPlugins(),
   initSlotPlugins(),
+  initInterceptors(),
   initSearchResultTabs(),
   initSearchBarActions(),
   initPluginRoutes(),
   initMiddlewareRegistry(),
   initThemes(),
   initUovadipasquas(),
+  initAutocomplete(),
 ]).then(() => {
   setOutgoingAllowlist(getOutgoingAllowlist());
   Bun.serve({ port, fetch: app.fetch, idleTimeout: 120 });

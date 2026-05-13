@@ -28,7 +28,8 @@ export const getNaturalLanguageBangQuery = (
   for (const c of withNatural) {
     const trigger = c.trigger.toLowerCase();
     firstWordMap.set(trigger, c.trigger);
-    for (const a of c.aliases || []) firstWordMap.set(a.toLowerCase(), c.trigger);
+    for (const a of c.aliases || [])
+      firstWordMap.set(a.toLowerCase(), c.trigger);
     for (const p of c.naturalLanguagePhrases || []) {
       phraseList.push({ phrase: p.toLowerCase(), trigger: c.trigger });
     }

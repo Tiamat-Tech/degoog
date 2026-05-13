@@ -126,7 +126,7 @@ export async function performSearch(
 
   if (query.trim().startsWith("!")) {
     state.currentQuery = query;
-    return _performBangCommand(query, resolvedType, page || 1);
+    return _performBangCommand(query, resolvedType, page || 1, isInit);
   }
 
   const commands = await _fetchCommands();
@@ -251,6 +251,18 @@ export async function performSearch(
         })
       : await fetch(appendSearchAuthParams(url));
 
+    if (!res.ok) {
+      const body = await res.text().catch(() => "(unreadable)");
+      console.error("[search] non-ok response", res.status, body);
+      const msg =
+        res.status === 429
+          ? "Too many requests. Please slow down."
+          : "Search failed. Please try again.";
+      if (resultsMeta) resultsMeta.textContent = "";
+      if (resultsList)
+        resultsList.innerHTML = `<div class="no-results">${msg}</div>`;
+      return;
+    }
     const data = (await res.json()) as SearchResponse;
     state.currentResults = data.results;
     state.currentData = data;
@@ -279,7 +291,8 @@ export async function performSearch(
       if (glanceEl) glanceEl.innerHTML = "";
     }
     renderResults(data.results);
-  } catch {
+  } catch (err) {
+    console.error("[search] search failed", err);
     if (resultsMeta) resultsMeta.textContent = "";
     if (resultsList)
       resultsList.innerHTML =
@@ -344,7 +357,8 @@ async function _performSearchWithBang(
         runScriptsInContainer(glanceEl);
       }
     }
-  } catch {
+  } catch (err) {
+    console.error("[search] bang search failed", err);
     if (resultsMeta) resultsMeta.textContent = "";
     if (resultsList)
       resultsList.innerHTML =
@@ -356,6 +370,7 @@ async function _performBangCommand(
   query: string,
   _type: string,
   page = 1,
+  isInit = false,
 ): Promise<void> {
   closeMediaPreview();
   hideAcDropdown(document.getElementById("ac-dropdown-home"));
@@ -386,14 +401,19 @@ async function _performBangCommand(
 
   const urlParams = new URLSearchParams({ q: query });
   if (page > 1) urlParams.set("page", String(page));
+  const historyState = { degoog: true, query, type: "web", page };
   if (state.postMethodEnabled) {
-    history.pushState(
-      { degoog: true, query, type: "web", page },
-      "",
-      `${getBase()}/search`,
-    );
+    if (isInit) {
+      history.replaceState(historyState, "", `${getBase()}/search`);
+    } else {
+      history.pushState(historyState, "", `${getBase()}/search`);
+    }
   } else {
-    history.replaceState(null, "", `${getBase()}/search?${urlParams.toString()}`);
+    if (isInit) {
+      history.replaceState(historyState, "", `${getBase()}/search?${urlParams.toString()}`);
+    } else {
+      history.pushState(historyState, "", `${getBase()}/search?${urlParams.toString()}`);
+    }
   }
 
   try {

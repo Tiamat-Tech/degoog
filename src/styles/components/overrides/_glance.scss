@@ -1,0 +1,19 @@
+ #at-a-glance:not(:empty) {
+  margin-bottom: $space-4;
+}
+
+.glance-box,
+.glance-ai {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.glance-snippet,
+.glance-sources {
+  margin: 0;
+  padding: 0;
+}

@@ -1,18 +1,18 @@
 export function getStoreTabHtml(): string {
   return `
-    <section class="store-repos-section settings-section ext-card">
+    <section class="store-repos-section settings-section ext-card degoog-panel degoog-panel--ext-card">
       <div class="store-repos-header">
         <h2 class="settings-section-heading">Repositories</h2>
         <div class="header-actions">
           <div class="store-repos-actions">
-            <button class="btn store-btn-refresh-all btn--secondary" type="button">Refresh all</button>
+            <button class="btn btn--secondary degoog-btn degoog-btn--secondary store-btn-refresh-all" type="button">Refresh all</button>
           </div>
-          <button class="btn btn--primary store-btn-add" type="button">Add repository</button>
+          <button class="btn btn--primary degoog-btn degoog-btn--primary store-btn-add" type="button">Add repository</button>
         </div>
       </div>
       <div class="store-add-repo-wrap" style="display:none">
-        <input type="text" class="store-input-url" placeholder="https://github.com/user/repo.git">
-        <button class="btn btn--primary store-btn-add-confirm" type="button">Add</button>
+        <input type="text" class="store-search-input degoog-search-bar degoog-search-bar--square-advanced store-input-url" placeholder="https://github.com/user/repo.git">
+        <button class="btn btn--primary degoog-btn degoog-btn--primary store-btn-add-confirm" type="button">Add</button>
         <span class="store-inline-error"></span>
       </div>
       <p class="settings-desc">Add a git repository URL to browse and install plugins, themes, engines, and transports. Set <code>repo-image</code> in the repo’s package.json to show an image next to the URL.</p>
@@ -22,9 +22,9 @@ export function getStoreTabHtml(): string {
       <div class="store-catalog-header">
         <h2 class="settings-section-heading">Catalog</h2>
       </div>
-      <div class="store-updates-panel" style="display:none"></div>
+      <div class="store-updates-panel degoog-accordion" style="display:none"></div>
       <div class="store-filter-bar">
-        <input type="text" class="store-search-input" placeholder="Search…" id="store-search-input">
+        <input type="text" class="store-search-input degoog-search-bar degoog-search-bar--square-advanced" placeholder="Search…" id="store-search-input">
         <select class="store-filter-select store-filter-type" aria-label="Filter by type"></select>
         <select class="store-filter-select store-filter-subtype" aria-label="Filter by sub-type" style="display:none"></select>
       </div>

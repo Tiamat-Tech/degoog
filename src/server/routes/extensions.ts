@@ -4,10 +4,7 @@ import {
   getEngineMap,
   setEnginesLocale,
 } from "../extensions/engines/registry";
-import {
-  getSettingsTokenFromRequest,
-  validateSettingsToken,
-} from "./settings-auth";
+import { canBalrogPass, gandalf } from "./settings-auth";
 import {
   getPluginExtensionMeta,
   getCommandInstanceById,
@@ -20,10 +17,13 @@ import {
   getSlotPluginById,
   getSlotSource,
 } from "../extensions/slots/registry";
+import { getInterceptorBySettingsId } from "../extensions/interceptors/registry";
+import { getInterceptorMeta } from "../extensions/interceptors/registry";
 import { getSearchBarActionExtensionMeta } from "../extensions/search-bar/registry";
 import { getThemeExtensionMeta } from "../extensions/themes/registry";
 import {
   getSettings,
+  dumbFallbackBecauseIDontThink,
   isDisabled,
   setSettings,
   mergeSecrets,
@@ -42,11 +42,16 @@ import {
   getTransportExtensionMeta,
   getTransport,
 } from "../extensions/transports/registry";
+import {
+  getAutocompleteExtensionMeta,
+  getAutocompleteProviderById,
+} from "../extensions/autocomplete/registry";
 import { outgoingFetch } from "../utils/outgoing";
 import { readFile } from "fs/promises";
 import { extensionReadmeExists } from "../utils/extension-docs";
 import { getInstalledItems } from "../extensions/store/item-ops";
 import { isVersionAtLeast, getAppVersion } from "../utils/version";
+import { logger } from "../utils/logger";
 
 const router = new Hono();
 
@@ -56,6 +61,13 @@ async function getSlotExtensionMeta(
   const slots = getSlotPlugins();
   const out: ExtensionMeta[] = [];
   for (const slot of slots) {
+    if (!slot.id) {
+      logger.warn(
+        "extensions",
+        `Skipping slot extension meta: missing id (name="${slot.name}")`,
+      );
+      continue;
+    }
     const baseSchema = slot.settingsSchema ?? [];
     const hasPositionChoice = (slot.slotPositions?.length ?? 0) > 0;
     const fullSchema: SettingField[] = [...baseSchema];
@@ -74,7 +86,9 @@ async function getSlotExtensionMeta(
       });
     }
     const id = slot.settingsId ?? `slot-${slot.id}`;
-    const raw = await getSettings(id);
+    const raw = slot.settingsFallbackIds?.length
+      ? await dumbFallbackBecauseIDontThink(id, slot.settingsFallbackIds)
+      : await getSettings(id);
     const settings = maskSecrets(raw, fullSchema);
     if (raw["disabled"]) settings["disabled"] = raw["disabled"];
     if (hasPositionChoice) {
@@ -109,44 +123,73 @@ router.get("/api/extensions", async (c) => {
     setEnginesLocale(locale);
     coreT.setLocale(locale);
   }
-  const [engines, plugins, slotMeta, searchBarMeta, themes, transports, installedItems] =
-    await Promise.all([
-      getEngineExtensionMeta(coreT),
-      getPluginExtensionMeta(coreT),
-      getSlotExtensionMeta(coreT),
-      getSearchBarActionExtensionMeta(),
-      getThemeExtensionMeta(),
-      getTransportExtensionMeta(),
-      getInstalledItems(),
-    ]);
+  const [
+    engines,
+    plugins,
+    slotMeta,
+    interceptorMeta,
+    searchBarMeta,
+    themes,
+    transports,
+    autocomplete,
+    installedItems,
+  ] = await Promise.all([
+    getEngineExtensionMeta(coreT),
+    getPluginExtensionMeta(coreT),
+    getSlotExtensionMeta(coreT),
+    getInterceptorMeta(),
+    getSearchBarActionExtensionMeta(),
+    getThemeExtensionMeta(),
+    getTransportExtensionMeta(),
+    getAutocompleteExtensionMeta(),
+    getInstalledItems(),
+  ]);
 
-  const allMetas = [...engines, ...plugins, ...slotMeta, ...searchBarMeta, ...themes, ...transports];
+  const allMetas = [
+    ...engines,
+    ...plugins,
+    ...slotMeta,
+    ...interceptorMeta,
+    ...searchBarMeta,
+    ...themes,
+    ...transports,
+    ...autocomplete,
+  ];
   for (const meta of allMetas) {
     const inst = installedItems.find((i) => {
       const prefixes =
-        i.type === ExtensionStoreType.Plugin ? ["plugin-", "slot-"] :
-        i.type === ExtensionStoreType.Theme ? ["theme-"] :
-        i.type === ExtensionStoreType.Engine ? ["engine-"] :
-        ["transport-"];
+        i.type === ExtensionStoreType.Plugin
+          ? ["plugin-", "slot-", "interceptor-"]
+          : i.type === ExtensionStoreType.Theme
+            ? ["theme-"]
+            : i.type === ExtensionStoreType.Engine
+              ? ["engine-"]
+              : i.type === ExtensionStoreType.Autocomplete
+                ? ["autocomplete-"]
+                : ["transport-"];
       return prefixes.some((p) => meta.id === p + i.installedAs);
     });
     if (inst?.minDegoogVersion) {
-      meta.requiresNewerVersion = !isVersionAtLeast(getAppVersion(), inst.minDegoogVersion);
+      meta.requiresNewerVersion = !isVersionAtLeast(
+        getAppVersion(),
+        inst.minDegoogVersion,
+      );
     }
   }
 
   return c.json({
     engines,
-    plugins: [...plugins, ...slotMeta, ...searchBarMeta],
+    plugins: [...plugins, ...slotMeta, ...interceptorMeta, ...searchBarMeta],
     themes,
     transports,
+    autocomplete,
   });
 });
 
 router.post("/api/extensions/:id/settings", async (c) => {
-  const token = getSettingsTokenFromRequest(c);
-  if (!(await validateSettingsToken(token)))
-    return c.json({ error: "Unauthorized" }, 401);
+  const token = canBalrogPass(c);
+  if (!(await gandalf(token)))
+    return c.json({ error: "You shall not pass!" }, 401);
   const id = c.req.param("id");
   let body: Record<string, unknown>;
   try {
@@ -162,22 +205,34 @@ router.post("/api/extensions/:id/settings", async (c) => {
     setEnginesLocale(locale);
     coreT.setLocale(locale);
   }
-  const [engines, plugins, slotMeta, searchBarMeta, themes, transportMeta] =
-    await Promise.all([
-      getEngineExtensionMeta(coreT),
-      getPluginExtensionMeta(coreT),
-      getSlotExtensionMeta(coreT),
-      getSearchBarActionExtensionMeta(),
-      getThemeExtensionMeta(),
-      getTransportExtensionMeta(),
-    ]);
+  const [
+    engines,
+    plugins,
+    slotMeta,
+    iceptMeta,
+    searchBarMeta,
+    themes,
+    transportMeta,
+    autocompleteMeta,
+  ] = await Promise.all([
+    getEngineExtensionMeta(coreT),
+    getPluginExtensionMeta(coreT),
+    getSlotExtensionMeta(coreT),
+    getInterceptorMeta(),
+    getSearchBarActionExtensionMeta(),
+    getThemeExtensionMeta(),
+    getTransportExtensionMeta(),
+    getAutocompleteExtensionMeta(),
+  ]);
   const ext = [
     ...engines,
     ...plugins,
     ...slotMeta,
+    ...iceptMeta,
     ...searchBarMeta,
     ...themes,
     ...transportMeta,
+    ...autocompleteMeta,
   ].find((e) => e.id === id);
 
   if (!ext) {
@@ -186,6 +241,7 @@ router.post("/api/extensions/:id/settings", async (c) => {
 
   const schemaKeys = new Set(ext.settingsSchema.map((f) => f.key));
   schemaKeys.add("disabled");
+  schemaKeys.add("priority");
   if (ext.type === ExtensionStoreType.Engine) {
     schemaKeys.add("score");
     schemaKeys.add("outgoingTransport");
@@ -235,6 +291,19 @@ router.post("/api/extensions/:id/settings", async (c) => {
   if (slotMatch) {
     const slotPlugin = getSlotPluginById(slotMatch);
     if (slotPlugin?.configure) slotPlugin.configure(merged);
+    if (slotPlugin && merged.priority !== undefined) {
+      const p = parseInt(String(merged.priority), 10);
+      slotPlugin.priority = isNaN(p) ? 0 : p;
+    }
+  }
+
+  const interceptorMatch = getInterceptorBySettingsId(id);
+  if (interceptorMatch) {
+    if (interceptorMatch.configure) interceptorMatch.configure(merged);
+    if (merged.priority !== undefined) {
+      const p = parseInt(String(merged.priority), 10);
+      interceptorMatch.priority = isNaN(p) ? 0 : p;
+    }
   }
 
   if (id.startsWith("transport-")) {
@@ -243,13 +312,18 @@ router.post("/api/extensions/:id/settings", async (c) => {
     if (transportInstance?.configure) transportInstance.configure(merged);
   }
 
+  if (id.startsWith("autocomplete-")) {
+    const providerInstance = getAutocompleteProviderById(id);
+    if (providerInstance?.configure) providerInstance.configure(merged);
+  }
+
   return c.json({ ok: true });
 });
 
 router.post("/api/extensions/transports/:name/test", async (c) => {
-  const token = getSettingsTokenFromRequest(c);
-  if (!(await validateSettingsToken(token)))
-    return c.json({ error: "Unauthorized" }, 401);
+  const token = canBalrogPass(c);
+  if (!(await gandalf(token)))
+    return c.json({ error: "You shall not pass!" }, 401);
 
   const name = c.req.param("name");
   if (!getTransport(name))
@@ -266,9 +340,9 @@ router.post("/api/extensions/transports/:name/test", async (c) => {
 });
 
 router.get("/api/extensions/:id/readme", async (c) => {
-  const token = getSettingsTokenFromRequest(c);
-  if (!(await validateSettingsToken(token)))
-    return c.json({ error: "Unauthorized" }, 401);
+  const token = canBalrogPass(c);
+  if (!(await gandalf(token)))
+    return c.json({ error: "You shall not pass!" }, 401);
 
   const id = c.req.param("id");
   const { exists, readmePath } = await extensionReadmeExists(id);

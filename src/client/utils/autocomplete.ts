@@ -3,6 +3,9 @@ import { escapeHtml } from "./dom";
 import { searchAuthHeaders } from "./request";
 import { getBase } from "./base-url";
 
+const _w = window as Window & { __DEGOOG_AC_DEBOUNCE__?: number };
+const _acDebounce = (): number => _w.__DEGOOG_AC_DEBOUNCE__ ?? 300;
+
 let acController: AbortController | null = null;
 let acTimeout: ReturnType<typeof setTimeout> | null = null;
 let acSelectedIdx = -1;
@@ -34,7 +37,10 @@ async function _fetchSuggestions(
       ? await fetch(`${getBase()}/api/suggest`, {
           method: "POST",
           body: JSON.stringify({ query }),
-          headers: { "Content-Type": "application/json", ...searchAuthHeaders() },
+          headers: {
+            "Content-Type": "application/json",
+            ...searchAuthHeaders(),
+          },
           signal: acController.signal,
         })
       : await fetch(`${getBase()}/api/suggest?q=${encodeURIComponent(query)}`, {
@@ -42,7 +48,12 @@ async function _fetchSuggestions(
           signal: acController.signal,
         });
 
-    const suggestions = (await res.json()) as string[];
+    const raw = (await res.json()) as {
+      text: string;
+      source: string;
+      rich?: { description?: string; thumbnail?: string; type?: string };
+    }[];
+    const suggestions = Array.isArray(raw) ? raw : [];
 
     if (!suggestions.length || input.value.trim() !== query) {
       dropdown.innerHTML = "";
@@ -52,7 +63,21 @@ async function _fetchSuggestions(
 
     acSelectedIdx = -1;
     dropdown.innerHTML = suggestions
-      .map((s) => `<div class="ac-item">${escapeHtml(s)}</div>`)
+      .map((s) => {
+        if (s.rich && (s.rich.description || s.rich.thumbnail)) {
+          const thumb = s.rich.thumbnail
+            ? `<img class="degoog-ac-rich-thumb" src="${escapeHtml(s.rich.thumbnail)}" alt="" aria-hidden="true">`
+            : "";
+          const type = s.rich.type
+            ? `<span class="degoog-ac-rich-type">${escapeHtml(s.rich.type)}</span>`
+            : "";
+          const desc = s.rich.description
+            ? `<span class="degoog-ac-rich-desc">${escapeHtml(s.rich.description)}</span>`
+            : "";
+          return `<div class="ac-item degoog-ac-rich" data-text="${escapeHtml(s.text)}">${thumb}<div class="degoog-ac-rich-body"><div class="degoog-ac-rich-title">${escapeHtml(s.text)}${type}</div>${desc}</div><span class="degoog-ac-source">${escapeHtml(s.source)}</span></div>`;
+        }
+        return `<div class="ac-item" data-text="${escapeHtml(s.text)}"><span class="degoog-ac-text">${escapeHtml(s.text)}</span><span class="degoog-ac-source">${escapeHtml(s.source)}</span></div>`;
+      })
       .join("");
     dropdown.style.display = "block";
     dropdown.parentElement?.classList.add("ac-open");
@@ -60,9 +85,14 @@ async function _fetchSuggestions(
     dropdown.querySelectorAll<HTMLElement>(".ac-item").forEach((el) => {
       el.addEventListener("mousedown", (e) => {
         e.preventDefault();
-        input.value = el.textContent ?? "";
+        const text =
+          el.dataset.text ??
+          el.querySelector(".degoog-ac-text, .degoog-ac-rich-title")
+            ?.textContent ??
+          "";
+        input.value = text;
         hideAcDropdown(dropdown);
-        performSearch(el.textContent ?? "");
+        performSearch(text);
       });
     });
   } catch {}
@@ -86,7 +116,7 @@ export function initAutocomplete(
     }
     acTimeout = setTimeout(
       () => void _fetchSuggestions(q, input, dropdown, performSearch),
-      150,
+      _acDebounce(),
     );
   });
 
@@ -98,19 +128,25 @@ export function initAutocomplete(
       e.preventDefault();
       acSelectedIdx = Math.min(acSelectedIdx + 1, items.length - 1);
       _updateAcHighlight(items);
-      input.value = items[acSelectedIdx].textContent ?? "";
+      input.value =
+        items[acSelectedIdx].dataset.text ??
+        items[acSelectedIdx].querySelector(".degoog-ac-text")?.textContent ??
+        "";
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       acSelectedIdx = Math.max(acSelectedIdx - 1, 0);
       _updateAcHighlight(items);
-      input.value = items[acSelectedIdx].textContent ?? "";
+      input.value =
+        items[acSelectedIdx].dataset.text ??
+        items[acSelectedIdx].querySelector(".degoog-ac-text")?.textContent ??
+        "";
     } else if (e.key === "Enter" || e.key === "Escape") {
       hideAcDropdown(dropdown);
     }
   });
 
   input.addEventListener("blur", () => {
-    setTimeout(() => hideAcDropdown(dropdown), 150);
+    setTimeout(() => hideAcDropdown(dropdown), 300);
   });
 
   input.addEventListener("focus", () => {

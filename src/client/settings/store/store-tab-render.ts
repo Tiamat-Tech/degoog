@@ -1,6 +1,7 @@
 import { escapeHtml } from "../../utils/dom";
 import { screenshotUrl } from "../store-lightbox";
 import type { RepoInfo, StoreItem } from "../../types/store-tab";
+import { getBase } from "../../utils/base-url";
 
 const OFFICIAL_REPO_URL =
   "https://github.com/degoog-org/official-extensions.git";
@@ -34,7 +35,7 @@ export function repoImageSrc(
   if (/^https?:\/\//i.test(img)) return img;
   const token = getToken();
   const q = token ? `&token=${encodeURIComponent(token)}` : "";
-  return `/api/store/repos/${encodeURIComponent(repo.localPath)}/asset?path=${encodeURIComponent(img)}${q}`;
+  return `${getBase()}/api/store/repos/${encodeURIComponent(repo.localPath)}/asset?path=${encodeURIComponent(img)}${q}`;
 }
 
 export function pluginTypeLabel(t: string): string {
@@ -66,7 +67,7 @@ export function renderRepoDetail(
     normalizeRepoUrl(repo.url) === normalizeRepoUrl(OFFICIAL_REPO_URL);
   const removeBtn = isOfficial
     ? ""
-    : `<button class="btn btn--danger store-btn-remove" type="button" data-url="${escapeHtml(repo.url)}">Remove</button>`;
+    : `<button class="btn btn--danger degoog-btn degoog-btn--danger store-btn-remove" type="button" data-url="${escapeHtml(repo.url)}">Remove</button>`;
   const normUrl = normalizeRepoUrl(repo.url);
   const behind = statusByUrl[normUrl] ?? statusByUrl[repo.url] ?? 0;
   const updatesNote =
@@ -89,7 +90,7 @@ export function renderRepoDetail(
           ${updatesNote}
         </div>
         <div class="store-repo-actions">
-          <button class="btn store-btn-refresh" type="button" data-url="${escapeHtml(repo.url)}">Refresh</button>
+          <button class="btn degoog-btn store-btn-refresh" type="button" data-url="${escapeHtml(repo.url)}">Refresh</button>
           ${removeBtn}
         </div>
       </div>
@@ -175,15 +176,17 @@ export function renderItemCard(
     subLabel = item.engineType ? engineTypeLabel(item.engineType) : "";
   } else if (item.type === "transport") {
     typeLabel = "Transport";
+  } else if (item.type === "autocomplete") {
+    typeLabel = "Autocomplete";
   } else {
     typeLabel = "Theme";
   }
 
   const btn = item.installed
     ? item.updateAvailable
-      ? `<span class="ext-configured-badge"></span><button class="btn btn--primary store-btn-update" type="button" data-repo-url="${escapeHtml(item.repoUrl)}" data-item-path="${escapeHtml(item.path)}" data-type="${escapeHtml(item.type)}">Update</button><button class="btn btn--secondary store-btn-uninstall" type="button" data-repo-url="${escapeHtml(item.repoUrl)}" data-item-path="${escapeHtml(item.path)}" data-type="${escapeHtml(item.type)}">Uninstall</button>`
-      : `<span class="ext-configured-badge"></span><button class="btn btn--secondary store-btn-uninstall" type="button" data-repo-url="${escapeHtml(item.repoUrl)}" data-item-path="${escapeHtml(item.path)}" data-type="${escapeHtml(item.type)}">Uninstall</button>`
-    : `<button class="btn btn--primary store-btn-install" type="button" data-repo-url="${escapeHtml(item.repoUrl)}" data-item-path="${escapeHtml(item.path)}" data-type="${escapeHtml(item.type)}">Install</button>`;
+      ? `<span class="ext-configured-badge"></span><button class="btn btn--primary degoog-btn degoog-btn--primary store-btn-update" type="button" data-repo-url="${escapeHtml(item.repoUrl)}" data-item-path="${escapeHtml(item.path)}" data-type="${escapeHtml(item.type)}">Update</button><button class="btn btn--secondary degoog-btn degoog-btn--secondary store-btn-uninstall" type="button" data-repo-url="${escapeHtml(item.repoUrl)}" data-item-path="${escapeHtml(item.path)}" data-type="${escapeHtml(item.type)}">Uninstall</button>`
+      : `<span class="ext-configured-badge"></span><button class="btn btn--secondary degoog-btn degoog-btn--secondary store-btn-uninstall" type="button" data-repo-url="${escapeHtml(item.repoUrl)}" data-item-path="${escapeHtml(item.path)}" data-type="${escapeHtml(item.type)}">Uninstall</button>`
+    : `<button class="btn btn--primary degoog-btn degoog-btn--primary store-btn-install" type="button" data-repo-url="${escapeHtml(item.repoUrl)}" data-item-path="${escapeHtml(item.path)}" data-type="${escapeHtml(item.type)}">Install</button>`;
   return `
     <div class="store-card" data-repo-url="${escapeHtml(item.repoUrl)}" data-item-path="${escapeHtml(item.path)}" data-type="${escapeHtml(item.type)}" data-plugin-type="${escapeHtml(item.pluginType || "")}" data-engine-type="${escapeHtml(item.engineType || "")}">
       <div class="store-card-thumb-wrap${clickableClass}"${screenshotsData}${thumbA11y}>${thumb}</div>
@@ -196,8 +199,8 @@ export function renderItemCard(
           ${item.requiresNewerVersion ? `<div class="store-card-version-warning">Requires a newer version of Degoog</div>` : ""}
         </div>
         <div class="store-card-footer">
-          <span class="store-type-badge store-type-${item.type}">${typeLabel}</span>
-          ${subLabel ? `<span class="store-subtype-badge">${escapeHtml(subLabel)}</span>` : ""}
+          <span class="store-type-badge store-type-${item.type} degoog-badge degoog-badge--store-type">${typeLabel}</span>
+          ${subLabel ? `<span class="store-subtype-badge degoog-badge">${escapeHtml(subLabel)}</span>` : ""}
           <div class="store-card-actions">${btn}</div>
         </div>
       </div>

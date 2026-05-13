@@ -15,7 +15,7 @@ export interface StoreItem {
   name: string;
   description?: string;
   version: string;
-  type: "plugin" | "theme" | "engine" | "transport";
+  type: "plugin" | "theme" | "engine" | "transport" | "autocomplete";
   installed: boolean;
   installedVersion?: string;
   updateAvailable?: boolean;

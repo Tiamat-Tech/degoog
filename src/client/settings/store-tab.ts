@@ -124,6 +124,7 @@ export async function initStoreTab(
         theme: items.filter((i) => i.type === "theme").length,
         engine: items.filter((i) => i.type === "engine").length,
         transport: items.filter((i) => i.type === "transport").length,
+        autocomplete: items.filter((i) => i.type === "autocomplete").length,
       };
       typeSelect.innerHTML = [
         { id: "all", label: "All", count: typeCounts.all },
@@ -131,6 +132,7 @@ export async function initStoreTab(
         { id: "theme", label: "Themes", count: typeCounts.theme },
         { id: "engine", label: "Engines", count: typeCounts.engine },
         { id: "transport", label: "Transports", count: typeCounts.transport },
+        { id: "autocomplete", label: "Autocomplete", count: typeCounts.autocomplete },
       ]
         .map(
           (t) =>
@@ -235,19 +237,19 @@ export async function initStoreTab(
                   <span class="store-updates-row-name">${escapeHtml(i.name)}</span>
                   <span class="store-updates-row-meta">${escapeHtml(i.repoName)} · <span class="store-card-version-old">v${escapeHtml(i.installedVersion || "?")}</span> → v${escapeHtml(i.version)}</span>
                 </div>
-                <button class="btn btn--primary store-btn-update" type="button" data-repo-url="${escapeHtml(i.repoUrl)}" data-item-path="${escapeHtml(i.path)}" data-type="${escapeHtml(i.type)}">Update</button>
+                <button class="btn btn--primary degoog-btn degoog-btn--primary store-btn-update" type="button" data-repo-url="${escapeHtml(i.repoUrl)}" data-item-path="${escapeHtml(i.path)}" data-type="${escapeHtml(i.type)}">Update</button>
               </div>`,
           )
           .join("");
         updatesPanel.innerHTML = `
           <div class="store-updates-header">
-            <button class="store-updates-toggle" type="button">
+            <button class="store-updates-toggle degoog-accordion-toggle" type="button">
               <span>Updates available (${updatable.length})</span>
               <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
-            <button class="btn btn--primary store-btn-update-all" type="button">Update all</button>
+            <button class="btn btn--primary degoog-btn degoog-btn--primary store-btn-update-all" type="button">Update all</button>
           </div>
-          <div class="store-updates-body">${rows}</div>`;
+          <div class="store-updates-body degoog-accordion-body degoog-accordion-body--flex">${rows}</div>`;
         updatesPanel
           .querySelector<HTMLButtonElement>(".store-updates-toggle")
           ?.addEventListener("click", () => {
@@ -290,7 +292,7 @@ export async function initStoreTab(
   addBtn?.addEventListener("click", () => {
     if (addWrap)
       addWrap.style.display =
-        addWrap.style.display === "none" ? "block" : "none";
+        addWrap.style.display === "none" ? "flex" : "none";
   });
   addConfirmBtn?.addEventListener("click", () => {
     if (addConfirmBtn)

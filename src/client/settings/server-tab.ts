@@ -14,6 +14,12 @@ type ServerSettingsData = {
   rateLimitBurstMax?: string;
   rateLimitLongWindow?: string;
   rateLimitLongMax?: string;
+  rateLimitSuggestEnabled?: string;
+  rateLimitSuggestBurstWindow?: string;
+  rateLimitSuggestBurstMax?: string;
+  rateLimitSuggestLongWindow?: string;
+  rateLimitSuggestLongMax?: string;
+  acDebounceMs?: string;
   languagesEnabled?: string;
   languages?: string;
   streamingEnabled?: string;
@@ -37,11 +43,11 @@ const _scoreT = window.scopedT("core");
 
 const _scoreRowTemplate = (domain: string, score: string): HTMLDivElement => {
   const row = document.createElement("div");
-  row.className = "settings-score-row";
+  row.className="settings-score-row";
 
   const domainInput = document.createElement("input");
   domainInput.type = "text";
-  domainInput.className = "settings-score-domain";
+  domainInput.className="settings-score-domain degoog-input";
   domainInput.placeholder = _scoreT(
     "settings-page.server.domain-score-domain-placeholder",
   );
@@ -49,7 +55,7 @@ const _scoreRowTemplate = (domain: string, score: string): HTMLDivElement => {
 
   const scoreInput = document.createElement("input");
   scoreInput.type = "number";
-  scoreInput.className = "settings-score-value";
+  scoreInput.className="settings-score-value degoog-input";
   scoreInput.placeholder = _scoreT(
     "settings-page.server.domain-score-value-placeholder",
   );
@@ -57,7 +63,7 @@ const _scoreRowTemplate = (domain: string, score: string): HTMLDivElement => {
 
   const remove = document.createElement("button");
   remove.type = "button";
-  remove.className = "settings-score-remove";
+  remove.className="settings-score-remove degoog-icon-btn";
   remove.setAttribute(
     "aria-label",
     _scoreT("settings-page.server.domain-score-remove-aria"),
@@ -149,6 +155,7 @@ export async function initServerTab(
   _bindToggle("proxy-enabled", "proxy-urls-wrap");
   _bindToggle("languages-enabled", "languages-wrap");
   _bindToggle("rate-limit-enabled", "rate-limit-options");
+  _bindToggle("rate-limit-suggest-enabled", "rate-limit-suggest-options");
   _bindToggle("streaming-enabled", "streaming-options");
   _bindToggle("streaming-auto-retry", "streaming-retry-wrap");
   _bindToggle("domain-block-enabled", "domain-block-wrap");
@@ -182,6 +189,12 @@ export async function initServerTab(
       _setVal("rate-limit-burst-max", data.rateLimitBurstMax);
       _setVal("rate-limit-long-window", data.rateLimitLongWindow);
       _setVal("rate-limit-long-max", data.rateLimitLongMax);
+      _setToggle("rate-limit-suggest-enabled", data.rateLimitSuggestEnabled);
+      _setVal("rate-limit-suggest-burst-window", data.rateLimitSuggestBurstWindow);
+      _setVal("rate-limit-suggest-burst-max", data.rateLimitSuggestBurstMax);
+      _setVal("rate-limit-suggest-long-window", data.rateLimitSuggestLongWindow);
+      _setVal("rate-limit-suggest-long-max", data.rateLimitSuggestLongMax);
+      _setVal("ac-debounce-ms", data.acDebounceMs);
 
       _setToggle("streaming-enabled", data.streamingEnabled);
       _setToggle("streaming-auto-retry", data.streamingAutoRetry);
@@ -228,19 +241,28 @@ export async function initServerTab(
     };
 
     if (enabled) {
-      const bw = val("rate-limit-burst-window");
-      const bm = val("rate-limit-burst-max");
-      const lw = val("rate-limit-long-window");
-      const lm = val("rate-limit-long-max");
+      const _rl = (id: string) => {
+        const input = el(id);
+        return input?.value.trim() || input?.placeholder || "";
+      };
+      Object.assign(payload, {
+        rateLimitBurstWindow: _rl("rate-limit-burst-window"),
+        rateLimitBurstMax: _rl("rate-limit-burst-max"),
+        rateLimitLongWindow: _rl("rate-limit-long-window"),
+        rateLimitLongMax: _rl("rate-limit-long-max"),
+      });
 
-      if (bw && bm && lw && lm) {
+      const suggestEnabled = el("rate-limit-suggest-enabled")?.checked;
+      payload.rateLimitSuggestEnabled = suggestEnabled ? "true" : "false";
+      if (suggestEnabled) {
         Object.assign(payload, {
-          rateLimitBurstWindow: bw,
-          rateLimitBurstMax: bm,
-          rateLimitLongWindow: lw,
-          rateLimitLongMax: lm,
+          rateLimitSuggestBurstWindow: _rl("rate-limit-suggest-burst-window"),
+          rateLimitSuggestBurstMax: _rl("rate-limit-suggest-burst-max"),
+          rateLimitSuggestLongWindow: _rl("rate-limit-suggest-long-window"),
+          rateLimitSuggestLongMax: _rl("rate-limit-suggest-long-max"),
         });
       }
+      payload.acDebounceMs = _rl("ac-debounce-ms");
     }
 
     return payload;

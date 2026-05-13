@@ -1,29 +1,8 @@
-@use "../public/icons/fontawesome/scss/variables" with (
-  $font-path: "/public/icons/fontawesome/webfonts"
-);
-@use "../public/icons/fontawesome/scss/fontawesome";
-@use "../public/icons/fontawesome/scss/solid";
-@use "../public/icons/fontawesome/scss/regular";
-@use "../public/icons/fontawesome/scss/brands";
-@use "../public/icons/fontawesome/scss/v4-shims";
-
 @import "variables";
 @import "fonts";
 @import "mixins";
-@import "components/buttons";
-@import "components/header";
-@import "components/logo";
-@import "components/search-bar";
-@import "components/results";
-@import "components/glance";
-@import "components/skeleton";
-@import "components/settings";
-@import "components/extension-cards";
-@import "components/sidebar";
-@import "components/media";
-@import "components/commands";
-@import "components/store";
-@import "components/uovadipasqua";
+@import "components/generic";
+@import "components/overrides";
 
 *,
 *::before,

@@ -1,9 +1,10 @@
 import type { ScoredResult } from "../types";
 import { signData, verifyData } from "./server-key";
+import { getBasePath } from "./base-url";
 
 export const buildSignedProxyUrl = (url: string): string => {
   const sig = signData(url);
-  return `/api/proxy/image?url=${encodeURIComponent(url)}&sig=${sig}`;
+  return `${getBasePath()}/api/proxy/image?url=${encodeURIComponent(url)}&sig=${sig}`;
 };
 
 export const verifyProxyUrl = (url: string, sig: string): boolean =>

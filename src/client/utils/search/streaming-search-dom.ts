@@ -90,14 +90,13 @@ export function updateEngineTimings(
   if (!panel) {
     sidebar.querySelector(".skeleton-sidebar")?.remove();
     panel = document.createElement("div");
-    panel.className =
-      "sidebar-panel sidebar-accordion streaming-engine-panel open";
+    panel.className="sidebar-panel sidebar-accordion streaming-engine-panel open degoog-panel degoog-panel--accordion degoog-panel--stack-item";
     panel.innerHTML = `
-      <button class="sidebar-accordion-toggle" type="button">
+      <button class="sidebar-accordion-toggle degoog-accordion-toggle degoog-accordion-toggle--sidebar" type="button">
         <span>Engine Performance</span>
         <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
-      <div class="sidebar-accordion-body"></div>`;
+      <div class="sidebar-accordion-body degoog-accordion-body"></div>`;
     panel
       .querySelector(".sidebar-accordion-toggle")
       ?.addEventListener("click", () => {

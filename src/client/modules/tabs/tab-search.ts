@@ -138,36 +138,46 @@ export async function performTabSearch(
           ? `${data.results?.length ?? 0} results (${(totalTime / 1000).toFixed(2)}s)`
           : `${data.results?.length ?? 0} results`;
 
-    state.currentData = {
+    const currentData: SearchResponse = {
       results: state.currentResults,
       query,
       totalTime,
       type: `tab:${tabId}`,
       engineTimings: timings,
       relatedSearches: [],
-    } satisfies SearchResponse;
+    };
+    state.currentData = currentData;
     _renderTabResults(data.results || [], resultsList);
 
     const isMediaTab = tabId === "engine:images" || tabId === "engine:videos";
     if (data.totalPages && data.totalPages > 1 && pagination && !isMediaTab) {
       _renderTabPagination(pagination, data.totalPages, page, query, tabId);
     }
-
-    const panels = await fetchSlotPanels(query, data.results);
-    const kpPanels = panels.filter(
-      (p) => p.position === SlotPanelPosition.KnowledgePanel,
-    );
-    renderSidebar(
-      state.currentData,
-      (q) => void performTabSearch(q, tabId),
-      kpPanels.length > 0 ? { sidebarTopPanels: kpPanels } : undefined,
-    );
-  } catch {
+  } catch (err) {
+    console.error("[tab-search] search failed", err);
     if (resultsMeta) resultsMeta.textContent = "";
     if (resultsList)
       resultsList.innerHTML =
         '<div class="no-results">Search failed. Please try again.</div>';
+    return;
   }
+
+  const currentData = state.currentData;
+  if (!currentData) return;
+
+  void (async () => {
+    const panels = await fetchSlotPanels(query, state.currentResults);
+    const kpPanels = panels.filter(
+      (p) => p.position === SlotPanelPosition.KnowledgePanel,
+    );
+    try {
+      renderSidebar(
+        currentData,
+        (q) => void performTabSearch(q, tabId),
+        kpPanels.length > 0 ? { sidebarTopPanels: kpPanels } : undefined,
+      );
+    } catch {}
+  })();
 }
 
 function _renderTabResults(

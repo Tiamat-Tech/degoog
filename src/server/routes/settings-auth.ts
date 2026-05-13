@@ -3,6 +3,7 @@ import { getMiddleware } from "../extensions/middleware/registry";
 import { asString, getSettings } from "../utils/plugin-settings";
 import { isPublicInstance } from "../utils/public-instance";
 import { logger } from "../utils/logger";
+import { getBasePath } from "../utils/base-url";
 import {
   TOKEN_TTL_MS,
   checkAuthRate,
@@ -47,7 +48,7 @@ function getTokenFromCookie(c: Context): string | undefined {
   return value || undefined;
 }
 
-export function getSettingsTokenFromRequest(c: Context): string | undefined {
+export function canBalrogPass(c: Context): string | undefined {
   const fromHeader = c.req.header("x-settings-token");
   if (fromHeader) {
     logger.debug("settings-auth", "token source: x-settings-token header");
@@ -65,11 +66,11 @@ export async function guardSettingsRoute(
   c: Context,
   route: string,
 ): Promise<Response | null> {
-  const token = getSettingsTokenFromRequest(c);
-  const valid = await validateSettingsToken(token);
+  const token = canBalrogPass(c);
+  const valid = await gandalf(token);
   if (!valid) {
     logger.debug("settings-auth", `401 on ${route}`);
-    return c.json({ error: "Unauthorized" }, 401);
+    return c.json({ error: "You shall not pass!" }, 401);
   }
   return null;
 }
@@ -77,8 +78,8 @@ export async function guardSettingsRoute(
 export async function shouldServeSettingsGate(c: Context): Promise<boolean> {
   const required = await isAuthRequired();
   if (!required) return false;
-  const token = getSettingsTokenFromRequest(c);
-  const valid = await validateSettingsToken(token);
+  const token = canBalrogPass(c);
+  const valid = await gandalf(token);
   return !valid;
 }
 
@@ -94,9 +95,7 @@ export function isPasswordRequired(): boolean {
   return getPasswords().length > 0;
 }
 
-export async function validateSettingsToken(
-  token: string | undefined,
-): Promise<boolean> {
+export async function gandalf(token: string | undefined): Promise<boolean> {
   if (isPublicInstance()) return false;
   const required = await isAuthRequired();
   if (!required) return true;
@@ -146,9 +145,8 @@ router.get("/api/settings/auth", async (c) => {
   const required = await isAuthRequired();
   if (!required) return c.json({ required: false, valid: true });
 
-  const token = getSettingsTokenFromRequest(c);
-  if (await validateSettingsToken(token))
-    return c.json({ required: true, valid: true });
+  const token = canBalrogPass(c);
+  if (await gandalf(token)) return c.json({ required: true, valid: true });
 
   const m = await getSelectedMiddlewareForSettingsGate();
   if (!m) {
@@ -171,7 +169,7 @@ router.get("/api/settings/auth", async (c) => {
 
 router.get("/api/settings/auth/callback", async (c) => {
   const m = await getSelectedMiddlewareForSettingsGate();
-  if (!m) return c.redirect("/settings");
+  if (!m) return c.redirect(`${getBasePath()}/settings`);
   const result = await m.handle(c.req.raw, { route: "settings-auth-callback" });
   if (
     result !== null &&
@@ -185,11 +183,11 @@ router.get("/api/settings/auth/callback", async (c) => {
     return c.redirect(`${result.redirect}${sep}token=${sessionToken}`);
   }
   if (result instanceof Response) return result;
-  return c.redirect("/settings");
+  return c.redirect(`${getBasePath()}/settings`);
 });
 
 router.post("/api/settings/auth", async (c) => {
-  if (isPublicInstance()) return c.json({ error: "Unauthorized" }, 401);
+  if (isPublicInstance()) return c.json({ error: "You shall not pass!" }, 401);
   const ip = _clientIp(c);
   const rate = checkAuthRate(ip);
   if (!rate.allowed) {

@@ -27,7 +27,7 @@ export const TranslateFunction: Translate = Object.assign(
     return key;
   },
   {
-    setLocale(_locale: string) { },
+    setLocale(_locale: string) {},
     locale: "",
     translations: undefined as TranslationRecord | undefined,
   },
@@ -38,19 +38,20 @@ export enum ExtensionStoreType {
   Theme = "theme",
   Engine = "engine",
   Transport = "transport",
+  Autocomplete = "autocomplete",
 }
 
 export interface SettingField {
   key: string;
   label: string;
   type:
-  | "text"
-  | "number"
-  | "password"
-  | "url"
-  | "toggle"
-  | "textarea"
-  | "select";
+    | "text"
+    | "number"
+    | "password"
+    | "url"
+    | "toggle"
+    | "textarea"
+    | "select";
   required?: boolean;
   placeholder?: string;
   description?: string;
@@ -58,13 +59,14 @@ export interface SettingField {
   options?: string[];
   default?: string;
   advanced?: boolean;
+  visibleWhen?: { key: string; equals: string };
 }
 
 export interface ExtensionMeta {
   id: string;
   displayName: string;
   description: string;
-  type: ExtensionStoreType | "command";
+  type: ExtensionStoreType | "command" | "interceptor";
   configurable: boolean;
   settingsSchema: SettingField[];
   settings: Record<string, string | string[]>;
@@ -98,6 +100,30 @@ export interface SearchEngine {
   t?: Translate;
 }
 
+export interface AutocompleteContext {
+  fetch: typeof fetch;
+  lang?: string;
+  createCache: CreateCache;
+}
+
+export interface RichSuggestion {
+  description?: string;
+  thumbnail?: string;
+  type?: string;
+}
+
+export type AutocompleteSuggestion = string | { text: string; rich?: RichSuggestion };
+
+export interface AutocompleteProvider {
+  name: string;
+  settingsSchema?: SettingField[];
+  configure?(settings: Record<string, string | string[]>): void;
+  getSuggestions(
+    query: string,
+    context?: AutocompleteContext,
+  ): Promise<AutocompleteSuggestion[]>;
+}
+
 export enum SlotPanelPosition {
   AboveResults = "above-results",
   BelowResults = "below-results",
@@ -126,12 +152,14 @@ export interface SlotPluginContext {
 }
 
 export interface SlotPlugin {
-  id: string;
+  id?: string;
   name: string;
   description: string;
   position: SlotPanelPosition;
   slotPositions?: SlotPanelPosition[];
   settingsId?: string;
+  settingsFallbackIds?: string[];
+  priority?: number;
   trigger: (query: string) => boolean | Promise<boolean>;
   waitForResults?: boolean;
   gridSize?: 1 | 2 | 3 | 4;
@@ -173,11 +201,12 @@ export interface BangCommand {
 }
 
 export interface SearchResultTab {
-  id: string;
+  id?: string;
   name: string;
   icon?: string;
   engineType?: string;
   settingsId?: string;
+  settingsFallbackIds?: string[];
   executeSearch?(
     query: string,
     page?: number,
@@ -194,9 +223,10 @@ export interface MiddlewareResult {
 }
 
 export interface RequestMiddleware {
-  id: string;
+  id?: string;
   name: string;
   settingsId?: string;
+  settingsFallbackIds?: string[];
   settingsSchema?: SettingField[];
   configure?(settings: Record<string, string | string[]>): void;
   init?(context: PluginContext): void | Promise<void>;
@@ -261,6 +291,31 @@ export interface Transport {
   ): Promise<Response>;
 }
 
+export interface InterceptorResult {
+  query: string;
+}
+
+export interface QueryInterceptorContext {
+  fetch?: (url: string, init?: RequestInit) => Promise<Response>;
+  createCache: CreateCache;
+  lang?: string;
+}
+
+export interface QueryInterceptor {
+  name: string;
+  description: string;
+  settingsId?: string;
+  settingsSchema?: SettingField[];
+  priority?: number;
+  configure?(settings: Record<string, string | string[]>): void;
+  init?(context: PluginContext): void | Promise<void>;
+  intercept(
+    query: string,
+    context?: QueryInterceptorContext,
+  ): Promise<InterceptorResult>;
+  t?: Translate;
+}
+
 export interface UovadipasquaSearchQueryTrigger {
   type: "search-query";
   pattern: string;
@@ -269,7 +324,7 @@ export interface UovadipasquaSearchQueryTrigger {
 
 export type UovadipasquaTrigger = UovadipasquaSearchQueryTrigger;
 export interface Uovadipasqua {
-  id: string;
+  id?: string;
   triggers: UovadipasquaTrigger[];
   waitForResults?: boolean;
 }

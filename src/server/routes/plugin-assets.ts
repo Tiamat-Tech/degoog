@@ -8,6 +8,7 @@ import {
   getPluginNamespace,
   getScriptFolderSource,
 } from "../utils/plugin-assets";
+import { rewritePluginPaths, rewriteThemePaths } from "../utils/extension-id";
 
 const MIME_TYPES: Record<string, string> = {
   ".js": "application/javascript",
@@ -56,13 +57,11 @@ router.get("/plugins/:folder/*", async (c) => {
   c.header("Content-Type", mime);
   c.header("Cache-Control", "no-cache");
 
-  // Auto-scope JS files with the plugin's translation namespace
-  // Same as injectScope but done here in the backend to avoid needing to load the entire script in the frontend first
   if (ext === ".js" || ext === ".mjs") {
     const ns = getPluginNamespace(folder);
     if (ns) {
-      const code = await file.text();
-      const scoped = `(function(t){${code}\n})(window.scopedT(${JSON.stringify(ns)}));`;
+      const code = rewritePluginPaths(await file.text(), folder);
+      const scoped = `(function(t){const __PLUGIN_ID__=${JSON.stringify(folder)};${code}\n})(window.scopedT(${JSON.stringify(ns)}));`;
       return c.body(scoped);
     }
   }
@@ -89,12 +88,15 @@ router.get("/themes/:folder/*", async (c) => {
   if (!(await file.exists())) return c.notFound();
   c.header("Content-Type", mime);
   c.header("Cache-Control", "no-cache");
-  // Auto-scope JS files with the theme's translation namespace
+
   if (ext === ".js" || ext === ".mjs") {
     const ns = `themes/${folder}`;
     const code = await file.text();
     const scoped = `(function(t){${code}\n})(window.scopedT(${JSON.stringify(ns)}));`;
     return c.body(scoped);
+  }
+  if (ext === ".css") {
+    return c.body(rewriteThemePaths(await file.text(), folder));
   }
   return c.body(await file.arrayBuffer());
 });

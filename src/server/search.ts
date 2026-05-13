@@ -18,6 +18,7 @@ import type {
   TimeFilter,
 } from "./types";
 import { extractImageUrl } from "./utils/extract-image";
+import { logger } from "./utils/logger";
 import { outgoingFetch, parseOutgoingTransport } from "./utils/outgoing";
 import { stripHtml } from "./utils/text";
 import { asString, getSettings } from "./utils/plugin-settings";
@@ -204,6 +205,11 @@ const _pickRandomUserAgentFromTextarea = (raw: string | undefined): string => {
   return lines[Math.floor(Math.random() * lines.length)] ?? "";
 };
 
+const _asBool = (v: string | undefined): boolean => {
+  const normalized = (v ?? "").trim().toLowerCase();
+  return normalized === "true" || normalized === "1" || normalized === "yes";
+};
+
 export const createSearchEngineContext = (
   engineSettingsId: string | undefined,
   lang?: string,
@@ -221,21 +227,32 @@ export const createSearchEngineContext = (
     fetch: async (url, init) => {
       let raw: string | undefined;
       let customUa = "";
+      let proxyOverrideEnabled = false;
+      let proxyOverrideUrls = "";
       if (engineSettingsId !== undefined) {
         const settings = await getSettings(engineSettingsId);
         raw = asString(settings.outgoingTransport) || undefined;
         customUa = _pickRandomUserAgentFromTextarea(
           asString(settings.customUserAgents) || undefined,
         );
+        proxyOverrideEnabled = _asBool(asString(settings.proxyOverrideEnabled));
+        proxyOverrideUrls = asString(settings.proxyOverrideUrls);
       }
       if (!raw && engineSettingsId !== undefined) {
         raw = getEngineDefaultTransport(engineSettingsId) ?? undefined;
       }
       const transport = parseOutgoingTransport(raw);
       const baseInit = init ?? {};
-      if (!customUa) return outgoingFetch(url, baseInit, transport);
+      if (!customUa)
+        return outgoingFetch(url, baseInit, transport, {
+          proxyOverrideEnabled,
+          proxyOverrideUrls,
+        });
       const headers = { ...(baseInit.headers ?? {}), "User-Agent": customUa };
-      return outgoingFetch(url, { ...baseInit, headers }, transport);
+      return outgoingFetch(url, { ...baseInit, headers }, transport, {
+        proxyOverrideEnabled,
+        proxyOverrideUrls,
+      });
     },
     lang: resolvedLang,
     dateFrom: dateFrom || undefined,
@@ -282,8 +299,9 @@ export const searchSingleEngine = async (
       results,
       timing: { name: engine.name, time: elapsed, resultCount: results.length },
     };
-  } catch {
+  } catch (err) {
     const elapsed = Math.round(performance.now() - t0);
+    logger.warn("engine", `${engine.name} failed after ${elapsed}ms`, err);
     return {
       results: [],
       timing: { name: engine.name, time: elapsed, resultCount: 0 },

@@ -8,6 +8,8 @@ import type {
 } from "../../types";
 import { getRandomUserAgent } from "../../utils/user-agents";
 
+const ASYNC_PAGE_SIZE = 35;
+
 export class BingImagesEngine implements SearchEngine {
   name = "Bing Images";
   safeSearch: string = "off";
@@ -33,11 +35,15 @@ export class BingImagesEngine implements SearchEngine {
     timeFilter?: TimeFilter,
     context?: EngineContext,
   ): Promise<SearchResult[]> {
-    const first = (page - 1) * 60;
+    const first = (page - 1) * ASYNC_PAGE_SIZE;
     const lang = context?.lang;
-    let url = `https://www.bing.com/images/search?q=${encodeURIComponent(query)}&count=60&first=${first}`;
+    let url = `https://www.bing.com/images/async?q=${encodeURIComponent(query)}&async=content&count=${ASYNC_PAGE_SIZE}&first=${first}`;
     if (lang) url += `&setlang=${lang}`;
-    if (this.safeSearch !== "off") url += `&adlt=${this.safeSearch}`;
+    const adlt =
+      this.safeSearch === "strict" || this.safeSearch === "moderate"
+        ? this.safeSearch
+        : "off";
+    url += `&adlt=${adlt}`;
     if (timeFilter && timeFilter !== "any" && timeFilter !== "custom") {
       const freshMap: Record<string, string> = {
         hour: "Hour",
@@ -72,8 +78,8 @@ export class BingImagesEngine implements SearchEngine {
     const $ = cheerio.load(html);
     const results: SearchResult[] = [];
 
-    $(".iusc, .imgpt").each((_, el) => {
-      const meta = $(el).attr("m") || $(el).find("a.iusc").attr("m") || "";
+    $("a.iusc").each((_, el) => {
+      const meta = $(el).attr("m") || "";
       try {
         const data = JSON.parse(meta);
         if (data.murl && data.turl) {
@@ -86,7 +92,7 @@ export class BingImagesEngine implements SearchEngine {
             imageUrl: data.murl,
           });
         }
-      } catch {}
+      } catch { }
     });
 
     if (results.length === 0) {
