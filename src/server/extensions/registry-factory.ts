@@ -170,8 +170,9 @@ export function createRegistry<T>(opts: RegistryOptions<T>): {
 } {
   let _items: T[] = [];
   const _canonicalIds = new Set<string>();
+  let _loadCount = 0;
 
-  async function loadFromDir(registryDir: RegistryDir): Promise<void> {
+  async function loadFromDir(registryDir: RegistryDir, bust: boolean): Promise<void> {
     let entries: string[];
     try {
       entries = await readdir(registryDir.dir);
@@ -189,7 +190,8 @@ export function createRegistry<T>(opts: RegistryOptions<T>): {
       resolved.map(async (r) => {
         if (!r) return null;
         try {
-          const url = pathToFileURL(r.fullPath).href;
+          const base = pathToFileURL(r.fullPath).href;
+          const url = bust ? `${base}?r=${_loadCount}` : base;
           const mod = (await import(url)) as Record<string, unknown>;
           const extracted = opts.match(mod);
           return extracted != null ? { extracted, r } : null;
@@ -247,18 +249,19 @@ export function createRegistry<T>(opts: RegistryOptions<T>): {
     }
   }
 
-  async function init(): Promise<void> {
+  async function init(bust = false): Promise<void> {
+    if (bust) _loadCount++;
     _items = [];
     _canonicalIds.clear();
     const dirs = typeof opts.dirs === "function" ? opts.dirs() : opts.dirs;
     for (const d of dirs) {
-      await loadFromDir(d);
+      await loadFromDir(d, bust);
     }
   }
 
   return {
     items: () => [..._items],
     init,
-    reload: init,
+    reload: () => init(true),
   };
 }

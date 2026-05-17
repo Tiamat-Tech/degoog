@@ -6,39 +6,41 @@ import { initProxyTest } from "./proxy-test";
 
 const t = window.scopedT("core");
 
+type BoolSetting = boolean | string;
+
 type ServerSettingsData = {
-  proxyEnabled?: string;
+  proxyEnabled?: BoolSetting;
   proxyUrls?: string;
-  rateLimitEnabled?: string;
+  rateLimitEnabled?: BoolSetting;
   rateLimitBurstWindow?: string;
   rateLimitBurstMax?: string;
   rateLimitLongWindow?: string;
   rateLimitLongMax?: string;
-  rateLimitSuggestEnabled?: string;
+  rateLimitSuggestEnabled?: BoolSetting;
   rateLimitSuggestBurstWindow?: string;
   rateLimitSuggestBurstMax?: string;
   rateLimitSuggestLongWindow?: string;
   rateLimitSuggestLongMax?: string;
   acDebounceMs?: string;
-  languagesEnabled?: string;
+  languagesEnabled?: BoolSetting;
   languages?: string;
-  streamingEnabled?: string;
-  streamingAutoRetry?: string;
+  streamingEnabled?: BoolSetting;
+  streamingAutoRetry?: BoolSetting;
   streamingMaxRetries?: string;
-  domainBlockEnabled?: string;
+  domainBlockEnabled?: BoolSetting;
   domainBlockList?: string;
-  domainBlockUiEnabled?: string;
-  domainReplaceEnabled?: string;
+  domainBlockUiEnabled?: BoolSetting;
+  domainReplaceEnabled?: BoolSetting;
   domainReplaceList?: string;
-  domainReplaceUiEnabled?: string;
-  domainScoreEnabled?: string;
+  domainReplaceUiEnabled?: BoolSetting;
+  domainScoreEnabled?: BoolSetting;
   domainScoreList?: string;
-  domainScoreUiEnabled?: string;
+  domainScoreUiEnabled?: BoolSetting;
   customCss?: string;
-  apiKeySearchEnabled?: string;
-  apiKeySuggestEnabled?: string;
-  honeypotEnabled?: string;
-  honeypotCssCheck?: string;
+  apiKeySearchEnabled?: BoolSetting;
+  apiKeySuggestEnabled?: BoolSetting;
+  honeypotEnabled?: BoolSetting;
+  honeypotCssCheck?: BoolSetting;
   honeypotBanDuration?: string;
 };
 
@@ -135,10 +137,10 @@ function _bindToggle(checkboxId: string, wrapId: string) {
   }
 }
 
-function _setToggle(id: string, state?: string) {
+function _setToggle(id: string, state?: BoolSetting) {
   const checkbox = el(id);
   if (checkbox && state !== undefined) {
-    checkbox.checked = state === "true";
+    checkbox.checked = state === true || state === "true";
     checkbox.dispatchEvent(new Event("change"));
   }
 }
