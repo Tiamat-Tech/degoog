@@ -4,6 +4,7 @@ import type {
   SearchType,
   TimeFilter,
   RetryPostBody,
+  ScoredResult
 } from "../../types";
 import {
   _applyRateLimit,
@@ -13,6 +14,14 @@ import {
 import { guardApiKey } from "../../utils/api-key-guard";
 import { parseEnginesFromBody, parseImageFilter, parsePage } from "./_parsers";
 import { handleRetry, handleSearch } from "./_search-handlers";
+
+/**
+ * @todo Remove this once openwebui merges my future pull request to add degoog specific search support.
+ */
+const openWebUIFix = <T extends { results: ScoredResult[] }>(r: T) => ({
+  ...r,
+  results: r.results.map((res) => ({ ...res, content: res.snippet })),
+});
 
 export function registerSearchRoutes(router: Hono): void {
   router.get("/api/search", async (c) => {
@@ -43,7 +52,7 @@ export function registerSearchRoutes(router: Hono): void {
       ),
     });
 
-    return c.json(result);
+    return c.json(openWebUIFix(result));
   });
 
   router.post("/api/search", async (c) => {
@@ -83,7 +92,7 @@ export function registerSearchRoutes(router: Hono): void {
         ),
       });
 
-      return c.json(result);
+      return c.json(openWebUIFix(result));
     }
 
     let body: SearchBody;
@@ -108,7 +117,7 @@ export function registerSearchRoutes(router: Hono): void {
       imageFilter: parseImageFilter(body.imgColor, body.imgSize, body.imgType, body.imgLayout, body.imgNsfw),
     });
 
-    return c.json(result);
+    return c.json(openWebUIFix(result));
   });
 
   router.get("/api/search/retry", async (c) => {
@@ -141,7 +150,7 @@ export function registerSearchRoutes(router: Hono): void {
       ),
     });
 
-    return c.json(result);
+    return c.json(openWebUIFix(result));
   });
 
   router.post("/api/search/retry", async (c) => {
@@ -174,6 +183,6 @@ export function registerSearchRoutes(router: Hono): void {
       imageFilter: parseImageFilter(body.imgColor, body.imgSize, body.imgType, body.imgLayout, body.imgNsfw),
     });
 
-    return c.json(result);
+    return c.json(openWebUIFix(result));
   });
 }

@@ -13,6 +13,7 @@ import {
   mergeDefaults,
 } from "../../utils/plugin-settings";
 import { autocompleteDir } from "../../utils/paths";
+import { DEGOOG_SETTINGS_ID } from "../../utils/search";
 import { outgoingFetch, parseOutgoingTransport } from "../../utils/outgoing";
 import { autocompleteCache, createCache } from "../../utils/cache";
 import { getTransportNames } from "../transports/registry";
@@ -127,8 +128,22 @@ async function _buildContext(providerId: string): Promise<AutocompleteContext> {
   const stored = await getSettings(providerId);
   const raw = asString(stored.outgoingTransport) || undefined;
   const transportName = parseOutgoingTransport(raw);
-  const rawLocale = (process.env.DEGOOG_DEFAULT_SEARCH_LANGUAGE || "").trim();
-  const lang = rawLocale.split(/[-_]/)[0].toLowerCase() || "en";
+  const globalSettings = await getSettings(DEGOOG_SETTINGS_ID);
+  const lang = (() => {
+    if (asBoolean(globalSettings.languagesEnabled)) {
+      const first = asString(globalSettings.languages ?? "")
+        .split(/[\n,]/)
+        .map((s) => s.trim().toLowerCase())
+        .find((s) => /^[a-z]{2,3}$/.test(s));
+      if (first) return first;
+    }
+    return (
+      (process.env.DEGOOG_DEFAULT_SEARCH_LANGUAGE || "")
+        .trim()
+        .split(/[-_]/)[0]
+        .toLowerCase() || "en"
+    );
+  })();
   return {
     fetch: (url, init) =>
       outgoingFetch(
