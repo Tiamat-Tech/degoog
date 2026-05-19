@@ -290,8 +290,10 @@ export const renderField = (
       : field.options[0];
     const opts = field.options
       .map(
-        (v) =>
-          `<option value="${escapeHtml(v)}"${validValue === v ? " selected" : ""}>${escapeHtml(v.charAt(0).toUpperCase() + v.slice(1))}</option>`,
+        (v, i) => {
+          const label = field.optionLabels?.[i] ?? (v.charAt(0).toUpperCase() + v.slice(1));
+          return `<option value="${escapeHtml(v)}"${validValue === v ? " selected" : ""}>${escapeHtml(label)}</option>`;
+        },
       )
       .join("");
     return _wrapVisibleWhen(

@@ -16,7 +16,7 @@ import {
   mergeDefaults,
 } from "../../utils/plugin-settings";
 import { createTranslatorFromPath } from "../../utils/translation";
-import { getTransportNames } from "../transports/registry";
+import { getTransportNames, getTransportDisplayNames } from "../transports/registry";
 import { enginesDir, defaultEnginesFile } from "../../utils/paths";
 import { readFileSync } from "fs";
 import { createRegistry } from "../registry-factory";
@@ -504,6 +504,7 @@ export async function getEngineExtensionMeta(
   const engineMap = getEngineMap();
   const results: ExtensionMeta[] = [];
   const transportOptions = getTransportNames();
+  const transportLabels = getTransportDisplayNames();
 
   const baseScoreField = coreT
     ? {
@@ -546,6 +547,7 @@ export async function getEngineExtensionMeta(
     const transportField: SettingField = {
       ...baseTransportField,
       options: transportOptions,
+      optionLabels: transportLabels,
       default: transportDefault,
     };
 

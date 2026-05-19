@@ -142,7 +142,7 @@ function getEntriesForType(
   return pkg.engines;
 }
 
-async function reloadAfterAction(type: ExtensionStoreType): Promise<void> {
+export async function reloadAfterAction(type: ExtensionStoreType): Promise<void> {
   if (type === ExtensionStoreType.Plugin) {
     await reloadSlotPlugins();
     await reloadInterceptors();

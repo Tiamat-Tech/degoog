@@ -51,7 +51,7 @@ import {
 import { outgoingFetch } from "../utils/outgoing";
 import { readFile } from "fs/promises";
 import { extensionReadmeExists } from "../utils/extension-docs";
-import { getInstalledItems } from "../extensions/store/item-ops";
+import { getInstalledItems, reloadAfterAction } from "../extensions/store/item-ops";
 import { isVersionAtLeast, getAppVersion } from "../utils/version";
 import { logger } from "../utils/logger";
 
@@ -268,7 +268,22 @@ router.post("/api/extensions/:id/settings", async (c) => {
 
   const existing = await getSettings(id);
   const merged = mergeSecrets(filtered, existing, ext.settingsSchema);
+  const wasDisabled = existing.disabled === "true";
+  const nowDisabled = merged.disabled === "true";
   await setSettings(id, merged);
+
+  if (wasDisabled !== nowDisabled) {
+    const storeType = Object.values(ExtensionStoreType).includes(
+      ext.type as ExtensionStoreType,
+    )
+      ? (ext.type as ExtensionStoreType)
+      : ExtensionStoreType.Plugin;
+    try {
+      await reloadAfterAction(storeType);
+    } catch (err) {
+      logger.warn("extensions", `Failed to reload after toggle of ${id}`, err);
+    }
+  }
 
   if (
     id.startsWith("plugin-") &&

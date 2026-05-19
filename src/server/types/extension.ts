@@ -59,6 +59,7 @@ export interface SettingField {
   description?: string;
   secret?: boolean;
   options?: string[];
+  optionLabels?: string[];
   default?: string;
   advanced?: boolean;
   visibleWhen?: { key: string; equals: string };

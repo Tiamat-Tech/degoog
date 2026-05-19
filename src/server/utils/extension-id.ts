@@ -31,4 +31,10 @@ export const rewriteThemePaths = (content: string, id: string): string =>
     .replace(/url\(\s*(['"]?)(?!https?:|\/|data:)([^'"\s)]+)\1\s*\)/g, `url($1/themes/${id}/$2$1)`);
 
 export const rewritePluginPaths = (code: string, id: string): string =>
-  code.replace(/\/api\/plugin\/[\w-]+\//g, `/api/plugin/${id}/`);
+  code
+    .replace(/\/api\/plugin\/[\w-]+\//g, `/api/plugin/${id}/`)
+    .replace(/\/plugins\/[\w-]+\//g, `/plugins/${id}/`)
+    .replace(
+      /\(document\.currentScript\s+instanceof\s+HTMLScriptElement\b[^?]*\)\?\.\[1\]\s*\?\?\s*["'][^"']*["']/gs,
+      "__PLUGIN_ID__",
+    );

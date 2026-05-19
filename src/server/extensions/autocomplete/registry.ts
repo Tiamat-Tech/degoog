@@ -16,7 +16,7 @@ import { autocompleteDir } from "../../utils/paths";
 import { DEGOOG_SETTINGS_ID } from "../../utils/search";
 import { outgoingFetch, parseOutgoingTransport } from "../../utils/outgoing";
 import { autocompleteCache, createCache } from "../../utils/cache";
-import { getTransportNames } from "../transports/registry";
+import { getTransportNames, getTransportDisplayNames } from "../transports/registry";
 import { createRegistry } from "../registry-factory";
 import { logger } from "../../utils/logger";
 import { buildSignedProxyUrl } from "../../utils/proxy-sign";
@@ -340,6 +340,7 @@ export async function getSuggestionsFromProviders(query: string): Promise<
 
 export async function getAutocompleteExtensionMeta(): Promise<ExtensionMeta[]> {
   const transportOptions = getTransportNames();
+  const transportLabels = getTransportDisplayNames();
   const results: ExtensionMeta[] = [];
 
   for (const p of _all()) {
@@ -360,6 +361,7 @@ export async function getAutocompleteExtensionMeta(): Promise<ExtensionMeta[]> {
     const transportField: SettingField = {
       ...OUTGOING_TRANSPORT_FIELD,
       options: transportOptions,
+      optionLabels: transportLabels,
       default: transportDefault,
     };
 

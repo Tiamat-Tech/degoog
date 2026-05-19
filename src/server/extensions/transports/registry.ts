@@ -85,6 +85,10 @@ export function getTransportNames(): string[] {
   return _all().map((t) => t.name);
 }
 
+export function getTransportDisplayNames(): string[] {
+  return _all().map((t) => t.displayName ?? t.name);
+}
+
 export const getAvailableTransportNames = async (): Promise<string[]> => {
   const results: string[] = [];
   for (const t of _all()) {
