@@ -79,6 +79,6 @@ export function findPluginRoute(
   );
 }
 
-export async function reloadPluginRoutes(): Promise<void> {
-  await registry.reload();
+export async function reloadPluginRoutes(bust = true): Promise<void> {
+  await (bust ? registry.reload() : registry.refresh());
 }

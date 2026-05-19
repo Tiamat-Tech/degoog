@@ -142,15 +142,18 @@ function getEntriesForType(
   return pkg.engines;
 }
 
-export async function reloadAfterAction(type: ExtensionStoreType): Promise<void> {
+export async function reloadAfterAction(
+  type: ExtensionStoreType,
+  bust = true,
+): Promise<void> {
   if (type === ExtensionStoreType.Plugin) {
-    await reloadSlotPlugins();
-    await reloadInterceptors();
-    await reloadSearchResultTabs();
-    await reloadCommands();
-    await reloadSearchBarActions();
-    await reloadPluginRoutes();
-    await reloadMiddlewareRegistry();
+    await reloadSlotPlugins(bust);
+    await reloadInterceptors(bust);
+    await reloadSearchResultTabs(bust);
+    await reloadCommands(bust);
+    await reloadSearchBarActions(bust);
+    await reloadPluginRoutes(bust);
+    await reloadMiddlewareRegistry(bust);
   } else if (type === ExtensionStoreType.Theme) {
     await reloadThemes();
   } else if (type === ExtensionStoreType.Transport) {

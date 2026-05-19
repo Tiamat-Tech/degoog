@@ -102,7 +102,7 @@ const registry = createRegistry<CommandEntry>({
   debugTag: "commands",
 });
 
-export async function initPlugins(): Promise<void> {
+async function loadAliases(): Promise<void> {
   const { readFile } = await import("fs/promises");
   const { aliasesFile } = await import("../../utils/paths");
 
@@ -119,13 +119,18 @@ export async function initPlugins(): Promise<void> {
   } catch {
     userAliases = {};
   }
+}
 
+export async function initPlugins(): Promise<void> {
+  await loadAliases();
   commandSourceMap.clear();
   await registry.init();
 }
 
-export async function reloadCommands(): Promise<void> {
-  await initPlugins();
+export async function reloadCommands(bust = true): Promise<void> {
+  await loadAliases();
+  commandSourceMap.clear();
+  await (bust ? registry.reload() : registry.refresh());
 }
 
 export function getCommandSource(id: string): "builtin" | "plugin" {

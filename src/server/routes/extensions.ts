@@ -279,7 +279,7 @@ router.post("/api/extensions/:id/settings", async (c) => {
       ? (ext.type as ExtensionStoreType)
       : ExtensionStoreType.Plugin;
     try {
-      await reloadAfterAction(storeType);
+      await reloadAfterAction(storeType, false);
     } catch (err) {
       logger.warn("extensions", `Failed to reload after toggle of ${id}`, err);
     }

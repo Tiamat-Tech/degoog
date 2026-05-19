@@ -80,8 +80,8 @@ export function getSearchResultTabById(tabId: string): SearchResultTab | null {
   return registry.items().find((t) => t.id === tabId) ?? null;
 }
 
-export async function reloadSearchResultTabs(): Promise<void> {
-  await registry.reload();
+export async function reloadSearchResultTabs(bust = true): Promise<void> {
+  await (bust ? registry.reload() : registry.refresh());
 }
 
 export function getAllTabTranslators(): {

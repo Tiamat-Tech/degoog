@@ -72,8 +72,8 @@ export async function getSearchBarActions(): Promise<SearchBarAction[]> {
   return out;
 }
 
-export async function reloadSearchBarActions(): Promise<void> {
-  await registry.init();
+export async function reloadSearchBarActions(bust = true): Promise<void> {
+  await (bust ? registry.reload() : registry.refresh());
 }
 
 export async function getSearchBarActionExtensionMeta(): Promise<

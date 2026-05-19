@@ -137,7 +137,7 @@ export function getAllSlotTranslators(): {
     .map((s) => ({ namespace: `slots/${s.id}`, translator: s.t! }));
 }
 
-export async function reloadSlotPlugins(): Promise<void> {
+export async function reloadSlotPlugins(bust = true): Promise<void> {
   slotSourceMap.clear();
-  await registry.reload();
+  await (bust ? registry.reload() : registry.refresh());
 }

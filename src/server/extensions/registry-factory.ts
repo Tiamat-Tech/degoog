@@ -167,6 +167,7 @@ export function createRegistry<T>(opts: RegistryOptions<T>): {
   items: () => T[];
   init: () => Promise<void>;
   reload: () => Promise<void>;
+  refresh: () => Promise<void>;
 } {
   let _items: T[] = [];
   const _canonicalIds = new Set<string>();
@@ -263,5 +264,6 @@ export function createRegistry<T>(opts: RegistryOptions<T>): {
     items: () => [..._items],
     init,
     reload: () => init(true),
+    refresh: () => init(false),
   };
 }

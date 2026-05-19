@@ -72,9 +72,9 @@ export function getMiddleware(id: string): RequestMiddleware | null {
   return registry.items().find((m) => m.id === mapped) ?? null;
 }
 
-export async function reloadMiddlewareRegistry(): Promise<void> {
+export async function reloadMiddlewareRegistry(bust = true): Promise<void> {
   _legacyToCanonical.clear();
-  await registry.reload();
+  await (bust ? registry.reload() : registry.refresh());
 }
 
 export function getAllMiddlewareTranslators(): {
