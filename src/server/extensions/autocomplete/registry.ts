@@ -13,39 +13,14 @@ import {
   mergeDefaults,
 } from "../../utils/plugin-settings";
 import { autocompleteDir } from "../../utils/paths";
-import { DEGOOG_SETTINGS_ID } from "../../utils/search";
 import { outgoingFetch, parseOutgoingTransport } from "../../utils/outgoing";
 import { autocompleteCache, createCache } from "../../utils/cache";
 import { getTransportNames, getTransportDisplayNames } from "../transports/registry";
 import { createRegistry } from "../registry-factory";
 import { logger } from "../../utils/logger";
 import { buildSignedProxyUrl } from "../../utils/proxy-sign";
-import { GoogleAutocompleteProvider } from "./google";
-import { DuckDuckGoAutocompleteProvider } from "./duckduckgo";
-
-interface BuiltinDefinition {
-  id: string;
-  displayName: string;
-  ProviderClass: new () => AutocompleteProvider;
-  defaultTransport?: string;
-}
-
-const BUILTIN_DEFINITIONS: BuiltinDefinition[] = [
-  {
-    id: "autocomplete-builtin-google",
-    displayName: "Google",
-    ProviderClass: GoogleAutocompleteProvider,
-  },
-  {
-    id: "autocomplete-builtin-duckduckgo",
-    displayName: "DuckDuckGo",
-    ProviderClass: DuckDuckGoAutocompleteProvider,
-  },
-];
-
-const builtinMap = Object.fromEntries(
-  BUILTIN_DEFINITIONS.map((d) => [d.id, new d.ProviderClass()]),
-) as Record<string, AutocompleteProvider>;
+import { getRandomUserAgent } from "../../utils/user-agents";
+import { getInstanceSettings, setInstanceSettings } from "../../utils/server-settings";
 
 interface PluginEntry {
   id: string;
@@ -65,7 +40,7 @@ function isAutocompleteProvider(val: unknown): val is AutocompleteProvider {
 }
 
 const pluginRegistry = createRegistry<PluginEntry>({
-  dirs: () => [{ dir: autocompleteDir(), source: "plugin" }],
+  dirs: () => [{ dir: autocompleteDir() }],
   match: (mod) => {
     const Export = mod.default ?? mod.provider ?? mod.Provider;
     const instance: AutocompleteProvider =
@@ -114,21 +89,14 @@ function _all(): {
   displayName: string;
   instance: AutocompleteProvider;
 }[] {
-  return [
-    ...BUILTIN_DEFINITIONS.map((d) => ({
-      id: d.id,
-      displayName: d.displayName,
-      instance: builtinMap[d.id],
-    })),
-    ...pluginRegistry.items(),
-  ];
+  return pluginRegistry.items();
 }
 
 async function _buildContext(providerId: string): Promise<AutocompleteContext> {
   const stored = await getSettings(providerId);
   const raw = asString(stored.outgoingTransport) || undefined;
   const transportName = parseOutgoingTransport(raw);
-  const globalSettings = await getSettings(DEGOOG_SETTINGS_ID);
+  const globalSettings = await getInstanceSettings();
   const lang = (() => {
     if (asBoolean(globalSettings.languagesEnabled)) {
       const first = asString(globalSettings.languages ?? "")
@@ -152,6 +120,7 @@ async function _buildContext(providerId: string): Promise<AutocompleteContext> {
         transportName,
       ),
     lang,
+    userAgent: () => getRandomUserAgent(),
     createCache,
   };
 }
@@ -348,10 +317,8 @@ export async function getAutocompleteExtensionMeta(): Promise<ExtensionMeta[]> {
     const userSchema = providerSchema.filter(
       (f) => f.key !== "outgoingTransport" && f.key !== "score",
     );
-    const builtinDef = BUILTIN_DEFINITIONS.find((d) => d.id === p.id);
     const transportDefault =
       providerSchema.find((f) => f.key === "outgoingTransport")?.default ??
-      builtinDef?.defaultTransport ??
       OUTGOING_TRANSPORT_FIELD.default;
 
     const scoreDefault =
@@ -387,13 +354,6 @@ export async function getAutocompleteExtensionMeta(): Promise<ExtensionMeta[]> {
 }
 
 export async function initAutocomplete(): Promise<void> {
-  for (const def of BUILTIN_DEFINITIONS) {
-    const instance = builtinMap[def.id];
-    if (instance?.configure && instance.settingsSchema?.length) {
-      const stored = await getSettings(def.id);
-      instance.configure(mergeDefaults(stored, instance.settingsSchema));
-    }
-  }
   await pluginRegistry.init();
 }
 

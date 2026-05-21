@@ -32,3 +32,6 @@ export const autocompleteDir = (): string =>
 
 export const blocklistFile = (): string =>
   process.env.DEGOOG_BLOCKLIST_FILE ?? join(_dataDir(), "blocklist.json");
+
+export const serverSettingsFile = (): string =>
+  process.env.DEGOOG_SERVER_SETTINGS_FILE ?? join(_dataDir(), "server-settings.json");

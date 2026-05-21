@@ -48,6 +48,7 @@ import { getClientIp } from "../utils/request";
 import { generateSearchNonce } from "../utils/search-nonce";
 import { getBasePath, getBaseUrl } from "../utils/base-url";
 import { FAKE_RESULTS } from "../../shared/fake-results";
+import { getInstanceSettings, setInstanceSettings } from "../utils/server-settings";
 
 const DEFAULT_THEME_DIR = "src/public/themes/degoog-theme";
 const CORE_LOCALES_ROOT = "src";
@@ -136,10 +137,9 @@ function themeCssPlaceholder(): string {
   return `<link rel="stylesheet" href="/theme/style.css?v=${pkg.version}">`;
 }
 
-const _DEGOOG_SETTINGS_ID = "degoog-settings";
 
 const customCssPlaceholder = async (): Promise<string> => {
-  const settings = await getSettings(_DEGOOG_SETTINGS_ID);
+  const settings = await getInstanceSettings();
   const css = asString(settings.customCss).trim();
   if (!css) return "";
   const safe = css.replace(/<\//g, "<\\/");
@@ -223,7 +223,7 @@ async function applyPagePlaceholders(
   }
   result = result.replaceAll("__APP_VERSION__", pkg.version);
 
-  const pageSettings = await getSettings(_DEGOOG_SETTINGS_ID);
+  const pageSettings = await getInstanceSettings();
   const anyApiKeyEnabled =
     asBoolean(pageSettings.apiKeySearchEnabled) ||
     asBoolean(pageSettings.apiKeySuggestEnabled);
@@ -363,7 +363,7 @@ const _buildResultActionsScript = async (c: Context): Promise<string> => {
   let replaceUi = false;
   let scoreUi = false;
   if (authenticated) {
-    const settings = await getSettings("degoog-settings");
+    const settings = await getInstanceSettings();
     blockUi = asBoolean(settings.domainBlockUiEnabled);
     replaceUi = asBoolean(settings.domainReplaceUiEnabled);
     scoreUi = asBoolean(settings.domainScoreUiEnabled);

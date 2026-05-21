@@ -27,6 +27,7 @@ import {
   type ThreatLevel,
 } from "./utils/sentinel";
 import { extractImageUrl } from "./utils/extract-image";
+import { getRandomUserAgent } from "./utils/user-agents";
 import { logger } from "./utils/logger";
 import { outgoingFetch, parseOutgoingTransport } from "./utils/outgoing";
 import { stripHtml, stripCssBlocks } from "./utils/text";
@@ -303,6 +304,7 @@ export const createSearchEngineContext = (
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     buildAcceptLanguage: () => _buildAcceptLanguage(resolvedLang),
+    userAgent: () => getRandomUserAgent(),
     extractImageUrl: extractImageUrl as EngineContext["extractImageUrl"],
     signProxyUrl: buildSignedProxyUrl,
     imageFilter,

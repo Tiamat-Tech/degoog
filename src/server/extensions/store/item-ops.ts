@@ -78,20 +78,6 @@ async function listScreenshots(dir: string): Promise<string[]> {
   }
 }
 
-async function inferEngineTypeFromFolder(dir: string): Promise<string | null> {
-  for (const entryFile of ["index.ts", "index.js", "index.mjs", "index.cjs"]) {
-    try {
-      const raw = await readFile(join(dir, entryFile), "utf-8");
-      const match = raw.match(/export\s+const\s+type\s*=\s*["']([^"']+)["']/);
-      if (match?.[1]) return match[1].trim();
-    } catch {
-      //
-    }
-  }
-  return null;
-}
-
-
 async function copyItemDir(
   srcDir: string,
   destDir: string,
@@ -316,11 +302,7 @@ export async function listRepoItems(repoUrl?: string): Promise<StoreItem[]> {
         if (type === ExtensionStoreType.Plugin && ent.type)
           item.pluginType = ent.type;
         if (type === ExtensionStoreType.Engine) {
-          if (ent.type) item.engineType = ent.type;
-          else {
-            const inferred = await inferEngineTypeFromFolder(fullPath);
-            item.engineType = inferred ?? "web";
-          }
+          item.engineType = ent.type ?? "web";
         }
         items.push(item);
       }

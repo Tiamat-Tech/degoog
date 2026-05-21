@@ -25,7 +25,6 @@ import { getSearchBarActionExtensionMeta } from "../extensions/search-bar/regist
 import { getThemeExtensionMeta } from "../extensions/themes/registry";
 import {
   getSettings,
-  dumbFallbackBecauseIDontThink,
   isDisabled,
   setSettings,
   mergeSecrets,
@@ -87,10 +86,8 @@ async function getSlotExtensionMeta(
           : "Where the slot content appears on the page.",
       });
     }
-    const id = slot.settingsId ?? `slot-${slot.id}`;
-    const raw = slot.settingsFallbackIds?.length
-      ? await dumbFallbackBecauseIDontThink(id, slot.settingsFallbackIds)
-      : await getSettings(id);
+    const id = slot.settingsId ?? slot.id;
+    const raw = await getSettings(id);
     const settings = maskSecrets(raw, fullSchema);
     if (raw["disabled"]) settings["disabled"] = raw["disabled"];
     if (hasPositionChoice) {

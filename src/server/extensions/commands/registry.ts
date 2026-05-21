@@ -66,7 +66,7 @@ const commandSourceMap = new Map<string, "builtin" | "plugin">();
 const registry = createRegistry<CommandEntry>({
   dirs: () => [
     { dir: builtinsDir, source: "builtin" },
-    { dir: pluginsDir(), source: "plugin" },
+    { dir: pluginsDir() },
   ],
   match: (mod) => {
     const Export = mod.default ?? mod.command ?? mod.Command;

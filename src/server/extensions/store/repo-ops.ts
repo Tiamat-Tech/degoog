@@ -1,7 +1,7 @@
 import { readFile, rm } from "fs/promises";
 import { join } from "path";
-import { createHash } from "crypto";
 import type { RepoInfo, RepoPackageJson } from "../../types";
+import { logger } from "../../utils/logger";
 import {
   normalizeRepoUrl,
   getStoreDir,
@@ -27,20 +27,21 @@ function _sanitizeGitError(raw: string): string {
     .trim();
 }
 
-export function slugFromUrl(url: string): string {
+export const slugFromUrl = (url: string): string => {
   const normalized = normalizeRepoUrl(url);
-  const hash = createHash("sha256").update(normalized).digest("hex").slice(0, 8);
+  let author = "anon";
   let repoName = "repo";
   try {
     const u = new URL(normalized.replace(/\.git$/, ""));
     const segments = u.pathname.split("/").filter(Boolean);
     repoName = (segments.pop() ?? "repo").replace(/\.git$/, "") || "repo";
-  } catch {
-    repoName = "repo";
+    author = segments.pop() ?? "anon";
+  } catch (err) {
+    logger.warn("store:slug", `failed to parse repo URL "${url}", using defaults`, err);
   }
-  const safeName = repoName.replace(/[^a-zA-Z0-9-_]/g, "-").slice(0, 32);
-  return `${hash}-${safeName}`;
-}
+  const safe = (s: string): string => s.replace(/[^a-zA-Z0-9-_]/g, "-").slice(0, 48);
+  return `${safe(author)}-${safe(repoName)}`;
+};
 
 export function isValidGitUrl(url: string): boolean {
   const trimmed = url.trim();

@@ -20,8 +20,8 @@ import { checkRateLimit } from "./rate-limit";
 import { buildSignedProxyUrl } from "./proxy-sign";
 import { getClientIp } from "./request";
 import { injectScope, translateHTML } from "./translation";
+import { getInstanceSettings, setInstanceSettings } from "./server-settings";
 
-export const DEGOOG_SETTINGS_ID = "degoog-settings";
 export const DEFAULT_LANGUAGES = [
   "af",
   "am",
@@ -113,7 +113,7 @@ export const DEFAULT_LANGUAGES = [
 ];
 
 export const _applyRateLimit = async (c: Context): Promise<Response | null> => {
-  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  const settings = await getInstanceSettings();
   const opts: Record<string, string> = {};
   for (const [k, v] of Object.entries(settings)) {
     opts[k] = typeof v === "string" ? v : Array.isArray(v) ? (v[0] ?? "") : "";

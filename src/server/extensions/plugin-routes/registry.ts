@@ -25,7 +25,7 @@ function normalizePath(p: string): string {
 }
 
 const registry = createRegistry<RouteEntry>({
-  dirs: () => [{ dir: pluginsDir(), source: "plugin" }],
+  dirs: () => [{ dir: pluginsDir() }],
   match: (mod) => {
     const routes =
       mod.routes ?? (mod.default as Record<string, unknown>)?.routes;

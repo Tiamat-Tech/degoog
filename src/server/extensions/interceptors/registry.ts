@@ -26,7 +26,7 @@ const isInterceptor = (val: unknown): val is QueryInterceptor =>
   typeof (val as QueryInterceptor).intercept === "function";
 
 const registry = createRegistry<QueryInterceptor>({
-  dirs: () => [{ dir: pluginsDir(), source: "plugin" }],
+  dirs: () => [{ dir: pluginsDir() }],
   match: (mod) => {
     const i =
       mod.interceptor ??
@@ -46,7 +46,6 @@ const registry = createRegistry<QueryInterceptor>({
         entryPath,
         folderName,
         settingsId,
-        "plugin",
       );
       await initPlugin(interceptor, entryPath, settingsId, template);
     }

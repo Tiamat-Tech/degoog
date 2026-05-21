@@ -1,8 +1,8 @@
 import { logger } from "./logger";
-import { asString, getSettings } from "./plugin-settings";
+import { asString } from "./plugin-settings";
+import { getInstanceSettings } from "./server-settings";
 import { addEntry, checkBlocked, resetCache } from "./blocklist";
 
-const SETTINGS_ID = "degoog-settings";
 const DEFAULT_BAN_HOURS = 0;
 
 let _enabled: boolean | null = null;
@@ -12,7 +12,7 @@ let _initialized = false;
 
 const reloadCache = async (): Promise<void> => {
   try {
-    const settings = await getSettings(SETTINGS_ID);
+    const settings = await getInstanceSettings();
     const v = asString(settings.honeypotEnabled ?? "");
     _enabled = v === "" || v === "true";
     const c = asString(settings.honeypotCssCheck ?? "");

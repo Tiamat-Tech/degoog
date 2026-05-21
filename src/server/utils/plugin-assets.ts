@@ -67,7 +67,6 @@ import { outgoingFetch } from "./outgoing";
 import { buildSignedProxyUrl } from "./proxy-sign";
 import {
   getSettings,
-  dumbFallbackBecauseIDontThink,
   mergeDefaults,
   type SettingValue,
 } from "./plugin-settings";
@@ -88,7 +87,7 @@ export async function loadPluginAssets(
   entryPath: string,
   folderName: string,
   settingsId: string,
-  source: "plugin" | "builtin",
+  source: "plugin" | "builtin" = "plugin",
 ): Promise<string> {
   const { readFile, stat } = await import("fs/promises");
   const template = await readFile(
@@ -109,7 +108,6 @@ export async function initPlugin(
   entryPath: string,
   settingsId: string,
   template: string,
-  fallbackSettingsIds: string[] = [],
 ): Promise<void> {
   const { readFile } = await import("fs/promises");
   const alreadyInited = _initedPlugins.has(plugin as object);
@@ -127,9 +125,7 @@ export async function initPlugin(
     _initedPlugins.add(plugin as object);
   }
   if (plugin.configure && plugin.settingsSchema?.length) {
-    const stored = fallbackSettingsIds.length
-      ? await dumbFallbackBecauseIDontThink(settingsId, fallbackSettingsIds)
-      : await getSettings(settingsId);
+    const stored = await getSettings(settingsId);
     plugin.configure(mergeDefaults(stored, plugin.settingsSchema));
   }
 }

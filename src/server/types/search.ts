@@ -143,6 +143,7 @@ export interface EngineContext {
   dateFrom?: string;
   dateTo?: string;
   buildAcceptLanguage?: () => string;
+  userAgent?: () => string;
   extractImageUrl?: (
     $el: unknown,
     baseUrl?: string,

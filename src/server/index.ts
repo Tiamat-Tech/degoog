@@ -5,10 +5,7 @@ import pkg from "../../package.json";
 import { getBasePath } from "./utils/base-url";
 import { initPlugins } from "./extensions/commands/registry";
 import { initUovadipasquas } from "./extensions/uovadipasqua/registry";
-import {
-  getOutgoingAllowlist,
-  initEngines,
-} from "./extensions/engines/registry";
+import { initEngines } from "./extensions/engines/registry";
 import { initMiddlewareRegistry } from "./extensions/middleware/registry";
 import { initPluginRoutes } from "./extensions/plugin-routes/registry";
 import { initSearchBarActions } from "./extensions/search-bar/registry";
@@ -20,8 +17,8 @@ import { initAutocomplete } from "./extensions/autocomplete/registry";
 import { initInterceptors } from "./extensions/interceptors/registry";
 import globalRouter from "./routes";
 import { build404 } from "./routes/pages";
-import { setOutgoingAllowlist } from "./utils/outgoing";
 import { initServerKey } from "./utils/server-key";
+import { runMigrations } from "./migrations";
 
 const BASE_PATH = getBasePath();
 
@@ -85,6 +82,8 @@ ${ANSI_GRAY}██████████████████████�
  `,
 );
 
+await runMigrations();
+
 Promise.all([
   initServerKey(),
   initTransports(),
@@ -100,6 +99,5 @@ Promise.all([
   initUovadipasquas(),
   initAutocomplete(),
 ]).then(() => {
-  setOutgoingAllowlist(getOutgoingAllowlist());
   Bun.serve({ port, fetch: app.fetch, idleTimeout: 120 });
 });

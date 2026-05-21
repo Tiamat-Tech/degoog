@@ -4,11 +4,12 @@ import { outgoingFetch } from "../utils/outgoing";
 import { defaultEnginesFile } from "../utils/paths";
 import { asBoolean, asString, getSettings, setSettings } from "../utils/plugin-settings";
 import { getRandomUserAgent } from "../utils/user-agents";
-import { DEFAULT_LANGUAGES, DEGOOG_SETTINGS_ID } from "../utils/search";
+import { DEFAULT_LANGUAGES } from "../utils/search";
 import { getServerKeyHex, regenerateServerKey } from "../utils/server-key";
 import { syncBlocklist } from "../utils/bot-trap";
 import { addEntry, listActive, removeEntry } from "../utils/blocklist";
 import { guardSettingsRoute, isPasswordRequired } from "./settings-auth";
+import { getInstanceSettings, setInstanceSettings } from "../utils/server-settings";
 
 const router = new Hono();
 
@@ -138,7 +139,7 @@ const fetchIp = async (useFn: typeof fetch): Promise<string | null> => {
 };
 
 router.get("/api/settings/streaming", async (c) => {
-  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  const settings = await getInstanceSettings();
   return c.json({
     enabled: asBoolean(settings.streamingEnabled),
     autoRetry: asBoolean(settings.streamingAutoRetry),
@@ -147,7 +148,7 @@ router.get("/api/settings/streaming", async (c) => {
 });
 
 router.get("/api/settings/languages", async (c) => {
-  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  const settings = await getInstanceSettings();
   if (!asBoolean(settings["languagesEnabled"])) {
     return c.json({ languages: DEFAULT_LANGUAGES });
   }
@@ -162,7 +163,7 @@ router.get("/api/settings/languages", async (c) => {
 router.get("/api/settings/general", async (c) => {
   const denied = await guardSettingsRoute(c, "GET /api/settings/general");
   if (denied) return denied;
-  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  const settings = await getInstanceSettings();
   return c.json(settings);
 });
 
@@ -175,14 +176,14 @@ router.post("/api/settings/general", async (c) => {
   } catch {
     return c.json({ error: "Invalid JSON" }, 400);
   }
-  const existing = await getSettings(DEGOOG_SETTINGS_ID);
+  const existing = await getInstanceSettings();
   const updates: Record<string, string | boolean> = {};
   for (const key of GENERAL_ALLOWED_KEYS) {
     if (key in body && typeof body[key] === "string") {
       updates[key] = BOOLEAN_SETTING_KEYS.has(key) ? body[key] === "true" : body[key];
     }
   }
-  await setSettings(DEGOOG_SETTINGS_ID, { ...existing, ...updates });
+  await setInstanceSettings({ ...existing, ...updates });
   await syncBlocklist();
   return c.json({ ok: true });
 });
@@ -210,7 +211,7 @@ router.post("/api/settings/domain-action", async (c) => {
   const source = _normalizeHostname(body.source ?? "");
   if (!source) return c.json({ error: "Missing source" }, 400);
 
-  const existing = await getSettings(DEGOOG_SETTINGS_ID);
+  const existing = await getInstanceSettings();
   const updates: Record<string, string> = {};
 
   if (kind === "block") {
@@ -249,7 +250,7 @@ router.post("/api/settings/domain-action", async (c) => {
     return c.json({ error: "Invalid kind" }, 400);
   }
 
-  await setSettings(DEGOOG_SETTINGS_ID, { ...existing, ...updates });
+  await setInstanceSettings({ ...existing, ...updates });
   return c.json({ ok: true });
 });
 
@@ -257,7 +258,7 @@ router.get("/api/settings/api-key", async (c) => {
   if (!isPasswordRequired()) return c.json({ error: "Forbidden" }, 403);
   const denied = await guardSettingsRoute(c, "GET /api/settings/api-key");
   if (denied) return denied;
-  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  const settings = await getInstanceSettings();
   return c.json({
     key: getServerKeyHex() ?? "",
     searchEnabled: asBoolean(settings.apiKeySearchEnabled),
@@ -280,7 +281,7 @@ router.get("/api/settings/proxy-test", async (c) => {
   const denied = await guardSettingsRoute(c, "GET /api/settings/proxy-test");
   if (denied) return denied;
 
-  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  const settings = await getInstanceSettings();
   const enabled = asBoolean(settings.proxyEnabled);
   const proxyUrls = asString(settings.proxyUrls);
 
@@ -308,7 +309,7 @@ router.get("/api/settings/proxy-test", async (c) => {
 router.get("/api/settings/honeypot/blocklist", async (c) => {
   const denied = await guardSettingsRoute(c, "GET /api/settings/honeypot/blocklist");
   if (denied) return denied;
-  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  const settings = await getInstanceSettings();
   const raw = parseInt(asString(settings.honeypotBanDuration ?? ""), 10);
   const banHours = Number.isFinite(raw) && raw >= 0 ? raw : 0;
   const entries = await listActive(banHours);
@@ -346,7 +347,7 @@ router.post("/api/settings/honeypot/unban", async (c) => {
 });
 
 router.get("/api/settings/appearance", async (c) => {
-  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  const settings = await getInstanceSettings();
   return c.json({
     theme: asString(settings.defaultTheme) || "system",
   });

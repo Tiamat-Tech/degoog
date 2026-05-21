@@ -3,15 +3,10 @@ import { FetchTransport } from "./builtins/fetch";
 import { CurlTransport } from "./builtins/curl";
 import { CurlImpersonateTransport } from "./builtins/curl-impersonate";
 import { AutoTransport } from "./builtins/auto";
-import {
-  getSettings,
-  dumbFallbackBecauseIDontThink,
-  maskSecrets,
-} from "../../utils/plugin-settings";
+import { getSettings, maskSecrets } from "../../utils/plugin-settings";
 import { transportsDir } from "../../utils/paths";
 import { createRegistry } from "../registry-factory";
 import { extensionReadmeExists, registerExtensionFolder } from "../../utils/extension-docs";
-import { stupidSettingIDtoAvoidConflicts } from "../extension-id";
 
 const _builtins: Transport[] = [
   new FetchTransport(),
@@ -19,8 +14,6 @@ const _builtins: Transport[] = [
   new CurlImpersonateTransport(),
   new AutoTransport(),
 ];
-
-const _legacyNameByCanonical = new Map<string, string>();
 
 function _isTransport(val: unknown): val is Transport {
   return (
@@ -36,7 +29,7 @@ function _isTransport(val: unknown): val is Transport {
 }
 
 const registry = createRegistry<Transport>({
-  dirs: () => [{ dir: transportsDir(), source: "plugin" }],
+  dirs: () => [{ dir: transportsDir() }],
   match: (mod) => {
     const Export = mod.default ?? mod.transport ?? mod.Transport;
     const instance: Transport =
@@ -48,26 +41,12 @@ const registry = createRegistry<Transport>({
   },
   canonicalIdKind: "transport",
   onLoad: async (instance, { folderName, canonicalId }) => {
-    const legacyName = instance.name;
     const name = canonicalId ?? folderName;
     if (_builtins.some((t) => t.name === name)) return;
     instance.name = name;
-    _legacyNameByCanonical.set(name, legacyName);
     registerExtensionFolder(`transport-${name}`, folderName);
     if (instance.configure) {
-      const { settingsId, fallbackSettingsIds } =
-        stupidSettingIDtoAvoidConflicts({
-          kind: "transport",
-          canonicalId: instance.name,
-          folderName,
-          legacyDevId: legacyName,
-        });
-
-      const stored = await dumbFallbackBecauseIDontThink(
-        settingsId,
-        fallbackSettingsIds,
-      );
-
+      const stored = await getSettings(`transport-${name}`);
       if (Object.keys(stored).length > 0) instance.configure(stored);
     }
   },
@@ -113,11 +92,7 @@ export async function getTransportExtensionMeta(): Promise<ExtensionMeta[]> {
   for (const t of _all()) {
     const schema = t.settingsSchema ?? [];
     const id = _settingsId(t);
-    const legacy = _legacyNameByCanonical.get(t.name);
-    const rawSettings =
-      legacy && legacy !== t.name
-        ? await dumbFallbackBecauseIDontThink(id, [`transport-${legacy}`])
-        : await getSettings(id);
+    const rawSettings = await getSettings(id);
     const settings = maskSecrets(rawSettings, schema);
     if (rawSettings["disabled"]) settings["disabled"] = rawSettings["disabled"];
     const { exists } = await extensionReadmeExists(id);

@@ -15,6 +15,7 @@ import rateLimit from "./rate-limit";
 import search from "./search";
 import searchBar from "./search-bar";
 import searchStream from "./search-stream";
+import setup from "./setup";
 import settings from "./settings";
 import settingsAuth from "./settings-auth";
 import slots from "./slots";
@@ -51,6 +52,7 @@ globalRouter.use("*", async (c, next) => {
   return next();
 });
 
+globalRouter.route("/", setup);
 globalRouter.route("/", honeypot);
 globalRouter.route("/", commands);
 globalRouter.route("/", uovadipasqua);

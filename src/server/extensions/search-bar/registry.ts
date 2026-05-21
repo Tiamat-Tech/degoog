@@ -35,7 +35,7 @@ function isSearchBarActionArray(val: unknown): val is SearchBarAction[] {
 }
 
 const registry = createRegistry<PluginActions>({
-  dirs: () => [{ dir: pluginsDir(), source: "plugin" }],
+  dirs: () => [{ dir: pluginsDir() }],
   match: (mod) => {
     const actions =
       mod.searchBarActions ??

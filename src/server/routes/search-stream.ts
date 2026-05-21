@@ -21,7 +21,6 @@ import { asBoolean, asString, getSettings } from "../utils/plugin-settings";
 import {
   _applyRateLimit,
   cacheKey,
-  DEGOOG_SETTINGS_ID,
   isValidQuery,
   parseEngineConfig,
 } from "../utils/search";
@@ -30,6 +29,7 @@ import { applyDomainRules } from "./search/_domain-rules";
 import { signResultThumbnails } from "../utils/proxy-sign";
 import { parseImageFilter, parsePage } from "./search/_parsers";
 import { runIntercepts } from "../utils/run-interceptors";
+import { getInstanceSettings, setInstanceSettings } from "../utils/server-settings";
 
 const router = new Hono();
 
@@ -114,7 +114,7 @@ router.get("/api/search/stream", async (c) => {
     });
   }
 
-  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  const settings = await getInstanceSettings();
   const autoRetry = asBoolean(settings.streamingAutoRetry);
   const maxRetries = Math.min(
     5,

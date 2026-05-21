@@ -109,6 +109,7 @@ export interface SearchEngine {
 export interface AutocompleteContext {
   fetch: typeof fetch;
   lang?: string;
+  userAgent?: () => string;
   createCache: CreateCache;
 }
 
@@ -166,7 +167,6 @@ export interface SlotPlugin {
   position: SlotPanelPosition;
   slotPositions?: SlotPanelPosition[];
   settingsId?: string;
-  settingsFallbackIds?: string[];
   isClientExposed?: boolean;
   priority?: number;
   trigger: (query: string) => boolean | Promise<boolean>;
@@ -217,7 +217,6 @@ export interface SearchResultTab {
   engineType?: string;
   isClientExposed?: boolean;
   settingsId?: string;
-  settingsFallbackIds?: string[];
   executeSearch?(
     query: string,
     page?: number,
@@ -237,7 +236,6 @@ export interface RequestMiddleware {
   id?: string;
   name: string;
   settingsId?: string;
-  settingsFallbackIds?: string[];
   isClientExposed?: boolean;
   settingsSchema?: SettingField[];
   configure?(settings: Record<string, SettingValue>): void;

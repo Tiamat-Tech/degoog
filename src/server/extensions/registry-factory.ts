@@ -10,16 +10,18 @@ import { pathToFileURL } from "url";
 import { logger } from "../utils/logger";
 import { makeExtID, dedupeExtID, type ExtensionKind } from "./extension-id";
 
+export type RegistrySource = "plugin" | "builtin";
+
 /**
- * A directory to scan for extensions, along with its source label.
+ * A directory to scan for extensions.
  *
  * @example
- * { dir: pluginsDir(), source: "plugin" }
- * { dir: join(process.cwd(), "src/server/extensions/commands/builtins"), source: "builtin" }
+ * { dir: pluginsDir() }
+ * { dir: builtinsDir, source: "builtin" }
  */
 export interface RegistryDir {
   dir: string;
-  source: "plugin" | "builtin";
+  source?: RegistrySource;
 }
 
 /**
@@ -30,7 +32,7 @@ export interface RegistryLoadMeta {
   entryPath: string;
   /** Folder or base filename, used as the extension's natural ID. */
   folderName: string;
-  source: "plugin" | "builtin";
+  source: RegistrySource;
   canonicalId?: string;
 }
 
@@ -210,7 +212,7 @@ export function createRegistry<T>(opts: RegistryOptions<T>): {
       const entryPath = join(registryDir.dir, c.r.base);
       const canonicalId = opts.canonicalIdKind
         ? dedupeExtID(
-            makeExtID(c.r.base, registryDir.source, opts.canonicalIdKind),
+            makeExtID(c.r.base, opts.canonicalIdKind),
             _canonicalIds,
             c.r.fullPath,
           )
@@ -221,7 +223,7 @@ export function createRegistry<T>(opts: RegistryOptions<T>): {
         meta: {
           entryPath,
           folderName: c.r.base,
-          source: registryDir.source,
+          source: registryDir.source ?? "plugin",
           canonicalId,
         },
       });
