@@ -4,20 +4,28 @@ import {
   writeServerSettings,
 } from "../utils/server-settings";
 import { logger } from "../utils/logger";
+import { isPublicInstance } from "../utils/public-instance";
+import { canBalrogPass, gandalf, isPasswordRequired } from "./settings-auth";
 
 const router = new Hono();
 
+const isInstanceGated = (): boolean =>
+  isPublicInstance() || isPasswordRequired();
+
 router.get("/api/server-settings", async (c) => {
   try {
+    if (isInstanceGated()) return c.json({ wizard: true });
     const s = await readServerSettings();
     return c.json({ wizard: s.wizard });
   } catch (err) {
     logger.error("route:server-settings", "GET failed", err);
-    return c.json({ wizard: false }, 500);
+    return c.json({ wizard: true }, 500);
   }
 });
 
 router.patch("/api/server-settings", async (c) => {
+  if (!(await gandalf(canBalrogPass(c))))
+    return c.json({ error: "You shall not pass!" }, 401);
   try {
     const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
     const patch: { wizard?: boolean } = {};

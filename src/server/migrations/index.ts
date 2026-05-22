@@ -1,5 +1,6 @@
 import { logger } from "../utils/logger";
 import { runStoreDirRename052026 } from "./2026-05-store-dir-rename";
+import { runItemDirRename052026 } from "./2026-05-item-dir-rename";
 import { runServerSettingsExtract052026 } from "./2026-05-server-settings-extract";
 import { runCanonicalIds052026 } from "./2026-05-canonical-ids";
 
@@ -19,6 +20,11 @@ export const runMigrations = async (): Promise<void> => {
     await runStoreDirRename052026();
   } catch (err) {
     logger.error("migrations", "store-dir-rename failed", err);
+  }
+  try {
+    await runItemDirRename052026();
+  } catch (err) {
+    logger.error("migrations", "item-dir-rename failed", err);
   }
   try {
     await runServerSettingsExtract052026();
