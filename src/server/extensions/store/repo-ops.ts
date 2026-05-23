@@ -39,6 +39,49 @@ const branchExists = async (repoPath: string, ref: string): Promise<boolean> => 
   return exit === 0;
 };
 
+const headBranch = async (repoPath: string): Promise<string> => {
+  const proc = Bun.spawn(["git", "-C", repoPath, "rev-parse", "--abbrev-ref", "HEAD"], {
+    stdout: "pipe",
+    stderr: "ignore",
+  });
+  await proc.exited;
+  return (await new Response(proc.stdout).text()).trim();
+};
+
+const fetchRef = async (repoPath: string, branch: string): Promise<boolean> => {
+  const proc = Bun.spawn(
+    ["git", "-C", repoPath, "fetch", "--depth", "1", "origin", `${branch}:refs/remotes/origin/${branch}`],
+    { stdout: "ignore", stderr: "ignore" },
+  );
+  return (await proc.exited) === 0;
+};
+
+const switchBranch = async (repoPath: string, branch: string): Promise<boolean> => {
+  if (!(await fetchRef(repoPath, branch))) return false;
+  const proc = Bun.spawn(
+    ["git", "-C", repoPath, "checkout", "-B", branch, `origin/${branch}`],
+    { stdout: "ignore", stderr: "ignore" },
+  );
+  return (await proc.exited) === 0;
+};
+
+const syncBranch = async (repoPath: string): Promise<void> => {
+  const current = await headBranch(repoPath);
+  if (DEGOOG_BETA_STORE) {
+    if (current === BETA_BRANCH) return;
+    if (!(await switchBranch(repoPath, BETA_BRANCH))) {
+      logger.warn("store:branch", `could not switch repo to ${BETA_BRANCH}, staying on ${current}`);
+    }
+    return;
+  }
+  if (current === BETA_BRANCH) {
+    const reverted = (await switchBranch(repoPath, "main")) || (await switchBranch(repoPath, "master"));
+    if (!reverted) {
+      logger.warn("store:branch", `could not revert repo off ${BETA_BRANCH}`);
+    }
+  }
+};
+
 function _sanitizeGitError(raw: string): string {
   if (!raw) return raw;
   const storeDir = getStoreDir();
@@ -161,6 +204,7 @@ export async function refreshRepo(url?: string): Promise<void> {
   for (const repo of toRefresh) {
     const repoPath = join(getStoreDir(), repo.localPath);
     try {
+      await syncBranch(repoPath);
       const betaPull = DEGOOG_BETA_STORE && await branchExists(repoPath, `origin/${BETA_BRANCH}`);
       const pullArgs = betaPull
         ? ["git", "-C", repoPath, "pull", "origin", BETA_BRANCH]
