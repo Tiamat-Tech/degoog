@@ -16,6 +16,8 @@ const router = new Hono();
 const GENERAL_ALLOWED_KEYS = [
   "proxyEnabled",
   "proxyUrls",
+  "imageProxyAllowLocal",
+  "imageProxyAllowList",
   "rateLimitEnabled",
   "rateLimitBurstWindow",
   "rateLimitBurstMax",
@@ -53,6 +55,7 @@ const GENERAL_ALLOWED_KEYS = [
 
 const BOOLEAN_SETTING_KEYS = new Set<typeof GENERAL_ALLOWED_KEYS[number]>([
   "proxyEnabled",
+  "imageProxyAllowLocal",
   "rateLimitEnabled",
   "rateLimitSuggestEnabled",
   "languagesEnabled",

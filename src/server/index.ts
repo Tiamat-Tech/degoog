@@ -16,6 +16,7 @@ import { initTransports } from "./extensions/transports/registry";
 import { initAutocomplete } from "./extensions/autocomplete/registry";
 import { initInterceptors } from "./extensions/interceptors/registry";
 import globalRouter from "./routes";
+import { markReady } from "./routes/health";
 import { build404 } from "./routes/pages";
 import { initServerKey } from "./utils/server-key";
 import { initValkey } from "./utils/cache-valkey";
@@ -58,14 +59,16 @@ app.notFound(async (c) => {
   return c.html(await build404(locale), 404);
 });
 
-const port = Number(process.env.DEGOOG_PORT) || 4444;
+const port = Number(process.env.DEGOOG_PORT || process.env.PORT) || 4444;
 
-const ANSI_BLUE = "\x1b[38;2;66;133;244m";
-const ANSI_RED = "\x1b[38;2;234;67;53m";
-const ANSI_YELLOW = "\x1b[38;2;251;188;5m";
-const ANSI_GREEN = "\x1b[38;2;52;168;83m";
-const ANSI_RESET = "\x1b[0m";
-const ANSI_GRAY = "\x1b[90m";
+const _noColor = !!process.env.NO_COLOR;
+const _ansi = (code: string): string => (_noColor ? "" : code);
+const ANSI_BLUE = _ansi("\x1b[38;2;66;133;244m");
+const ANSI_RED = _ansi("\x1b[38;2;234;67;53m");
+const ANSI_YELLOW = _ansi("\x1b[38;2;251;188;5m");
+const ANSI_GREEN = _ansi("\x1b[38;2;52;168;83m");
+const ANSI_RESET = _ansi("\x1b[0m");
+const ANSI_GRAY = _ansi("\x1b[90m");
 
 console.log(
   `
@@ -101,6 +104,12 @@ Promise.all([
   initThemes(),
   initUovadipasquas(),
   initAutocomplete(),
-]).then(() => {
-  Bun.serve({ port, fetch: app.fetch, idleTimeout: 120 });
-});
+])
+  .then(() => {
+    Bun.serve({ port, fetch: app.fetch, idleTimeout: 120 });
+    markReady();
+  })
+  .catch((err) => {
+    console.error("[startup] initialization failed", err);
+    process.exit(1);
+  });
