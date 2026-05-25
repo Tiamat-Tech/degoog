@@ -1,15 +1,14 @@
 import { Hono } from "hono";
-import { getSettings } from "../utils/plugin-settings";
 import { getClientIp } from "../utils/request";
 import { checkRateLimit } from "../utils/rate-limit";
+import { getInstanceSettings } from "../utils/server-settings";
 
-const DEGOOG_SETTINGS_ID = "degoog-settings";
 const router = new Hono();
 
 router.get("/api/rate-limit/test", async (c) => {
   if (process.env.LOG_LEVEL !== "debug") return;
 
-  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  const settings = await getInstanceSettings();
   const opts: Record<string, string> = {};
   for (const [k, v] of Object.entries(settings)) {
     opts[k] = typeof v === "string" ? v : Array.isArray(v) ? (v[0] ?? "") : "";

@@ -4,7 +4,10 @@ import {
   type PluginContext,
   type SlotPlugin,
 } from "../../../../types";
-import type { TtlCache } from "../../../../utils/cache";
+import type { AsyncTtlCache } from "../../../../utils/cache";
+
+const WIKI_NAMESPACE = "ext:wikipedia:page";
+const WIKI_TTL_MS = 60 * 60 * 1000;
 
 const TIMEOUT_MS = 5_000;
 const USER_AGENT = "degoog/1.0 (+https://github.com/degoog-org/degoog)";
@@ -29,7 +32,7 @@ interface WikiPage {
 let _template = "";
 let _signProxyUrl: PluginContext["signProxyUrl"] | null = null;
 
-let _wikiCache!: TtlCache<WikiPage>;
+let _wikiCache!: AsyncTtlCache<WikiPage>;
 
 const _proxyImageUrl = (url: string): string => {
   if (!url || !_signProxyUrl) return "";
@@ -98,18 +101,18 @@ const wikipediaSlot: SlotPlugin = {
   init(ctx: PluginContext): void {
     _template = ctx.template;
     if (ctx.signProxyUrl) _signProxyUrl = ctx.signProxyUrl;
-    _wikiCache = ctx.createCache<WikiPage>(60 * 60 * 1000);
+    _wikiCache = ctx.useCache<WikiPage>(WIKI_NAMESPACE, WIKI_TTL_MS);
   },
 
   async trigger(query: string): Promise<boolean> {
     const q = query.trim();
     if (q.length < 2 || q.length > 100) return false;
     const key = q.toLowerCase();
-    const page = _wikiCache.get(key);
+    const page = await _wikiCache.get(key);
     if (page === null) {
       const fetched = await _fetchWikipedia(q);
       if (fetched) {
-        _wikiCache.set(key, fetched);
+        await _wikiCache.set(key, fetched);
         return true;
       }
       return false;
@@ -120,11 +123,11 @@ const wikipediaSlot: SlotPlugin = {
   async execute(query: string): Promise<{ title?: string; html: string }> {
     const q = query.trim();
     const key = q.toLowerCase();
-    let page = _wikiCache.get(key);
+    let page = await _wikiCache.get(key);
     if (page === null) {
       const fetched = await _fetchWikipedia(q);
       if (fetched) {
-        _wikiCache.set(key, fetched);
+        await _wikiCache.set(key, fetched);
         page = fetched;
       }
     }

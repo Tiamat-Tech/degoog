@@ -13,6 +13,7 @@ import { initThemesTab } from "../../settings/themes-tab";
 import { initServerTab } from "../../settings/server-tab";
 import { initStoreTab } from "../../settings/store-tab";
 import { initGlobalSearch } from "../../settings/settings-search";
+import { initSettingsWizard } from "../wizard/wizard";
 import "../modals/settings-modal/modal";
 import type { AllExtensions } from "../../types";
 import { navigateSettingsBack } from "../../utils/navigation";
@@ -207,6 +208,7 @@ async function _initSettings(): Promise<void> {
     const storeEl = document.getElementById("store-content");
     if (storeEl) void initStoreTab(storeEl, getStoredToken);
     initGlobalSearch();
+    void initSettingsWizard();
   } catch {
     const enginesEl = document.getElementById("engines-content");
     const pluginsEl = document.getElementById("plugins-content");

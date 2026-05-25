@@ -27,7 +27,7 @@ Search aggregator that queries multiple engines and shows results in one place. 
 
 ## Run
 
-By default the app will run on port `4444` with user `1000:1000`, please check the [documentation](https://degoog-org.github.io/degoog/env.html) for a comprehensive list of env variables and various nuances.
+By default the app will run on port `4444` with user `1000:1000`, please check the [documentation](https://degoog-org.github.io/docs/env.html) for a comprehensive list of env variables and various nuances.
 
 ```bash
 mkdir -p ./data
@@ -90,7 +90,6 @@ WantedBy=default.target
 
 </details>
 
-
 </details>
 
 <details>
@@ -151,7 +150,7 @@ _**Note:** These have only been INITIALLY vetted, there is no way for me to keep
 
 ## Documentation
 
-Full customisation guide  (plugins, themes, engines, transports, store, settings gate, aliases, env): **[documentation](https://degoog-org.github.io/degoog)**.
+Full customisation guide (plugins, themes, engines, transports, store, settings gate, aliases, env): **[documentation](https://degoog-org.github.io/docs)**.
 
 ## Little shoutout
 

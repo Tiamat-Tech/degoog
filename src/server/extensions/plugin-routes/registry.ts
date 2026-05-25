@@ -1,5 +1,5 @@
 import type { PluginRoute } from "../../types";
-import { createTranslatorFromPath } from "../../utils/translation";
+import { bootCircuitFromPath } from "../../utils/translation-circuit";
 import { pluginsDir } from "../../utils/paths";
 import { createRegistry } from "../registry-factory";
 
@@ -25,7 +25,7 @@ function normalizePath(p: string): string {
 }
 
 const registry = createRegistry<RouteEntry>({
-  dirs: () => [{ dir: pluginsDir(), source: "plugin" }],
+  dirs: () => [{ dir: pluginsDir() }],
   match: (mod) => {
     const routes =
       mod.routes ?? (mod.default as Record<string, unknown>)?.routes;
@@ -45,7 +45,7 @@ const registry = createRegistry<RouteEntry>({
   },
   onLoad: async (entry, { entryPath, folderName }) => {
     entry.pluginId = folderName;
-    const t = await createTranslatorFromPath(entryPath);
+    const t = await bootCircuitFromPath(entryPath);
     for (const route of entry.routes) {
       route.t = t;
     }

@@ -266,6 +266,29 @@
             >
               <div class="setting-section-heading-wrapper">
                 <h2 class="settings-section-heading">
+                  {{t:settings-page.wizard.restart-heading}}
+                </h2>
+                <div class="floating-section-icon">
+                  <i class="fa-solid fa-route"></i>
+                </div>
+              </div>
+              <p class="settings-desc">
+                {{t:settings-page.wizard.restart-desc}}
+              </p>
+              <button
+                class="btn btn--secondary degoog-btn degoog-btn--secondary"
+                id="settings-wizard-restart"
+                type="button"
+              >
+                {{t:settings-page.wizard.restart-button}}
+              </button>
+            </section>
+
+            <section
+              class="settings-section ext-card degoog-panel degoog-panel--ext-card"
+            >
+              <div class="setting-section-heading-wrapper">
+                <h2 class="settings-section-heading">
                   {{t:settings-page.install.heading}}
                 </h2>
                 <div class="floating-section-icon">
@@ -293,7 +316,10 @@
                   <i class="fa-solid fa-bell"></i>
                 </div>
               </div>
-              <p id="settings-update-check-newversionavailable" style="display:none">
+              <p
+                id="settings-update-check-newversionavailable"
+                style="display: none"
+              >
                 <b>{{t:settings-page.update-check.new-desc}}</b>
               </p>
               <p class="settings-desc">
@@ -356,13 +382,40 @@
                 </div>
               </div>
               <p class="settings-desc">{{t:settings-page.server.cache-desc}}</p>
-              <button
-                class="btn btn--secondary degoog-btn degoog-btn--secondary settings-cache-clear"
-                id="settings-cache-clear"
-                type="button"
-              >
-                {{t:settings-page.server.cache-clear}}
-              </button>
+              <div class="settings-cache-buttons">
+                <button
+                  class="btn btn--secondary degoog-btn degoog-btn--secondary settings-cache-clear"
+                  id="settings-cache-clear-search"
+                  data-cache-scope="search"
+                  type="button"
+                >
+                  {{t:settings-page.server.cache-clear-search}}
+                </button>
+                <button
+                  class="btn btn--secondary degoog-btn degoog-btn--secondary settings-cache-clear"
+                  id="settings-cache-clear-autocomplete"
+                  data-cache-scope="autocomplete"
+                  type="button"
+                >
+                  {{t:settings-page.server.cache-clear-autocomplete}}
+                </button>
+                <button
+                  class="btn btn--secondary degoog-btn degoog-btn--secondary settings-cache-clear"
+                  id="settings-cache-clear-extensions"
+                  data-cache-scope="extensions"
+                  type="button"
+                >
+                  {{t:settings-page.server.cache-clear-extensions}}
+                </button>
+                <button
+                  class="btn btn--secondary degoog-btn degoog-btn--secondary settings-cache-clear"
+                  id="settings-cache-clear-all"
+                  data-cache-scope="all"
+                  type="button"
+                >
+                  {{t:settings-page.server.cache-clear-all}}
+                </button>
+              </div>
             </section>
 
             <section
@@ -804,6 +857,42 @@
                     ></div>
                   </fieldset>
                 </div>
+                <label class="settings-toggle-wrap degoog-toggle-wrap">
+                  <input
+                    type="checkbox"
+                    id="settings-image-proxy-allow-local"
+                    class="settings-toggle"
+                    aria-label="{{t:settings-page.server.image-proxy-allow-local-aria}}"
+                  />
+                  <span class="toggle-slider degoog-toggle"></span>
+                  <span class="settings-toggle-label"
+                    >{{t:settings-page.server.image-proxy-allow-local}}</span
+                  >
+                </label>
+                <div
+                  class="settings-proxy-urls-wrap"
+                  id="settings-image-proxy-allow-list-wrap"
+                  style="display: none"
+                >
+                  <fieldset
+                    class="settings-fieldset settings-fieldset-inverse settings-fieldset--compact"
+                  >
+                    <label
+                      for="settings-image-proxy-allow-list"
+                      class="settings-proxy-urls-label"
+                      >{{t:settings-page.server.image-proxy-allow-list-label}}</label
+                    >
+                    <p class="settings-desc">
+                      {{t:settings-page.server.image-proxy-allow-list-desc}}
+                    </p>
+                    <textarea
+                      id="settings-image-proxy-allow-list"
+                      class="settings-proxy-urls degoog-input"
+                      rows="4"
+                      placeholder="^192\.168\.&#10;^10\.&#10;jellyfin\.lan"
+                    ></textarea>
+                  </fieldset>
+                </div>
               </fieldset>
             </section>
 
@@ -848,7 +937,7 @@
                       class="settings-fieldset settings-fieldset-inverse settings-fieldset--compact"
                     >
                       <p class="settings-rate-limit-defaults">
-                        {{t:settings-page.server.rate-limit-search-group}} —
+                        {{t:settings-page.server.rate-limit-search-group}} -
                         {{t:settings-page.server.rate-limit-defaults}}
                       </p>
                       <div class="settings-rl-grid">
@@ -926,7 +1015,7 @@
                       class="settings-fieldset settings-fieldset-inverse settings-fieldset--compact"
                     >
                       <p class="settings-rate-limit-defaults">
-                        {{t:settings-page.server.rate-limit-suggest-group}} —
+                        {{t:settings-page.server.rate-limit-suggest-group}} -
                         {{t:settings-page.server.rate-limit-suggest-defaults}}
                       </p>
                       <div class="settings-rl-grid">
@@ -1011,7 +1100,7 @@
                   {{t:settings-page.server.honeypot-heading}}
                 </h2>
                 <div class="floating-section-icon">
-                  <i class="fa-solid fa-robot"></i>
+                  <i class="fa-solid fa-spider"></i>
                 </div>
               </div>
               <p class="settings-desc">
@@ -1059,7 +1148,7 @@
                     id="settings-honeypot-ban-duration"
                     class="degoog-input"
                     min="0"
-                    placeholder="0"
+                    placeholder="72"
                   />
                 </fieldset>
                 <fieldset

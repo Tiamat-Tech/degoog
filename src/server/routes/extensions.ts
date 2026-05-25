@@ -2,16 +2,13 @@ import { Hono } from "hono";
 import {
   getEngineExtensionMeta,
   getEngineMap,
-  setEnginesLocale,
 } from "../extensions/engines/registry";
 import { canBalrogPass, gandalf } from "./settings-auth";
 import {
   getPluginExtensionMeta,
   getCommandInstanceById,
-  setCommandsLocale,
 } from "../extensions/commands/registry";
 import { getCoreTranslator } from "./pages";
-import { getLocale } from "../utils/hono";
 import {
   getSlotPlugins,
   getSlotPluginById,
@@ -25,7 +22,6 @@ import { getSearchBarActionExtensionMeta } from "../extensions/search-bar/regist
 import { getThemeExtensionMeta } from "../extensions/themes/registry";
 import {
   getSettings,
-  dumbFallbackBecauseIDontThink,
   isDisabled,
   setSettings,
   mergeSecrets,
@@ -87,10 +83,8 @@ async function getSlotExtensionMeta(
           : "Where the slot content appears on the page.",
       });
     }
-    const id = slot.settingsId ?? `slot-${slot.id}`;
-    const raw = slot.settingsFallbackIds?.length
-      ? await dumbFallbackBecauseIDontThink(id, slot.settingsFallbackIds)
-      : await getSettings(id);
+    const id = slot.settingsId ?? slot.id;
+    const raw = await getSettings(id);
     const settings = maskSecrets(raw, fullSchema);
     if (raw["disabled"]) settings["disabled"] = raw["disabled"];
     if (hasPositionChoice) {
@@ -119,13 +113,7 @@ async function getSlotExtensionMeta(
 }
 
 router.get("/api/extensions", async (c) => {
-  const locale = getLocale(c);
   const coreT = await getCoreTranslator();
-  if (locale) {
-    setCommandsLocale(locale);
-    setEnginesLocale(locale);
-    coreT.setLocale(locale);
-  }
   const [
     engines,
     plugins,
@@ -205,13 +193,7 @@ router.post("/api/extensions/:id/settings", async (c) => {
     return c.json({ error: "Invalid JSON" }, 400);
   }
 
-  const locale = getLocale(c);
   const coreT = await getCoreTranslator();
-  if (locale) {
-    setCommandsLocale(locale);
-    setEnginesLocale(locale);
-    coreT.setLocale(locale);
-  }
   const [
     engines,
     plugins,

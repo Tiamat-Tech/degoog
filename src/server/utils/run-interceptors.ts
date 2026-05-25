@@ -1,5 +1,5 @@
 import { getInterceptors } from "../extensions/interceptors/registry";
-import { createCache } from "./cache";
+import { createCache, useCache } from "./cache";
 import { outgoingFetch } from "./outgoing";
 import { logger } from "./logger";
 import { isDisabled } from "./plugin-settings";
@@ -21,6 +21,7 @@ export const runIntercepts = async (
       const result = await interceptor.intercept(current, {
         fetch: outgoingFetch as (url: string, init?: RequestInit) => Promise<Response>,
         createCache,
+        useCache,
         lang,
       });
       current = result.query;

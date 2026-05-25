@@ -34,7 +34,7 @@ export async function handleSearch(params: SearchParams) {
     imageFilter,
   );
 
-  const cached = cache.get(key);
+  const cached = await cache.get(key);
   if (cached) {
     const qShort = query.trim().slice(0, 80);
     const enginesOn = Object.values(engines).filter(Boolean).length;
@@ -65,7 +65,7 @@ export async function handleSearch(params: SearchParams) {
     : searchType === "news"
       ? cache.NEWS_TTL_MS
       : undefined;
-  cache.set(key, response, ttl);
+  await cache.set(key, response, ttl);
 
   return {
     ...response,
@@ -110,7 +110,7 @@ export async function handleRetry(
     dateTo,
     imageFilter,
   );
-  const cached = cache.get(key);
+  const cached = await cache.get(key);
 
   if (cached) {
     const updatedTimings = cached.engineTimings.map((et) =>
@@ -125,7 +125,7 @@ export async function handleRetry(
       results: merged,
       engineTimings: updatedTimings,
     };
-    cache.set(
+    await cache.set(
       key,
       updated,
       cache.hasFailedEngines(updated) ? cache.SHORT_TTL_MS : undefined,

@@ -62,12 +62,11 @@ export function getScriptFolderSource(
 
 import { join } from "path";
 import type { PluginContext, SettingField } from "../types";
-import { createCache } from "./cache";
+import { createCache, useCache } from "./cache";
 import { outgoingFetch } from "./outgoing";
 import { buildSignedProxyUrl } from "./proxy-sign";
 import {
   getSettings,
-  dumbFallbackBecauseIDontThink,
   mergeDefaults,
   type SettingValue,
 } from "./plugin-settings";
@@ -80,6 +79,17 @@ type PluginLike = {
 
 const _initedPlugins = new WeakSet<object>();
 
+export const PLUGIN_API_PREFIX = "/api/plugin";
+
+export const buildApiBase = (pluginId: string): string =>
+  `${PLUGIN_API_PREFIX}/${pluginId}`;
+
+export const buildRouteUrl = (pluginId: string, path = ""): string => {
+  const apiBase = buildApiBase(pluginId);
+  const suffix = String(path || "").replace(/^\/+/, "");
+  return suffix ? `${apiBase}/${suffix}` : apiBase;
+};
+
 export const forgetPluginInit = (plugin: object): void => {
   _initedPlugins.delete(plugin);
 };
@@ -88,7 +98,7 @@ export async function loadPluginAssets(
   entryPath: string,
   folderName: string,
   settingsId: string,
-  source: "plugin" | "builtin",
+  source: "plugin" | "builtin" = "plugin",
 ): Promise<string> {
   const { readFile, stat } = await import("fs/promises");
   const template = await readFile(
@@ -109,12 +119,17 @@ export async function initPlugin(
   entryPath: string,
   settingsId: string,
   template: string,
-  fallbackSettingsIds: string[] = [],
+  options: { pluginId: string },
 ): Promise<void> {
   const { readFile } = await import("fs/promises");
+  const { pluginId } = options;
   const alreadyInited = _initedPlugins.has(plugin as object);
   if (plugin.init && !alreadyInited) {
     const ctx: PluginContext = {
+      id: pluginId,
+      pluginId,
+      apiBase: buildApiBase(pluginId),
+      routeUrl: (path = "") => buildRouteUrl(pluginId, path),
       dir: entryPath,
       template,
       readFile: (filename: string) =>
@@ -122,14 +137,13 @@ export async function initPlugin(
       signProxyUrl: buildSignedProxyUrl,
       fetch: outgoingFetch as PluginContext["fetch"],
       createCache,
+      useCache,
     };
     await Promise.resolve(plugin.init(ctx));
     _initedPlugins.add(plugin as object);
   }
   if (plugin.configure && plugin.settingsSchema?.length) {
-    const stored = fallbackSettingsIds.length
-      ? await dumbFallbackBecauseIDontThink(settingsId, fallbackSettingsIds)
-      : await getSettings(settingsId);
+    const stored = await getSettings(settingsId);
     plugin.configure(mergeDefaults(stored, plugin.settingsSchema));
   }
 }

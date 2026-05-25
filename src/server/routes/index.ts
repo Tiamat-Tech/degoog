@@ -4,6 +4,7 @@ import { cssCheckOn, isBlocked } from "../utils/bot-trap";
 import { hasPinged, strike } from "../utils/link-token";
 import { getClientIp } from "../utils/request";
 import commands from "./commands";
+import health from "./health";
 import honeypot from "./honeypot";
 import pages, { buildGandalf } from "./pages";
 import uovadipasqua from "./uovadipasqua";
@@ -15,6 +16,7 @@ import rateLimit from "./rate-limit";
 import search from "./search";
 import searchBar from "./search-bar";
 import searchStream from "./search-stream";
+import setup from "./setup";
 import settings from "./settings";
 import settingsAuth from "./settings-auth";
 import slots from "./slots";
@@ -24,6 +26,8 @@ import sw from "./sw";
 import themes from "./themes";
 
 const globalRouter = new Hono();
+
+globalRouter.route("/", health);
 
 // TODO Consider using a more structured approach for the routes
 // e.g. globalRouter.route("/", commands); becomes globalRouter.route("/commands/", commands);
@@ -51,6 +55,7 @@ globalRouter.use("*", async (c, next) => {
   return next();
 });
 
+globalRouter.route("/", setup);
 globalRouter.route("/", honeypot);
 globalRouter.route("/", commands);
 globalRouter.route("/", uovadipasqua);

@@ -1,14 +1,30 @@
-import { describe, test, expect, beforeAll } from "bun:test";
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { getServerKeyHex, initServerKey } from "../../src/server/utils/server-key";
+import {
+  getInstanceSettings,
+  updateInstanceSettings,
+  type ServerSettingValue,
+} from "../../src/server/utils/server-settings";
 
 let searchRouter: {
   request: (req: Request | string) => Response | Promise<Response>;
 };
 
+let _savedSettings: Record<string, ServerSettingValue> = {};
+
 beforeAll(async () => {
   await initServerKey();
+  const s = await getInstanceSettings();
+  _savedSettings = {
+    apiKeySearchEnabled: s.apiKeySearchEnabled ?? false,
+  };
+  await updateInstanceSettings({ apiKeySearchEnabled: false });
   const mod = await import("../../src/server/routes/search");
   searchRouter = mod.default;
+});
+
+afterAll(async () => {
+  await updateInstanceSettings(_savedSettings);
 });
 
 describe("routes/search", () => {

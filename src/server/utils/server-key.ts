@@ -1,20 +1,25 @@
 import { createHmac, randomBytes, timingSafeEqual } from "crypto";
-import { getSettings, setSettings } from "./plugin-settings";
+import { getInstanceSettings, updateInstanceSettings } from "./server-settings";
 
-const SETTINGS_ID = "degoog-api-secret";
-const KEY_FIELD = "key";
+export const API_SECRET_FIELD = "apiSecretKey";
+const KEY_HEX_LEN = 64;
 
 let _key: Buffer | null = null;
 
+const _readStoredKey = async (): Promise<string | null> => {
+  const settings = await getInstanceSettings();
+  const v = settings[API_SECRET_FIELD];
+  return typeof v === "string" && v.length === KEY_HEX_LEN ? v : null;
+};
+
 export async function initServerKey(): Promise<void> {
-  const stored = await getSettings(SETTINGS_ID);
-  const existing = stored[KEY_FIELD];
-  if (typeof existing === "string" && existing.length === 64) {
+  const existing = await _readStoredKey();
+  if (existing) {
     _key = Buffer.from(existing, "hex");
     return;
   }
   const generated = randomBytes(32);
-  await setSettings(SETTINGS_ID, { [KEY_FIELD]: generated.toString("hex") });
+  await updateInstanceSettings({ [API_SECRET_FIELD]: generated.toString("hex") });
   _key = generated;
 }
 
@@ -40,7 +45,7 @@ export function verifyServerKeyHex(provided: string): boolean {
 
 export async function regenerateServerKey(): Promise<void> {
   const generated = randomBytes(32);
-  await setSettings(SETTINGS_ID, { [KEY_FIELD]: generated.toString("hex") });
+  await updateInstanceSettings({ [API_SECRET_FIELD]: generated.toString("hex") });
   _key = generated;
 }
 

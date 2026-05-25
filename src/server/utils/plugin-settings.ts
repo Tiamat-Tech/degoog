@@ -1,8 +1,11 @@
-import { readFile, writeFile, mkdir } from "fs/promises";
-import { dirname } from "path";
+import { readFile } from "fs/promises";
 import { pluginSettingsFile } from "./paths";
-
-const SETTINGS_PATH = pluginSettingsFile();
+import { writeJsonAtomic } from "./atomic-json";
+import {
+  INVALIDATE_SCOPE,
+  onInvalidate,
+  publishInvalidate,
+} from "./cache-valkey";
 
 type PluginSettingsStore = Record<string, Record<string, SettingValue>>;
 export type SettingValue = string | string[] | boolean;
@@ -29,10 +32,15 @@ export const settingsAsStrings = (
 let cache: PluginSettingsStore | null = null;
 let loadFailed = false;
 
+onInvalidate((payload) => {
+  if (payload.scope !== INVALIDATE_SCOPE.PLUGIN_SETTINGS) return;
+  cache = null;
+});
+
 const load = async (): Promise<PluginSettingsStore> => {
   if (cache) return cache;
   try {
-    const raw = await readFile(SETTINGS_PATH, "utf-8");
+    const raw = await readFile(pluginSettingsFile(), "utf-8");
     cache = JSON.parse(raw) as PluginSettingsStore;
     loadFailed = false;
   } catch (e: unknown) {
@@ -45,8 +53,7 @@ const load = async (): Promise<PluginSettingsStore> => {
 export const didSettingsLoadFail = (): boolean => loadFailed;
 
 async function persist(store: PluginSettingsStore): Promise<void> {
-  await mkdir(dirname(SETTINGS_PATH), { recursive: true });
-  await writeFile(SETTINGS_PATH, JSON.stringify(store, null, 2), "utf-8");
+  await writeJsonAtomic(pluginSettingsFile(), store);
 }
 
 export const getSettings = async (
@@ -56,29 +63,8 @@ export const getSettings = async (
   return store[id] ?? {};
 };
 
-export const dumbFallbackBecauseIDontThink = async (
-  preferredId: string,
-  fallbacks: string[],
-): Promise<Record<string, SettingValue>> => {
-  const store = await load();
-  if (store[preferredId]) return store[preferredId] ?? {};
-  for (const id of fallbacks) {
-    if (!id || id === preferredId) continue;
-    if (store[id]) return store[id] ?? {};
-  }
-  return {};
-};
-
 export const isDisabled = async (id: string): Promise<boolean> => {
   const settings = await getSettings(id);
-  return asBoolean(settings["disabled"]);
-};
-
-export const isDisabledWithFallback = async (
-  preferredId: string,
-  fallbacks: string[],
-): Promise<boolean> => {
-  const settings = await dumbFallbackBecauseIDontThink(preferredId, fallbacks);
   return asBoolean(settings["disabled"]);
 };
 
@@ -106,6 +92,7 @@ export async function setSettings(
 
   await persist(store);
   loadFailed = false;
+  await publishInvalidate(INVALIDATE_SCOPE.PLUGIN_SETTINGS, id);
 }
 
 export const getAllSettings = async (): Promise<PluginSettingsStore> => {
@@ -133,6 +120,7 @@ export const clearTypeOverride = async (id: string): Promise<void> => {
     delete store[id][TYPE_OVERRIDE_KEY];
     cache = store;
     await persist(store);
+    await publishInvalidate(INVALIDATE_SCOPE.PLUGIN_SETTINGS, id);
   }
 };
 
@@ -142,6 +130,7 @@ export async function removeSettings(id: string): Promise<void> {
     delete store[id];
     cache = store;
     await persist(store);
+    await publishInvalidate(INVALIDATE_SCOPE.PLUGIN_SETTINGS, id);
   }
 }
 

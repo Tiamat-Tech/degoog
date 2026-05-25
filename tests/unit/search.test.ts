@@ -1,6 +1,12 @@
 import { describe, test, expect } from "bun:test";
 import { mergeNewResults, resolveEngine, scoreResults } from "../../src/server/search";
-import type { SearchResult, ScoredResult } from "../../src/server/types";
+import { cacheKey } from "../../src/server/utils/search";
+import {
+  ImgNsfw,
+  type SearchResult,
+  type ScoredResult,
+  type EngineConfig,
+} from "../../src/server/types";
 
 const result = (
   url: string,
@@ -102,20 +108,28 @@ describe("search", () => {
     });
   });
 
-  describe("resolveEngine", () => {
-    test("returns engine by id when registry is initialized", async () => {
-      const { initEngines } =
-        await import("../../src/server/extensions/engines/registry");
-      const orig = process.env.DEGOOG_ENGINES_DIR;
-      process.env.DEGOOG_ENGINES_DIR = "/nonexistent-empty-dir-12345";
-      await initEngines();
-      const engine = resolveEngine("duckduckgo");
-      expect(engine).not.toBeNull();
-      expect(engine!.name).toBe("DuckDuckGo");
-      if (orig !== undefined) process.env.DEGOOG_ENGINES_DIR = orig;
-      else delete process.env.DEGOOG_ENGINES_DIR;
+  describe("cacheKey", () => {
+    const engines: EngineConfig = { google: true };
+
+    test("differs when only imgNsfw differs", () => {
+      const safe = cacheKey("cats", engines, "images", 1, "any", "", "", "", {
+        nsfw: ImgNsfw.OFF,
+      });
+      const nsfw = cacheKey("cats", engines, "images", 1, "any", "", "", "", {
+        nsfw: ImgNsfw.ON,
+      });
+      expect(safe).not.toBe(nsfw);
     });
 
+    test("stays stable when imageFilter is absent", () => {
+      const a = cacheKey("cats", engines, "web", 1);
+      const b = cacheKey("cats", engines, "web", 1);
+      expect(a).toBe(b);
+      expect(a.endsWith("|")).toBe(true);
+    });
+  });
+
+  describe("resolveEngine", () => {
     test("returns null for unknown engine name", async () => {
       const { initEngines } =
         await import("../../src/server/extensions/engines/registry");

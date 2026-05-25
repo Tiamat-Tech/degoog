@@ -25,6 +25,7 @@ import { focusInput, initKeyboardShortcuts } from "../utils/keyboard-shortcuts";
 import { initSearchBarActions } from "../utils/search-bar-actions";
 import { renderPageTemplates } from "./renderer/render-page";
 import { initResultActions } from "./result-actions";
+import { initHomeWizard } from "./wizard/wizard";
 import { getBase } from "../utils/base-url";
 import { isSettingsPathname } from "../utils/settings-path";
 import type { ImageFilter } from "../types/search";
@@ -41,6 +42,7 @@ type DegoogHistoryState = {
 export function init(): void {
   renderPageTemplates();
   void applyUovaStorage();
+  void initHomeWizard();
 
   document.body.addEventListener(
     "click",

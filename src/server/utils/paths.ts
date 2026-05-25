@@ -1,4 +1,14 @@
-import { join } from "path";
+import { join, resolve, sep } from "path";
+
+export const resolveContained = (
+  root: string,
+  ...parts: string[]
+): string | null => {
+  const base = resolve(root);
+  const target = resolve(base, ...parts);
+  if (target !== base && !target.startsWith(base + sep)) return null;
+  return target;
+};
 
 const _dataDir = (): string =>
   process.env.DEGOOG_DATA_DIR ?? join(process.cwd(), "data");
@@ -32,3 +42,6 @@ export const autocompleteDir = (): string =>
 
 export const blocklistFile = (): string =>
   process.env.DEGOOG_BLOCKLIST_FILE ?? join(_dataDir(), "blocklist.json");
+
+export const serverSettingsFile = (): string =>
+  process.env.DEGOOG_SERVER_SETTINGS_FILE ?? join(_dataDir(), "server-settings.json");

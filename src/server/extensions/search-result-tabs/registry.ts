@@ -5,11 +5,10 @@ import {
   lockinNameSpace,
   lockinSettingsId,
 } from "../../utils/plugin-assets";
-import { isDisabledWithFallback } from "../../utils/plugin-settings";
-import { createTranslatorFromPath } from "../../utils/translation";
+import { isDisabled } from "../../utils/plugin-settings";
+import { bootCircuitFromPath } from "../../utils/translation-circuit";
 import { pluginsDir } from "../../utils/paths";
 import { createRegistry } from "../registry-factory";
-import { stupidSettingIDtoAvoidConflicts } from "../extension-id";
 
 function isSearchResultTab(val: unknown): val is SearchResultTab {
   if (typeof val !== "object" || val === null) return false;
@@ -22,7 +21,7 @@ function isSearchResultTab(val: unknown): val is SearchResultTab {
 }
 
 const registry = createRegistry<SearchResultTab>({
-  dirs: () => [{ dir: pluginsDir(), source: "plugin" }],
+  dirs: () => [{ dir: pluginsDir() }],
   match: (mod) => {
     const t =
       mod.tab ??
@@ -31,38 +30,16 @@ const registry = createRegistry<SearchResultTab>({
     return isSearchResultTab(t) ? t : null;
   },
   canonicalIdKind: "tab",
-  onLoad: async (tab, { entryPath, folderName, source, canonicalId }) => {
-    const legacyId = typeof tab.id === "string" ? tab.id : "";
+  onLoad: async (tab, { entryPath, folderName, canonicalId }) => {
     const id = canonicalId ?? folderName;
     tab.id = id;
-    const { settingsId, fallbackSettingsIds } = stupidSettingIDtoAvoidConflicts(
-      {
-        kind: "tab",
-        canonicalId: id,
-        folderName,
-        legacyDevId: legacyId,
-        explicitSettingsId: tab.settingsId,
-      },
-    );
-    tab.settingsId = settingsId;
-    tab.settingsFallbackIds = fallbackSettingsIds;
-    tab.t = await createTranslatorFromPath(entryPath);
+    tab.settingsId = id;
+    tab.t = await bootCircuitFromPath(entryPath);
     lockinNameSpace(folderName, `tabs/${id}`);
-    lockinSettingsId(folderName, settingsId);
-    if (!(await isDisabledWithFallback(settingsId, fallbackSettingsIds))) {
-      const template = await loadPluginAssets(
-        entryPath,
-        folderName,
-        settingsId,
-        source,
-      );
-      await initPlugin(
-        tab,
-        entryPath,
-        settingsId,
-        template,
-        fallbackSettingsIds,
-      );
+    lockinSettingsId(folderName, id);
+    if (!(await isDisabled(id))) {
+      const template = await loadPluginAssets(entryPath, folderName, id);
+      await initPlugin(tab, entryPath, id, template, { pluginId: folderName });
     }
   },
   debugTag: "search-result-tabs",

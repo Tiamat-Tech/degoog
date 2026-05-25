@@ -21,12 +21,12 @@ import type {
 } from "../types";
 import { fetchViaHttpProxy } from "./http-proxy-fetch";
 import { logger } from "./logger";
-import { asBoolean, getSettings } from "./plugin-settings";
+import { asBoolean } from "./plugin-settings";
 import { fetchViaSocks, isSocksProxy } from "./socks-fetch";
+import { getInstanceSettings } from "./server-settings";
 
 export type { TransportFetchOptions as OutgoingFetchOptions };
 
-const DEGOOG_SETTINGS_ID = "degoog-settings";
 
 export type OutgoingTransport = string;
 
@@ -141,7 +141,7 @@ async function buildTransportContext(
     proxyOverrideUrls?: string | string[];
   },
 ): Promise<{ transport: Transport; context: TransportContext }> {
-  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  const settings = await getInstanceSettings();
   const proxyOverrideEnabled = opts?.proxyOverrideEnabled === true;
   const proxyOverrideRaw = opts?.proxyOverrideUrls;
 

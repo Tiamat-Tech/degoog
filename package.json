@@ -1,6 +1,6 @@
 {
   "name": "degoog",
-  "version": "0.18.0",
+  "version": "0.19.0-dev-0.1",
   "type": "module",
   "scripts": {
     "dev": "bun run --watch src/server/index.ts",
@@ -20,6 +20,7 @@
     "cheerio": "1.2.0",
     "dompurify": "^3.4.2",
     "hono": "4.12.18",
+    "ioredis": "^5.10.1",
     "marked": "^18.0.3",
     "sass": "1.85.0",
     "socks": "2.8.7"

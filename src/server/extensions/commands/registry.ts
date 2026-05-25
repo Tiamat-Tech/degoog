@@ -16,8 +16,11 @@ import {
   isDisabled,
   maskSecrets,
 } from "../../utils/plugin-settings";
-import { createTranslatorFromPath } from "../../utils/translation";
-import { getDefaultEngineConfig, getEngineMap as getSearchEngineMap } from "../engines/registry";
+import { bootCircuitFromPath } from "../../utils/translation-circuit";
+import {
+  getDefaultEngineConfig,
+  getEngineMap as getSearchEngineMap,
+} from "../engines/registry";
 import { pluginsDir } from "../../utils/paths";
 import { createRegistry } from "../registry-factory";
 import { extensionReadmeExists } from "../../utils/extension-docs";
@@ -62,12 +65,10 @@ function isBangCommand(val: unknown): val is BangCommand {
 }
 
 const commandSourceMap = new Map<string, "builtin" | "plugin">();
+const seenTriggers = new Set<string>();
 
 const registry = createRegistry<CommandEntry>({
-  dirs: () => [
-    { dir: builtinsDir, source: "builtin" },
-    { dir: pluginsDir(), source: "plugin" },
-  ],
+  dirs: () => [{ dir: builtinsDir, source: "builtin" }, { dir: pluginsDir() }],
   match: (mod) => {
     const Export = mod.default ?? mod.command ?? mod.Command;
     const instance: BangCommand =
@@ -75,8 +76,6 @@ const registry = createRegistry<CommandEntry>({
         ? new (Export as new () => BangCommand)()
         : (Export as BangCommand);
     if (!isBangCommand(instance)) return null;
-    if (registry.items().some((c) => c.trigger === instance.trigger))
-      return null;
     return {
       id: "",
       trigger: instance.trigger,
@@ -85,9 +84,11 @@ const registry = createRegistry<CommandEntry>({
     };
   },
   onLoad: async (entry, { entryPath, folderName, source }) => {
+    if (seenTriggers.has(entry.trigger)) return false;
+    seenTriggers.add(entry.trigger);
     entry.id = (source === "plugin" ? "plugin-" : "") + folderName;
     commandSourceMap.set(entry.id, source);
-    entry.instance.t = await createTranslatorFromPath(entryPath);
+    entry.instance.t = await bootCircuitFromPath(entryPath);
     lockinNameSpace(folderName, `commands/${entry.id}`);
     if (!(await isDisabled(entry.id))) {
       const template = await loadPluginAssets(
@@ -96,7 +97,9 @@ const registry = createRegistry<CommandEntry>({
         entry.id,
         source,
       );
-      await initPlugin(entry.instance, entryPath, entry.id, template);
+      await initPlugin(entry.instance, entryPath, entry.id, template, {
+        pluginId: folderName,
+      });
     }
   },
   debugTag: "commands",
@@ -124,12 +127,14 @@ async function loadAliases(): Promise<void> {
 export async function initPlugins(): Promise<void> {
   await loadAliases();
   commandSourceMap.clear();
+  seenTriggers.clear();
   await registry.init();
 }
 
 export async function reloadCommands(bust = false): Promise<void> {
   await loadAliases();
   commandSourceMap.clear();
+  seenTriggers.clear();
   await (bust ? registry.reload() : registry.refresh());
 }
 
@@ -180,12 +185,6 @@ export type CommandRegistryEntry = {
   naturalLanguagePhrases?: string[];
   category?: string;
 };
-
-export function setCommandsLocale(locale: string): void {
-  for (const entry of registry.items()) {
-    entry.instance.t?.setLocale(locale);
-  }
-}
 
 export function getCommandRegistry(): CommandRegistryEntry[] {
   const entries: CommandRegistryEntry[] = registry.items().map((c) => {

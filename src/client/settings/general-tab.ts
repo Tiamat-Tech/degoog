@@ -11,6 +11,7 @@ import { getBase } from "../utils/base-url";
 import { idbGet, idbSet } from "../utils/db";
 import { requestInstallPrompt } from "../utils/install-prompt";
 import { applyTheme } from "../utils/theme";
+import { restartWizard } from "../modules/wizard/wizard";
 
 const t = window.scopedT("core");
 
@@ -195,6 +196,10 @@ export async function initVersionChecker(): Promise<void> {
 export async function initGeneralTab(): Promise<void> {
   await initAppearanceSettings();
   await initVersionChecker();
+
+  document
+    .getElementById("settings-wizard-restart")
+    ?.addEventListener("click", () => restartWizard());
 
   document
     .getElementById("settings-install-prompt")

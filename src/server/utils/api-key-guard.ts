@@ -1,8 +1,8 @@
 import type { Context } from "hono";
-import { asBoolean, didSettingsLoadFail, getSettings } from "./plugin-settings";
-import { DEGOOG_SETTINGS_ID } from "./search";
+import { asBoolean, didSettingsLoadFail } from "./plugin-settings";
 import { verifySearchNonce } from "./search-nonce";
 import { verifyServerKeyHex } from "./server-key";
+import { getInstanceSettings } from "./server-settings";
 
 const _verifyNonce = (c: Context): boolean => {
   const n = c.req.header("x-search-nonce") ?? c.req.query("searchNonce") ?? "";
@@ -22,7 +22,7 @@ export async function guardApiKey(
   c: Context,
   settingKey: string,
 ): Promise<Response | null> {
-  const settings = await getSettings(DEGOOG_SETTINGS_ID);
+  const settings = await getInstanceSettings();
   if (didSettingsLoadFail()) return c.json({ error: "You shall not pass!" }, 401);
   if (!asBoolean(settings[settingKey])) return null;
   if (_verifyNonce(c) || _bearerMatches(c)) return null;

@@ -1,9 +1,14 @@
 import { logger } from "./logger";
-import { asString, getSettings } from "./plugin-settings";
+import { asString, type SettingValue } from "./plugin-settings";
+import { getInstanceSettings } from "./server-settings";
 import { addEntry, checkBlocked, resetCache } from "./blocklist";
 
-const SETTINGS_ID = "degoog-settings";
-const DEFAULT_BAN_HOURS = 0;
+export const DEFAULT_BAN_HOURS = 72;
+
+export const resolveBanHours = (raw: SettingValue | undefined): number => {
+  const n = parseInt(asString(raw ?? ""), 10);
+  return Number.isFinite(n) && n >= 0 ? n : DEFAULT_BAN_HOURS;
+};
 
 let _enabled: boolean | null = null;
 let _cssCheck: boolean | null = null;
@@ -12,13 +17,12 @@ let _initialized = false;
 
 const reloadCache = async (): Promise<void> => {
   try {
-    const settings = await getSettings(SETTINGS_ID);
+    const settings = await getInstanceSettings();
     const v = asString(settings.honeypotEnabled ?? "");
     _enabled = v === "" || v === "true";
     const c = asString(settings.honeypotCssCheck ?? "");
     _cssCheck = c === "" || c === "true";
-    const raw = parseInt(asString(settings.honeypotBanDuration ?? ""), 10);
-    _banHours = Number.isFinite(raw) && raw >= 0 ? raw : DEFAULT_BAN_HOURS;
+    _banHours = resolveBanHours(settings.honeypotBanDuration);
     _initialized = true;
   } catch (e) {
     logger.error(

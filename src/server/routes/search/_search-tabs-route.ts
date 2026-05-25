@@ -1,7 +1,7 @@
 import type { Hono } from "hono";
 import { getCustomEngineTypes } from "../../extensions/engines/registry";
 import { getSearchResultTabs } from "../../extensions/search-result-tabs/registry";
-import { isDisabledWithFallback } from "../../utils/plugin-settings";
+import { isDisabled } from "../../utils/plugin-settings";
 import { logger } from "../../utils/logger";
 
 export function registerSearchTabsRoutes(router: Hono): void {
@@ -36,9 +36,8 @@ export function registerSearchTabsRoutes(router: Hono): void {
         }
         continue;
       }
-      const settingsId = tab.settingsId ?? `tab-${tab.id}`;
-      const fallbacks = tab.settingsFallbackIds ?? [];
-      if (await isDisabledWithFallback(settingsId, fallbacks)) continue;
+      const settingsId = tab.settingsId ?? tab.id;
+      if (await isDisabled(settingsId)) continue;
       list.push({ id: tab.id, name: tab.name, icon: tab.icon ?? null });
     }
     return c.json({ tabs: list });

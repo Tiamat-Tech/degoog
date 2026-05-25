@@ -1,4 +1,6 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { updateInstanceSettings } from "../../src/server/utils/server-settings";
+import { syncBlocklist } from "../../src/server/utils/bot-trap";
 
 type Router = {
   request: (req: Request | string) => Response | Promise<Response>;
@@ -111,26 +113,12 @@ describe("honeypot traps - enabled (default)", () => {
 
 describe("honeypot traps - disabled", () => {
   beforeAll(async () => {
-    const { setSettings, getSettings } =
-      await import("../../src/server/utils/plugin-settings");
-    const { syncBlocklist } = await import("../../src/server/utils/bot-trap");
-    const existing = await getSettings("degoog-settings");
-    await setSettings("degoog-settings", {
-      ...existing,
-      honeypotEnabled: "false",
-    });
+    await updateInstanceSettings({ honeypotEnabled: "false" });
     await syncBlocklist();
   });
 
   afterAll(async () => {
-    const { setSettings, getSettings } =
-      await import("../../src/server/utils/plugin-settings");
-    const { syncBlocklist } = await import("../../src/server/utils/bot-trap");
-    const existing = await getSettings("degoog-settings");
-    await setSettings("degoog-settings", {
-      ...existing,
-      honeypotEnabled: "true",
-    });
+    await updateInstanceSettings({ honeypotEnabled: "true" });
     await syncBlocklist();
   });
 

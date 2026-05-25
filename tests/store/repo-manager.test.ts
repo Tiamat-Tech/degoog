@@ -9,7 +9,7 @@ describe("store/repo-manager", () => {
     const slug = getRepoSlugFromUrl("https://github.com/user/repo.git");
     expect(typeof slug).toBe("string");
     expect(slug.length).toBeGreaterThan(0);
-    expect(slug).toMatch(/^[a-f0-9]{8}-[a-zA-Z0-9-]+$/);
+    expect(slug).toBe("user-repo");
   });
 
   test("getRepoSlugFromUrl is deterministic for same URL", () => {

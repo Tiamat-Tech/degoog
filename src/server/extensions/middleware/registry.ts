@@ -5,84 +5,56 @@ import {
   lockinNameSpace,
   lockinSettingsId,
 } from "../../utils/plugin-assets";
-import { isDisabledWithFallback } from "../../utils/plugin-settings";
-import { createTranslatorFromPath } from "../../utils/translation";
+import { isDisabled } from "../../utils/plugin-settings";
+import { bootCircuitFromPath } from "../../utils/translation-circuit";
 import { pluginsDir } from "../../utils/paths";
 import { createRegistry } from "../registry-factory";
-import { stupidSettingIDtoAvoidConflicts } from "../extension-id";
 
-function isRequestMiddleware(val: unknown): val is RequestMiddleware {
+const isRequestMiddleware = (val: unknown): val is RequestMiddleware => {
   if (typeof val !== "object" || val === null) return false;
   const m = val as Record<string, unknown>;
   return typeof m.name === "string" && typeof m.handle === "function";
-}
-
-const _legacyToCanonical = new Map<string, string>();
+};
 
 const registry = createRegistry<RequestMiddleware>({
-  dirs: () => [{ dir: pluginsDir(), source: "plugin" }],
+  dirs: () => [{ dir: pluginsDir() }],
   match: (mod) => {
     const m =
       mod.middleware ?? (mod.default as Record<string, unknown>)?.middleware;
     return isRequestMiddleware(m) ? m : null;
   },
   canonicalIdKind: "middleware",
-  onLoad: async (m, { entryPath, folderName, source, canonicalId }) => {
-    const legacyId = typeof m.id === "string" ? m.id : "";
+  onLoad: async (m, { entryPath, folderName, canonicalId }) => {
     const id = canonicalId ?? folderName;
     m.id = id;
-    const { settingsId, fallbackSettingsIds } = stupidSettingIDtoAvoidConflicts(
-      {
-        kind: "middleware",
-        canonicalId: id,
-        folderName,
-        legacyDevId: legacyId,
-        explicitSettingsId: m.settingsId,
-      },
-    );
-    m.settingsId = settingsId;
-    m.settingsFallbackIds = fallbackSettingsIds;
-    if (legacyId && legacyId !== id) _legacyToCanonical.set(legacyId, id);
-    m.t = await createTranslatorFromPath(entryPath);
+    m.settingsId = id;
+    m.t = await bootCircuitFromPath(entryPath);
     lockinNameSpace(folderName, `middleware/${id}`);
-    lockinSettingsId(folderName, settingsId);
-    if (!(await isDisabledWithFallback(settingsId, fallbackSettingsIds))) {
-      const template = await loadPluginAssets(
-        entryPath,
-        folderName,
-        settingsId,
-        source,
-      );
-      await initPlugin(m, entryPath, settingsId, template, fallbackSettingsIds);
+    lockinSettingsId(folderName, id);
+    if (!(await isDisabled(id))) {
+      const template = await loadPluginAssets(entryPath, folderName, id);
+      await initPlugin(m, entryPath, id, template, { pluginId: folderName });
     }
   },
   debugTag: "middleware",
 });
 
-export async function initMiddlewareRegistry(): Promise<void> {
-  _legacyToCanonical.clear();
+export const initMiddlewareRegistry = async (): Promise<void> => {
   await registry.init();
-}
+};
 
-export function getMiddleware(id: string): RequestMiddleware | null {
-  const direct = registry.items().find((m) => m.id === id);
-  if (direct) return direct;
-  const mapped = _legacyToCanonical.get(id);
-  if (!mapped) return null;
-  return registry.items().find((m) => m.id === mapped) ?? null;
-}
+export const getMiddleware = (id: string): RequestMiddleware | null =>
+  registry.items().find((m) => m.id === id) ?? null;
 
-export async function reloadMiddlewareRegistry(bust = true): Promise<void> {
-  _legacyToCanonical.clear();
+export const reloadMiddlewareRegistry = async (bust = true): Promise<void> => {
   await (bust ? registry.reload() : registry.refresh());
-}
+};
 
-export function getAllMiddlewareTranslators(): {
+export const getAllMiddlewareTranslators = (): {
   namespace: string;
   translator: Translate;
-}[] {
-  return registry
+}[] =>
+  registry
     .items()
     .filter((m) => !!m.t)
     .map((m) => ({ namespace: `middleware/${m.id}`, translator: m.t! }));
-}

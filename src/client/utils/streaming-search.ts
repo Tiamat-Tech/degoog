@@ -8,16 +8,15 @@ import { MAX_PAGE } from "../constants";
 import {
   closeMediaPreview,
   destroyMediaObserver,
+  setupMediaObserver,
 } from "../modules/media/media";
 import {
   attachVideoPlayers,
   clearSlotPanels,
   renderPagination,
-  renderResults,
   renderSidebar,
 } from "../modules/renderer/render";
 import { appendMediaCards, renderMediaEngineBar } from "../modules/renderer/render-media";
-import { setupMediaObserver } from "../modules/media/media";
 import { state } from "../state";
 import {
   EngineTiming,
@@ -289,7 +288,10 @@ export async function performStreamingSearch(
   });
 
   source.addEventListener("error", (e) => {
-    if (_activeSource !== source) return;
+    if (_activeSource !== source) {
+      source.close();
+      return;
+    }
     console.error("[streaming-search] stream error", e);
     source.close();
     _activeSource = null;

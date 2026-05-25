@@ -10,7 +10,6 @@ import { logger } from "../../utils/logger";
 import {
   asString,
   getSettings,
-  maskSecrets,
   setSettings,
 } from "../../utils/plugin-settings";
 
@@ -46,8 +45,8 @@ export interface LoadedTheme {
 }
 
 import { themesDir } from "../../utils/paths";
-import { createTranslatorFromPath } from "../../utils/translation";
-import { extensionReadmeExists } from "../../utils/extension-docs";
+import { bootCircuitFromPath } from "../../utils/translation-circuit";
+import { buildExtensionMeta } from "../extension-meta";
 import { rewriteThemePaths } from "../../utils/extension-id";
 
 const THEMES_DIR = themesDir();
@@ -116,14 +115,7 @@ export async function initThemes(): Promise<void> {
         };
 
         theme.compiledCss = await compileThemeCss(theme);
-
-        theme.t = await createTranslatorFromPath(themeDir);
-
-        if (manifest.settingsSchema?.length) {
-          const stored = await getSettings(settingsId(entry.name));
-          if (Object.keys(stored).length > 0) {
-          }
-        }
+        theme.t = await bootCircuitFromPath(themeDir);
 
         themes.push(theme);
       } catch (err) {
@@ -167,7 +159,14 @@ export function getThemeById(id: string): LoadedTheme | null {
 }
 
 export async function getThemeHtml(
-  page: "layout" | "index" | "search" | "settings" | "gandalf" | "robots-takeover" | "404",
+  page:
+    | "layout"
+    | "index"
+    | "search"
+    | "settings"
+    | "gandalf"
+    | "robots-takeover"
+    | "404",
 ): Promise<string | null> {
   const theme = getActiveTheme();
   if (!theme) return null;
@@ -175,7 +174,10 @@ export async function getThemeHtml(
   if (!htmlFile) return null;
 
   try {
-    return rewriteThemePaths(await readFile(join(theme.dir, htmlFile), "utf-8"), theme.id);
+    return rewriteThemePaths(
+      await readFile(join(theme.dir, htmlFile), "utf-8"),
+      theme.id,
+    );
   } catch {
     return null;
   }
@@ -187,20 +189,16 @@ export async function getThemeExtensionMeta(): Promise<ExtensionMeta[]> {
   for (const theme of themes) {
     const schema = theme.manifest.settingsSchema ?? [];
     const id = settingsId(theme.id);
-    const rawSettings = schema.length > 0 ? await getSettings(id) : {};
-    const maskedSettings = maskSecrets(rawSettings, schema);
-    const { exists } = await extensionReadmeExists(id);
-
-    results.push({
-      id,
-      displayName: theme.manifest.name,
-      description: theme.manifest.description ?? "Custom theme",
-      type: ExtensionStoreType.Theme,
-      configurable: schema.length > 0,
-      settingsSchema: schema,
-      settings: maskedSettings,
-      extensionDocsAvailable: exists,
-    });
+    results.push(
+      await buildExtensionMeta({
+        id,
+        displayName: theme.manifest.name,
+        description: theme.manifest.description ?? "Custom theme",
+        type: ExtensionStoreType.Theme,
+        schema,
+        rawSettings: schema.length > 0 ? await getSettings(id) : {},
+      }),
+    );
   }
 
   return results;
@@ -243,7 +241,10 @@ export async function getThemeTemplatesHtml(): Promise<string> {
   const parts: string[] = [];
   for (const [id, filePath] of Object.entries(theme.manifest.templates)) {
     try {
-      const content = rewriteThemePaths(await readFile(join(theme.dir, filePath), "utf-8"), theme.id);
+      const content = rewriteThemePaths(
+        await readFile(join(theme.dir, filePath), "utf-8"),
+        theme.id,
+      );
       parts.push(`<template id="degoog-${id}">${content}</template>`);
     } catch {
       logger.debug(
