@@ -3,6 +3,7 @@ import { runStoreDirRename052026 } from "./2026-05-store-dir-rename";
 import { runItemDirRename052026 } from "./2026-05-item-dir-rename";
 import { runServerSettingsExtract052026 } from "./2026-05-server-settings-extract";
 import { runCanonicalIds052026 } from "./2026-05-canonical-ids";
+import { runCommandIds052027 } from "./2026-05-command-ids";
 import { runBuiltinMigrations052026 } from "./2026-05-builtin-migrations";
 
 /**
@@ -36,6 +37,11 @@ export const runMigrations = async (): Promise<void> => {
     await runCanonicalIds052026();
   } catch (err) {
     logger.error("migrations", "canonical-ids failed", err);
+  }
+  try {
+    await runCommandIds052027();
+  } catch (err) {
+    logger.error("migrations", "command-ids failed", err);
   }
   try {
     await runBuiltinMigrations052026();

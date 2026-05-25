@@ -23,6 +23,7 @@ import {
 } from "../engines/registry";
 import { pluginsDir } from "../../utils/paths";
 import { createRegistry } from "../registry-factory";
+import { makeExtID, folderFromExtID } from "../extension-id";
 import { extensionReadmeExists } from "../../utils/extension-docs";
 
 const builtinsDir = join(
@@ -86,7 +87,7 @@ const registry = createRegistry<CommandEntry>({
   onLoad: async (entry, { entryPath, folderName, source }) => {
     if (seenTriggers.has(entry.trigger)) return false;
     seenTriggers.add(entry.trigger);
-    entry.id = (source === "plugin" ? "plugin-" : "") + folderName;
+    entry.id = makeExtID(folderName, "command");
     commandSourceMap.set(entry.id, source);
     entry.instance.t = await bootCircuitFromPath(entryPath);
     lockinNameSpace(folderName, `commands/${entry.id}`);
@@ -193,7 +194,7 @@ export function getCommandRegistry(): CommandRegistryEntry[] {
       .filter(([, target]) => target === c.trigger)
       .map(([alias]) => alias);
     const phrases = c.instance.naturalLanguagePhrases;
-    const category = c.id.startsWith("plugin-") ? "Plugins" : "Built-in";
+    const category = getCommandSource(c.id) === "plugin" ? "Plugins" : "Built-in";
     return {
       id: c.id,
       trigger: c.instance.trigger,
@@ -314,10 +315,10 @@ export async function getPluginExtensionMeta(
     );
     let rawSettings = await getSettings(entry.id);
     if (
-      entry.id.startsWith("plugin-") &&
+      getCommandSource(entry.id) === "plugin" &&
       baseSchema.some((f) => f.key === "useAsSettingsGate")
     ) {
-      const slug = entry.id.slice(7);
+      const slug = folderFromExtID(entry.id, "command");
       if (
         asString(middlewareSettings.settingsGate).trim() === `plugin:${slug}`
       ) {

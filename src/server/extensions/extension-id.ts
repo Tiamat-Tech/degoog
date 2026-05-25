@@ -21,6 +21,11 @@ export const makeExtID = (
   return folderName.endsWith(suffix) ? folderName : `${folderName}${suffix}`;
 };
 
+export const folderFromExtID = (id: string, kind: ExtensionKind): string => {
+  const suffix = `-${kind}`;
+  return id.endsWith(suffix) ? id.slice(0, -suffix.length) : id;
+};
+
 export const dedupeExtID = (
   desired: string,
   existing: Set<string>,

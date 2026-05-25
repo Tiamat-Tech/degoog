@@ -46,7 +46,7 @@ const reloadPluginBundle = async (bust: boolean): Promise<void> => {
 
 const pluginSettingsIds = (installedAs: string): string[] => {
   const ids = new Set<string>(getPluginSettingsIds(installedAs));
-  ids.add(`plugin-${installedAs}`);
+  ids.add(makeExtID(installedAs, "command"));
   return [...ids];
 };
 

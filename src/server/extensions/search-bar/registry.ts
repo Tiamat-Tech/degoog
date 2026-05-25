@@ -12,6 +12,7 @@ import {
 import { bootCircuitFromPath } from "../../utils/translation-circuit";
 import { pluginsDir } from "../../utils/paths";
 import { createRegistry } from "../registry-factory";
+import { makeExtID } from "../extension-id";
 import { buildExtensionMeta } from "../extension-meta";
 
 interface PluginActions {
@@ -61,7 +62,7 @@ export async function initSearchBarActions(): Promise<void> {
 export async function getSearchBarActions(): Promise<SearchBarAction[]> {
   const out: SearchBarAction[] = [];
   for (const { pluginId, actions } of registry.items()) {
-    const pluginSettingsId = `plugin-${pluginId}`;
+    const pluginSettingsId = makeExtID(pluginId, "command");
     if (await isDisabled(pluginSettingsId)) continue;
     const settings = await getSettings(pluginSettingsId);
     for (const action of actions) {
@@ -90,7 +91,7 @@ export async function getSearchBarActionExtensionMeta(): Promise<
         }
       ).settingsSchema ?? [];
     if (schema.length === 0) continue;
-    const id = `plugin-${pluginId}`;
+    const id = makeExtID(pluginId, "command");
     const name =
       (action as SearchBarAction & { name?: string }).name ?? pluginId;
     const description =

@@ -42,6 +42,89 @@ const RESERVED_GLOBAL_KEYS = new Set<string>([
   "middleware",
 ]);
 
+/**
+ * Last-resort fallback for official-store legacy keys, applied only after
+ * manifest-based resolution finds nothing. Manifest legacyIds win for users
+ * who still have the official repo cloned under data/store; this table covers
+ * users who are missing that repo or whose clone predates the legacyIds, plus
+ * cross-kind renames that no manifest entry can express (e.g. the old command
+ * "plugin-rss" now shipping as the rss slot). The official IDs are frozen
+ * before go-live, so these mappings stay valid.
+ */
+const OFFICIAL_STORE_OVERRIDES: Record<string, string> = {
+  "ai-summary": "degoog-org-official-extensions-ai-summary-slot",
+  "ai-summary-slot": "degoog-org-official-extensions-ai-summary-slot",
+  "apps-pocket": "degoog-org-official-extensions-apps-pocket-command",
+  "autocomplete-builtin-duckduckgo": "autocomplete-degoog-org-official-extensions-duckduckgo",
+  "autocomplete-builtin-google": "autocomplete-degoog-org-official-extensions-google",
+  bing: "degoog-org-official-extensions-bing-engine",
+  "bing-engine": "degoog-org-official-extensions-bing-engine",
+  "bing-images": "degoog-org-official-extensions-bing-images-engine",
+  "bing-images-engine": "degoog-org-official-extensions-bing-images-engine",
+  "bing-news": "degoog-org-official-extensions-bing-news-engine",
+  "bing-news-engine": "degoog-org-official-extensions-bing-news-engine",
+  "bing-videos": "degoog-org-official-extensions-bing-videos-engine",
+  "bing-videos-engine": "degoog-org-official-extensions-bing-videos-engine",
+  brave: "degoog-org-official-extensions-brave-engine",
+  "brave-api-search": "degoog-org-official-extensions-brave-api-search-engine",
+  "brave-engine": "degoog-org-official-extensions-brave-engine",
+  "brave-news": "degoog-org-official-extensions-brave-news-engine",
+  "brave-news-engine": "degoog-org-official-extensions-brave-news-engine",
+  browserless: "degoog-org-official-extensions-browserless-transport",
+  camoufox: "degoog-org-official-extensions-camoufox-transport",
+  catpuccin: "degoog-org-official-extensions-catpuccin-theme",
+  cloakbrowser: "degoog-org-official-extensions-cloakbrowser-transport",
+  colors: "degoog-org-official-extensions-colors-command",
+  "ddg-bang": "degoog-org-official-extensions-ddg-bang-command",
+  define: "degoog-org-official-extensions-define-command",
+  "degoog-docs": "degoog-org-official-extensions-degoog-docs-theme",
+  "degoog-fplay": "degoog-org-official-extensions-degoog-fplay-transport",
+  duckduckgo: "degoog-org-official-extensions-duckduckgo-engine",
+  "duckduckgo-engine": "degoog-org-official-extensions-duckduckgo-engine",
+  "duckduckgo-images": "degoog-org-official-extensions-duckduckgo-images-engine",
+  "duckduckgo-news": "degoog-org-official-extensions-duckduckgo-news-engine",
+  ecosia: "degoog-org-official-extensions-ecosia-engine",
+  flaresolverr: "degoog-org-official-extensions-flaresolverr-transport",
+  freshrss: "degoog-org-official-extensions-freshrss-slot",
+  "github-slot": "degoog-org-official-extensions-github-slot",
+  google: "degoog-org-official-extensions-google-engine",
+  "google-engine": "degoog-org-official-extensions-google-engine",
+  "google-images": "degoog-org-official-extensions-google-images-engine",
+  "google-images-engine": "degoog-org-official-extensions-google-images-engine",
+  "google-videos": "degoog-org-official-extensions-google-videos-engine",
+  "google-videos-engine": "degoog-org-official-extensions-google-videos-engine",
+  "hacker-news": "degoog-org-official-extensions-hacker-news-engine",
+  "highlight-terms": "degoog-org-official-extensions-highlight-terms-command",
+  "internet-archive": "degoog-org-official-extensions-internet-archive-engine",
+  jellyfin: "degoog-org-official-extensions-jellyfin-command",
+  lemmy: "degoog-org-official-extensions-lemmy-engine",
+  "math-slot": "degoog-org-official-extensions-math-slot",
+  meilisearch: "degoog-org-official-extensions-meilisearch-command",
+  "nasa-images": "degoog-org-official-extensions-nasa-images-engine",
+  openverse: "degoog-org-official-extensions-openverse-engine",
+  password: "degoog-org-official-extensions-password-command",
+  "plugin-rss": "degoog-org-official-extensions-rss-slot",
+  pokemon: "degoog-org-official-extensions-pokemon-theme",
+  qr: "degoog-org-official-extensions-qr-command",
+  reddit: "degoog-org-official-extensions-reddit-engine",
+  "reddit-engine": "degoog-org-official-extensions-reddit-engine",
+  romm: "degoog-org-official-extensions-romm-command",
+  rss: "degoog-org-official-extensions-rss-slot",
+  "search-history": "degoog-org-official-extensions-search-history-command",
+  "spell-check": "degoog-org-official-extensions-spell-check-middleware",
+  startpage: "degoog-org-official-extensions-startpage-engine",
+  "the-guardian": "degoog-org-official-extensions-the-guardian-engine",
+  time: "degoog-org-official-extensions-time-command",
+  "tmdb-slot": "degoog-org-official-extensions-tmdb-slot",
+  "transport-degoog-4play": "degoog-org-official-extensions-degoog-fplay-transport",
+  weather: "degoog-org-official-extensions-weather-command",
+  "wikimedia-commons": "degoog-org-official-extensions-wikimedia-commons-engine",
+  wikipedia: "degoog-org-official-extensions-wikipedia-engine",
+  "wikipedia-engine": "degoog-org-official-extensions-wikipedia-engine",
+  yahoo: "autocomplete-degoog-org-official-extensions-yahoo",
+  zen: "degoog-org-official-extensions-zen-theme",
+};
+
 type SettingsValue = string | string[] | boolean;
 type SettingsStore = Record<string, Record<string, SettingsValue> | number | undefined> & {
   [SCHEMA_KEY]?: number;
@@ -156,7 +239,9 @@ const _collectBuiltinMappings = async (): Promise<BuiltinMappings> => {
       }
     }
     if (detected.command) {
-      canonicals.add(folder);
+      const cmdCanonical = makeExtID(folder, "command");
+      canonicals.add(cmdCanonical);
+      addCandidate(folder, cmdCanonical);
     }
     if (detected.slot) {
       const slotCanonical = makeExtID(folder, "slot");
@@ -209,7 +294,7 @@ const _collectInstalledMappings = async (): Promise<BuiltinMappings> => {
     addCandidate(folder, settingsId);
   }
   for (const folder of await _listDirs(pluginsDir())) {
-    const cmdId = `plugin-${folder}`;
+    const cmdId = makeExtID(folder, "command");
     const slotId = makeExtID(folder, "slot");
     const middlewareId = makeExtID(folder, "middleware");
     const tabId = makeExtID(folder, "tab");
@@ -218,6 +303,7 @@ const _collectInstalledMappings = async (): Promise<BuiltinMappings> => {
     canonicals.add(middlewareId);
     canonicals.add(tabId);
     addCandidate(`command-${folder}`, cmdId);
+    addCandidate(`plugin-${folder}`, cmdId);
     addCandidate(`slot-${folder}`, slotId);
     addCandidate(`middleware-${folder}`, middlewareId);
     addCandidate(`interceptor-${folder}`, middlewareId);
@@ -260,6 +346,11 @@ const _collectRepoMappings = async (
         candidates.add(`${itemFolder}-${kind}`);
         candidates.add(`${kind}-${itemFolder}`);
         candidates.add(folder);
+        if (kind === "command") {
+          candidates.add(`plugin-${itemFolder}`);
+          candidates.add(`plugin-${folder}`);
+          candidates.add(`command-${itemFolder}`);
+        }
         if (Array.isArray(ent.legacyIds)) {
           for (const l of ent.legacyIds) {
             if (typeof l === "string" && l.trim()) candidates.add(l.trim());
@@ -362,10 +453,6 @@ export const runCanonicalIds052026 = async (): Promise<void> => {
     if (RESERVED_GLOBAL_KEYS.has(key)) continue;
     if (canonicals.has(key)) continue;
     const candidates = _resolve(key);
-    if (candidates.length === 0) {
-      unresolved.push(key);
-      continue;
-    }
     if (candidates.length > 1) {
       logger.warn(
         "migration:canonical-ids",
@@ -373,7 +460,20 @@ export const runCanonicalIds052026 = async (): Promise<void> => {
       );
       continue;
     }
-    rewrites.push({ legacyKey: key, canonicalId: candidates[0] });
+    if (candidates.length === 1) {
+      rewrites.push({ legacyKey: key, canonicalId: candidates[0] });
+      continue;
+    }
+    const fallback = OFFICIAL_STORE_OVERRIDES[key];
+    if (fallback) {
+      rewrites.push({ legacyKey: key, canonicalId: fallback });
+      logger.info(
+        "migration:canonical-ids",
+        `orphan "${key}" resolved via official-store fallback -> "${fallback}"`,
+      );
+      continue;
+    }
+    unresolved.push(key);
   }
 
   if (rewrites.length === 0 && unresolved.length === 0) {

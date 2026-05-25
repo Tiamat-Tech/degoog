@@ -9,7 +9,7 @@ const STAMP_KEY = "__builtinMigrationsAt";
 const BUILTIN_MOVES: Array<{ from: string; to: string }> = [
   {
     from: "ai-summary-slot",
-    to: "fccview-degoog-extensions-ai-summary-slot",
+    to: "degoog-org-official-extensions-ai-summary-slot",
   },
 ];
 

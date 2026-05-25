@@ -29,8 +29,8 @@ describe("commands registry", () => {
     expect(reg.length).toBeGreaterThan(0);
   });
 
-  test("getCommandInstanceById returns help command", () => {
-    const cmd = getCommandInstanceById("help");
+  test("getCommandInstanceById returns help command by -command id", () => {
+    const cmd = getCommandInstanceById("help-command");
     expect(cmd).toBeDefined();
     expect(cmd!.trigger).toBe("help");
   });

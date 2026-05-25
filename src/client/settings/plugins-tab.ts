@@ -50,8 +50,8 @@ const _renderPluginCard = (
     : "";
   const canDisable =
     plugin.configurable ||
-    plugin.id.startsWith("plugin-") ||
-    plugin.id.startsWith("slot-");
+    plugin.id.endsWith("-slot") ||
+    (plugin.id.endsWith("-command") && plugin.source !== "builtin");
   const toggle = canDisable
     ? `<label class="engine-toggle degoog-toggle-wrap degoog-toggle-wrap--transparent">
         <input type="checkbox" class="plugin-toggle-input" id="plugin-toggle-${escapeHtml(plugin.id)}" data-id="${escapeHtml(plugin.id)}" ${isEnabled ? "checked" : ""}>

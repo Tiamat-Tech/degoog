@@ -30,8 +30,9 @@ describe("settingsIdsForInstalled", () => {
     expect(ids).toContain("autocomplete-acme-ac");
   });
 
-  test("plugin always includes plugin-<folder>", () => {
+  test("plugin command uses canonical -command suffix, not plugin- prefix", () => {
     const ids = settingsIdsForInstalled(ExtensionStoreType.Plugin, "acme-px");
-    expect(ids).toContain("plugin-acme-px");
+    expect(ids).toContain("acme-px-command");
+    expect(ids).not.toContain("plugin-acme-px");
   });
 });

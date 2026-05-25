@@ -4,12 +4,13 @@ import { enginesDir, pluginsDir, themesDir, transportsDir } from "./paths";
 
 type ExtensionDocsPath = { readmePath: string; exists: boolean };
 
+const _PLUGIN_SUFFIXES = ["-command", "-slot", "-middleware", "-tab"];
+
 const _destDirFromId = (id: string): string | null => {
-  if (id.startsWith("plugin-") || id.startsWith("slot-")) return pluginsDir();
-  if (id.startsWith("tab-") || id.startsWith("middleware-")) return pluginsDir();
-  if (id.startsWith("theme-")) return themesDir();
-  if (id.startsWith("transport-")) return transportsDir();
-  if (id.startsWith("engine-")) return enginesDir();
+  if (_PLUGIN_SUFFIXES.some((s) => id.endsWith(s))) return pluginsDir();
+  if (id.endsWith("-theme")) return themesDir();
+  if (id.endsWith("-transport")) return transportsDir();
+  if (id.endsWith("-engine")) return enginesDir();
   return null;
 };
 
@@ -24,7 +25,11 @@ export const registerExtensionFolder = (id: string, folder: string): void => {
 export const getExtensionReadmePath = (id: string, folder?: string): string | null => {
   const base = _destDirFromId(id);
   if (!base) return null;
-  const resolved = folder ?? _folderById.get(id) ?? id.replace(/^[a-z]+-/, "");
+  const fallbackFolder = id.replace(
+    /-(command|slot|middleware|tab|theme|transport|engine)$/,
+    "",
+  );
+  const resolved = folder ?? _folderById.get(id) ?? fallbackFolder;
   if (!resolved.trim() || !_SAFE_FOLDER.test(resolved)) return null;
   return join(base, resolved, "README.md");
 };

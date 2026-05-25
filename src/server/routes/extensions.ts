@@ -48,6 +48,7 @@ import { outgoingFetch } from "../utils/outgoing";
 import { readFile } from "fs/promises";
 import { extensionReadmeExists } from "../utils/extension-docs";
 import { getInstalledItems, reloadAfterAction } from "../extensions/store/item-ops";
+import { makeExtID, folderFromExtID } from "../extensions/extension-id";
 import { isVersionAtLeast, getAppVersion } from "../utils/version";
 import { logger } from "../utils/logger";
 
@@ -148,17 +149,22 @@ router.get("/api/extensions", async (c) => {
   ];
   for (const meta of allMetas) {
     const inst = installedItems.find((i) => {
-      const prefixes =
+      const expected =
         i.type === ExtensionStoreType.Plugin
-          ? ["plugin-", "slot-", "interceptor-"]
+          ? [
+              makeExtID(i.installedAs, "command"),
+              makeExtID(i.installedAs, "slot"),
+              makeExtID(i.installedAs, "middleware"),
+              makeExtID(i.installedAs, "tab"),
+            ]
           : i.type === ExtensionStoreType.Theme
-            ? ["theme-"]
+            ? [`theme-${makeExtID(i.installedAs, "theme")}`]
             : i.type === ExtensionStoreType.Engine
-              ? ["engine-"]
+              ? [makeExtID(i.installedAs, "engine")]
               : i.type === ExtensionStoreType.Autocomplete
-                ? ["autocomplete-"]
-                : ["transport-"];
-      return prefixes.some((p) => meta.id === p + i.installedAs);
+                ? [`autocomplete-${i.installedAs}`]
+                : [`transport-${makeExtID(i.installedAs, "transport")}`];
+      return expected.includes(meta.id);
     });
     if (inst?.minDegoogVersion) {
       meta.requiresNewerVersion = !isVersionAtLeast(
@@ -268,10 +274,10 @@ router.post("/api/extensions/:id/settings", async (c) => {
   }
 
   if (
-    id.startsWith("plugin-") &&
+    id.endsWith("-command") &&
     ext.settingsSchema.some((f) => f.key === "useAsSettingsGate")
   ) {
-    const slug = id.slice(7);
+    const slug = folderFromExtID(id, "command");
     const gateValue = `plugin:${slug}`;
     const mid = await getSettings("middleware");
     const useGate = mid.settingsGate;
@@ -289,9 +295,7 @@ router.post("/api/extensions/:id/settings", async (c) => {
   const commandInstance = getCommandInstanceById(id);
   if (commandInstance?.configure) commandInstance.configure(merged);
 
-  const slotMatch = id.startsWith("slot-")
-    ? id.slice(5)
-    : getSlotPlugins().find((s) => (s.settingsId ?? `slot-${s.id}`) === id)?.id;
+  const slotMatch = getSlotPlugins().find((s) => s.settingsId === id)?.id;
   if (slotMatch) {
     const slotPlugin = getSlotPluginById(slotMatch);
     if (slotPlugin?.configure) slotPlugin.configure(merged);
