@@ -9,7 +9,11 @@ import { getServerKeyHex, regenerateServerKey } from "../utils/server-key";
 import { resolveBanHours, syncBlocklist } from "../utils/bot-trap";
 import { addEntry, listActive, removeEntry } from "../utils/blocklist";
 import { guardSettingsRoute, isPasswordRequired } from "./settings-auth";
-import { getInstanceSettings, setInstanceSettings } from "../utils/server-settings";
+import {
+  getInstanceSettings,
+  setInstanceSettings,
+  updateInstanceSettings,
+} from "../utils/server-settings";
 
 const router = new Hono();
 
@@ -53,7 +57,7 @@ const GENERAL_ALLOWED_KEYS = [
   "honeypotBanDuration",
 ] as const;
 
-const BOOLEAN_SETTING_KEYS = new Set<typeof GENERAL_ALLOWED_KEYS[number]>([
+const BOOLEAN_SETTING_KEYS = new Set<(typeof GENERAL_ALLOWED_KEYS)[number]>([
   "proxyEnabled",
   "imageProxyAllowLocal",
   "rateLimitEnabled",
@@ -183,7 +187,9 @@ router.post("/api/settings/general", async (c) => {
   const updates: Record<string, string | boolean> = {};
   for (const key of GENERAL_ALLOWED_KEYS) {
     if (key in body && typeof body[key] === "string") {
-      updates[key] = BOOLEAN_SETTING_KEYS.has(key) ? body[key] === "true" : body[key];
+      updates[key] = BOOLEAN_SETTING_KEYS.has(key)
+        ? body[key] === "true"
+        : body[key];
     }
   }
   await setInstanceSettings({ ...existing, ...updates });
@@ -310,7 +316,10 @@ router.get("/api/settings/proxy-test", async (c) => {
 });
 
 router.get("/api/settings/honeypot/blocklist", async (c) => {
-  const denied = await guardSettingsRoute(c, "GET /api/settings/honeypot/blocklist");
+  const denied = await guardSettingsRoute(
+    c,
+    "GET /api/settings/honeypot/blocklist",
+  );
   if (denied) return denied;
   const settings = await getInstanceSettings();
   const banHours = resolveBanHours(settings.honeypotBanDuration);
@@ -334,7 +343,10 @@ router.post("/api/settings/honeypot/ban", async (c) => {
 });
 
 router.post("/api/settings/honeypot/unban", async (c) => {
-  const denied = await guardSettingsRoute(c, "POST /api/settings/honeypot/unban");
+  const denied = await guardSettingsRoute(
+    c,
+    "POST /api/settings/honeypot/unban",
+  );
   if (denied) return denied;
   let body: { ip?: string };
   try {
@@ -353,6 +365,33 @@ router.get("/api/settings/appearance", async (c) => {
   return c.json({
     theme: asString(settings.defaultTheme) || "system",
   });
+});
+
+router.get("/api/settings/tab-order", async (c) => {
+  const settings = await getInstanceSettings();
+  const order = settings["engineTabsOrder"];
+  return c.json({ engineTabsOrder: Array.isArray(order) ? order : [] });
+});
+
+router.post("/api/settings/tab-order", async (c) => {
+  const denied = await guardSettingsRoute(c, "POST /api/settings/tab-order");
+  if (denied) return denied;
+  let body: { engineTabsOrder?: unknown };
+  try {
+    body = await c.req.json<{ engineTabsOrder?: unknown }>();
+  } catch {
+    return c.json({ error: "Invalid JSON" }, 400);
+  }
+  if (
+    !Array.isArray(body.engineTabsOrder) ||
+    !body.engineTabsOrder.every((v) => typeof v === "string")
+  ) {
+    return c.json({ error: "engineTabsOrder must be a string array" }, 400);
+  }
+  await updateInstanceSettings({
+    engineTabsOrder: body.engineTabsOrder as string[],
+  });
+  return c.json({ ok: true });
 });
 
 router.get("/api/settings/default-engines", async (c) => {

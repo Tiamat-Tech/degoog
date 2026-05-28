@@ -4,6 +4,8 @@ import { performSearch } from "../../utils/search-actions";
 import { getEnabledSearchTypes } from "../../utils/engines";
 import { getBangMatchType } from "../../utils/navigation";
 import { performTabSearch } from "./tab-search";
+import { getTabOrder, applyTabOrder } from "../../utils/tab-order";
+import { TAB_ORDER_SAVED } from "../../constants";
 
 interface TabInfo {
   id: string;
@@ -37,21 +39,61 @@ export function initTabs(): void {
   window.addEventListener("extensions-saved", () => {
     void _loadPluginTabs();
   });
+
+  window.addEventListener(TAB_ORDER_SAVED, () => {
+    void getTabOrder().then(_reorderDomTabs);
+  });
 }
+
+const _tabKey = (el: HTMLElement): string => {
+  const type = el.dataset.type ?? "";
+  if (type === "web") return "web";
+  if (type.startsWith("tab:engine:")) return type.slice(11);
+  if (type.startsWith("tab:")) return type.slice(4);
+  return type;
+};
+
+const _reorderDomTabs = (order: string[]): void => {
+  const container = document.getElementById("results-tabs");
+  const toolsBar = document.getElementById("tools-bar");
+  if (!container || !toolsBar || !order.length) return;
+
+  const tabs = Array.from(container.querySelectorAll<HTMLElement>(".results-tab"));
+  const byKey = new Map<string, HTMLElement>();
+  for (const tab of tabs) byKey.set(_tabKey(tab), tab);
+
+  for (const key of order) {
+    const el = byKey.get(key);
+    if (el) container.insertBefore(el, toolsBar);
+  }
+};
+
+const _tabOrderKey = (tab: TabInfo): string => {
+  if (tab.id.startsWith("engine:")) return tab.id.slice(7);
+  return tab.id;
+};
 
 const _loadPluginTabs = async (): Promise<void> => {
   try {
-    const [res, enabledTypes] = await Promise.all([
+    const [res, enabledTypes, savedOrder] = await Promise.all([
       fetch(`${getBase()}/api/search-tabs`),
       getEnabledSearchTypes(),
+      getTabOrder(),
     ]);
     if (!res.ok) return;
     const data = (await res.json()) as { tabs: TabInfo[] };
-    pluginTabs = (data.tabs || []).filter((tab) => {
+    const filtered = (data.tabs || []).filter((tab) => {
       if (!tab.id.startsWith("engine:")) return true;
       return enabledTypes.has(tab.id.slice(7));
     });
+
+    const orderedKeys = applyTabOrder(filtered.map(_tabOrderKey), savedOrder);
+    pluginTabs = orderedKeys
+      .map((k) => filtered.find((t) => _tabOrderKey(t) === k))
+      .filter((t): t is TabInfo => t !== undefined);
+
     _renderPluginTabs();
+    _reorderDomTabs(savedOrder);
   } catch {}
 };
 

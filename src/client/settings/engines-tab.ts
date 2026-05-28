@@ -1,10 +1,12 @@
 import { idbGet, idbSet } from "../utils/db";
-import { SETTINGS_KEY } from "../constants";
+import { SETTINGS_KEY, TAB_ORDER_SAVED } from "../constants";
 import { escapeHtml, getConfigStatus } from "../utils/dom";
 import { openModal } from "../modules/modals/settings-modal/modal";
 import type { ExtensionMeta, EngineRecord, AllExtensions } from "../types";
 import { getBase } from "../utils/base-url";
 import { renderMdInline } from "../utils/md";
+import { getTabOrder, applyTabOrder } from "../utils/tab-order";
+import { openTabOrderModal, type TypeEntry } from "./tab-order-modal";
 
 const t = window.scopedT("core");
 const themeT = window.scopedT("themes/degoog");
@@ -24,9 +26,9 @@ const _engineTypes = (engine: ExtensionMeta): string[] => {
 const _primaryType = (types: string[]): string =>
   types.length > 0 ? types[0] : "web";
 
-const _groupByType = (
-  engines: ExtensionMeta[],
-): { key: string; label: string; engines: ExtensionMeta[] }[] => {
+type GroupEntry = { key: string; label: string; engines: ExtensionMeta[] };
+
+const _groupByType = (engines: ExtensionMeta[]): GroupEntry[] => {
   const map = new Map<string, ExtensionMeta[]>();
   for (const engine of engines) {
     const key = _primaryType(_engineTypes(engine)).toLowerCase();
@@ -44,6 +46,32 @@ const _groupByType = (
       label: _typeLabel(key),
       engines: map.get(key) ?? [],
     }));
+};
+
+const _allTypeEntries = (engines: ExtensionMeta[]): TypeEntry[] => {
+  const seen = new Set<string>();
+  const result: TypeEntry[] = [];
+  for (const engine of engines) {
+    for (const type of _engineTypes(engine)) {
+      const key = type.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push({ key, label: _typeLabel(key) });
+      }
+    }
+  }
+  return result;
+};
+
+const _sortGroups = (groups: GroupEntry[], saved: string[]): GroupEntry[] => {
+  if (!saved.length) return groups;
+  const orderedKeys = applyTabOrder(
+    groups.map((g) => g.key),
+    saved,
+  );
+  return orderedKeys
+    .map((k) => groups.find((g) => g.key === k))
+    .filter((g): g is GroupEntry => g !== undefined);
 };
 
 const _extraTypeLabels = (engine: ExtensionMeta): string[] => {
@@ -74,9 +102,13 @@ const _renderEngineCard = (
     allowConfigure && engine.configurable ? getConfigStatus(engine) : null;
   const badge =
     status === "configured"
-      ? '<span class="ext-configured-badge" data-tooltip="' + escapeHtml(t("settings-page.extensions.status-configured")) + '"></span>'
+      ? '<span class="ext-configured-badge" data-tooltip="' +
+        escapeHtml(t("settings-page.extensions.status-configured")) +
+        '"></span>'
       : status === "needs-config"
-        ? '<span class="ext-needs-config-badge" data-tooltip="' + escapeHtml(t("settings-page.extensions.status-needs-config")) + '"></span>'
+        ? '<span class="ext-needs-config-badge" data-tooltip="' +
+          escapeHtml(t("settings-page.extensions.status-needs-config")) +
+          '"></span>'
         : "";
   const configureBtn =
     allowConfigure && engine.configurable
@@ -121,8 +153,26 @@ export async function initEnginesTab(
     ...savedEnginesMap,
   };
 
-  const groups = _groupByType(allExtensions.engines);
+  const rawGroups = _groupByType(allExtensions.engines);
+  const savedOrder = await getTabOrder();
+  const groups = _sortGroups(rawGroups, savedOrder);
+
   let html = "";
+
+  if (allowConfigure) {
+    html += `<section class="settings-section ext-card degoog-panel degoog-panel--ext-card">
+      <div class="setting-section-heading-wrapper">
+        <h2 class="settings-section-heading">${escapeHtml(t("settings-page.extensions.tabs-heading"))}</h2>
+        <div class="floating-section-icon"><i class="fa-solid fa-table-columns"></i></div>
+      </div>
+      <p class="settings-desc">${escapeHtml(t("settings-page.extensions.tabs-desc"))}</p>
+      <div class="settings-page-actions">
+        <button class="btn btn--secondary degoog-btn degoog-btn--secondary" id="order-engine-tabs" type="button">${escapeHtml(t("settings-page.extensions.order-tabs"))}</button>
+        <button class="btn btn--secondary degoog-btn degoog-btn--secondary" id="save-default-engines" type="button">${escapeHtml(t("settings-page.extensions.save-defaults"))}</button>
+      </div>
+    </section>`;
+  }
+
   for (const { label, engines } of groups) {
     html += `<div class="ext-group"><h3 class="ext-group-label">${escapeHtml(label)}</h3><div class="ext-cards">`;
     for (const engine of engines) {
@@ -130,9 +180,7 @@ export async function initEnginesTab(
     }
     html += `</div></div>`;
   }
-  if (allowConfigure) {
-    html += `<div class="settings-page-actions"><button class="btn btn--secondary degoog-btn degoog-btn--secondary" id="save-default-engines" type="button">${t("settings-page.extensions.save-defaults")}</button></div>`;
-  }
+
   container.innerHTML = html;
 
   container
@@ -184,4 +232,18 @@ export async function initEnginesTab(
         }
       });
   }
+
+  document
+    .getElementById("order-engine-tabs")
+    ?.addEventListener("click", () => {
+      const token = sessionStorage.getItem("degoog-settings-token");
+      const allTypes = _allTypeEntries(allExtensions.engines);
+      void openTabOrderModal(allTypes, token);
+    });
+
+  const onOrderSaved = (): void => {
+    window.removeEventListener(TAB_ORDER_SAVED, onOrderSaved);
+    void initEnginesTab(allExtensions, options);
+  };
+  window.addEventListener(TAB_ORDER_SAVED, onOrderSaved);
 }
