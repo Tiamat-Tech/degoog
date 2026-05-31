@@ -34,6 +34,7 @@ export interface EngineTiming {
   name: string;
   time: number;
   resultCount: number;
+  indexed?: boolean;
 }
 
 export interface KnowledgePanel {

@@ -276,6 +276,8 @@
       "max-urls-desc": "Cap canonical URL rows in the index. 0 means unlimited.",
       "max-hits": "Max query–URL links",
       "max-hits-desc": "Cap links between queries and URLs. 0 means unlimited.",
+      "max-age-days": "Max result age (days)",
+      "max-age-days-desc": "Remove indexed results not seen in this many days. 0 means keep forever.",
       "prune-enabled": "Prune when over limits",
       "prune-enabled-desc": "Delete oldest entries when URL or link caps are exceeded. Only applies when a cap is set.",
       "fuzzy-enabled": "Fuzzy recall",

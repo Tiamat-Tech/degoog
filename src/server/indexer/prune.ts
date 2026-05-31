@@ -6,6 +6,12 @@ export const pruneOrphanUrls = (db: Database): void => {
 };
 
 export const runPrune = (db: Database, cfg: IndexerConfig): void => {
+  if (cfg.maxAgeDays > 0) {
+    const cutoff = Date.now() - cfg.maxAgeDays * 86_400_000;
+    db.prepare("DELETE FROM query_hits WHERE last_seen < ?").run(cutoff);
+    pruneOrphanUrls(db);
+  }
+
   if (!cfg.pruneEnabled) return;
 
   if (cfg.maxHits > 0) {

@@ -67,10 +67,9 @@ export async function handleSearch(params: SearchParams) {
     imageFilter,
   );
 
-  const ttl = cache.hasFailedEngines(response) ? cache.SHORT_TTL_MS : undefined;
-  await cache.set(key, response, ttl);
-
   const settings = await getInstanceSettings();
+  let finalResponse = response;
+
   if (asBoolean(settings.degoogIndexerEnabled)) {
     const toIndex = response.results.filter(
       (r) =>
@@ -78,13 +77,28 @@ export async function handleSearch(params: SearchParams) {
         !(r.sources ?? []).includes(DEGOOG_ENGINE_NAME),
     );
     if (toIndex.length > 0) {
+      const degoogTiming = response.engineTimings.find(
+        (et) => et.name === DEGOOG_ENGINE_NAME,
+      );
+      if (degoogTiming?.resultCount === 0) {
+        finalResponse = {
+          ...response,
+          engineTimings: response.engineTimings.map((et) =>
+            et.name === DEGOOG_ENGINE_NAME ? { ...et, indexed: true } : et,
+          ),
+        };
+      }
       queueMicrotask(() => void recordResults(query, type, toIndex));
     }
   }
 
+  if (!cache.hasFailedEngines(finalResponse)) {
+    await cache.set(key, finalResponse);
+  }
+
   return {
-    ...response,
-    results: signResultThumbnails(await applyDomainRules(response.results)),
+    ...finalResponse,
+    results: signResultThumbnails(await applyDomainRules(finalResponse.results)),
   };
 }
 

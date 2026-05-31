@@ -5,6 +5,7 @@ export interface IndexerConfig {
   maxPerSearch: number;
   maxUrls: number;
   maxHits: number;
+  maxAgeDays: number;
   pruneEnabled: boolean;
   fuzzyEnabled: boolean;
   queryLimit: number;
@@ -33,6 +34,7 @@ export const getIndexerConfig = async (): Promise<IndexerConfig> => {
   const maxPerSearch = clampInt(asString(s.degoogIndexerMaxPerSearch), 30, 0, 500);
   const maxUrls = clampInt(asString(s.degoogIndexerMaxUrls), 0, 0, 100_000_000);
   const maxHits = clampInt(asString(s.degoogIndexerMaxHits), 0, 0, 100_000_000);
+  const maxAgeDays = clampInt(asString(s.degoogIndexerMaxAgeDays), 0, 0, 3650);
   const queryLimit = clampInt(asString(s.degoogIndexerQueryLimit), 30, 1, 100);
   const limitsOn = maxUrls > 0 || maxHits > 0;
   const pruneSetting = asString(s.degoogIndexerPruneEnabled);
@@ -43,6 +45,7 @@ export const getIndexerConfig = async (): Promise<IndexerConfig> => {
     maxPerSearch,
     maxUrls,
     maxHits,
+    maxAgeDays,
     pruneEnabled,
     fuzzyEnabled: fuzzyRaw !== "false",
     queryLimit,

@@ -126,6 +126,7 @@ export interface EngineTiming {
   status?: string;
   errorReason?: string;
   httpStatus?: number;
+  indexed?: boolean;
 }
 
 export type EngineFetch = (

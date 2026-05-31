@@ -3,6 +3,8 @@ import type { SearchResponse, SlotPanel } from "../../types";
 import { escapeHtml } from "../../utils/dom";
 import { retryEngine } from "../../utils/search-actions";
 
+const t = window.scopedT("themes/degoog");
+
 export const setupRetryLinks = (container: HTMLElement): void => {
   container
     .querySelectorAll<HTMLElement>(".engine-retry-link")
@@ -61,14 +63,21 @@ export function renderSidebar(
     const maxTime = Math.max(...data.engineTimings.map((e) => e.time));
     data.engineTimings.forEach((et) => {
       const barWidth = Math.min(100, (et.time / maxTime) * 100);
-      const statusClass = et.resultCount === 0 ? " engine-failed" : "";
+      const isIndexed = et.resultCount === 0 && et.indexed === true;
+      const statusClass = et.resultCount === 0 && !isIndexed ? " engine-failed" : "";
+      const metaText = isIndexed
+        ? `${t("search-templates.results.just-indexed")} · ${et.time}ms`
+        : `${et.resultCount} results · ${et.time}ms`;
+      const action = isIndexed
+        ? ""
+        : `<a class="engine-retry-link degoog-link" data-engine="${escapeHtml(et.name)}">retry</a>`;
       statsContent += `
         <div class="engine-stat-row${statusClass}">
           <div class="engine-stat-info">
             <div class="engine-stat-label degoog-text">${escapeHtml(et.name)}</div>
-            <div class="engine-stat-meta degoog-text degoog-text--sm degoog-text--secondary">${et.resultCount} results · ${et.time}ms</div>
+            <div class="engine-stat-meta degoog-text degoog-text--sm degoog-text--secondary">${metaText}</div>
           </div>
-          <a class="engine-retry-link degoog-link" data-engine="${escapeHtml(et.name)}">retry</a>
+          ${action}
         </div>`;
       void barWidth;
     });

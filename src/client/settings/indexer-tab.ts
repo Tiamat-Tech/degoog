@@ -150,6 +150,16 @@ const renderShell = (container: HTMLElement): void => {
             step="1"
           />
           <p class="settings-desc">${tr("max-hits-desc")}</p>
+          <label class="settings-proxy-urls-label" for="indexer-max-age-days">${tr("max-age-days")}</label>
+          <input
+            type="number"
+            id="indexer-max-age-days"
+            class="settings-rate-limit-input degoog-input"
+            min="0"
+            max="3650"
+            step="1"
+          />
+          <p class="settings-desc">${tr("max-age-days-desc")}</p>
           <label class="settings-toggle-wrap degoog-toggle-wrap">
             <input type="checkbox" id="indexer-prune-enabled" class="settings-toggle" />
             <span class="toggle-slider degoog-toggle"></span>
@@ -266,6 +276,7 @@ const persistIndexerSettings = async (): Promise<boolean> => {
         degoogIndexerMaxPerSearch: val("indexer-max-per-search") || "30",
         degoogIndexerMaxUrls: val("indexer-max-urls") || "0",
         degoogIndexerMaxHits: val("indexer-max-hits") || "0",
+        degoogIndexerMaxAgeDays: val("indexer-max-age-days") || "0",
         degoogIndexerPruneEnabled: String(checked("indexer-prune-enabled")),
         degoogIndexerFuzzyEnabled: String(checked("indexer-fuzzy-enabled")),
         degoogIndexerQueryLimit: val("indexer-query-limit") || "30",
@@ -641,6 +652,7 @@ const wireToggles = async (
   const maxPerSearchEl = document.getElementById("indexer-max-per-search") as HTMLInputElement | null;
   const maxUrlsEl = document.getElementById("indexer-max-urls") as HTMLInputElement | null;
   const maxHitsEl = document.getElementById("indexer-max-hits") as HTMLInputElement | null;
+  const maxAgeDaysEl = document.getElementById("indexer-max-age-days") as HTMLInputElement | null;
   const queryLimitEl = document.getElementById("indexer-query-limit") as HTMLInputElement | null;
   const domainAllowEl = document.getElementById("indexer-domain-allowlist") as HTMLTextAreaElement | null;
   const domainBlockEl = document.getElementById("indexer-domain-blocklist") as HTMLTextAreaElement | null;
@@ -674,6 +686,7 @@ const wireToggles = async (
       maxPerSearchEl,
       maxUrlsEl,
       maxHitsEl,
+      maxAgeDaysEl,
       queryLimitEl,
       domainAllowEl,
       domainBlockEl,
@@ -689,6 +702,7 @@ const wireToggles = async (
   if (maxPerSearchEl) maxPerSearchEl.value = str("degoogIndexerMaxPerSearch", "30");
   if (maxUrlsEl) maxUrlsEl.value = str("degoogIndexerMaxUrls", "0");
   if (maxHitsEl) maxHitsEl.value = str("degoogIndexerMaxHits", "0");
+  if (maxAgeDaysEl) maxAgeDaysEl.value = str("degoogIndexerMaxAgeDays", "0");
   if (queryLimitEl) queryLimitEl.value = str("degoogIndexerQueryLimit", "30");
   if (domainAllowEl) domainAllowEl.value = str("degoogIndexerDomainAllowlist", "");
   if (domainBlockEl) domainBlockEl.value = str("degoogIndexerDomainBlocklist", "");
@@ -709,6 +723,7 @@ const wireToggles = async (
     maxPerSearchEl,
     maxUrlsEl,
     maxHitsEl,
+    maxAgeDaysEl,
     queryLimitEl,
     domainAllowEl,
     domainBlockEl,

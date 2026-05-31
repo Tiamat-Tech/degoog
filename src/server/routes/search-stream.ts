@@ -252,11 +252,6 @@ router.get("/api/search/stream", async (c) => {
           relatedSearches,
         };
 
-        const ttl = cache.hasFailedEngines(response)
-          ? cache.SHORT_TTL_MS
-          : undefined;
-        await cache.set(key, response, ttl);
-
         const indexerSettings = await getInstanceSettings();
         if (asBoolean(indexerSettings.degoogIndexerEnabled)) {
           const toIndex = rawScoredResults.filter(
@@ -265,8 +260,19 @@ router.get("/api/search/stream", async (c) => {
               !(r.sources ?? []).includes(DEGOOG_ENGINE_NAME),
           );
           if (toIndex.length > 0) {
+            const degoogTiming = allTimings.find(
+              (et) => et.name === DEGOOG_ENGINE_NAME,
+            );
+            if (degoogTiming?.resultCount === 0) {
+              const idx = allTimings.indexOf(degoogTiming);
+              allTimings[idx] = { ...degoogTiming, indexed: true };
+            }
             queueMicrotask(() => void recordResults(query, type, toIndex));
           }
+        }
+
+        if (!cache.hasFailedEngines(response)) {
+          await cache.set(key, response);
         }
 
         _send("done", {
