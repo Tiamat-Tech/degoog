@@ -32,5 +32,6 @@ export function getLocale(
     );
     return override;
   }
+
   return c.req.header("Accept-Language")?.split(",")[0].trim() || "en";
 }

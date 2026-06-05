@@ -15,7 +15,7 @@ const _DATE_PREFIX =
 
 export const stripSnippetPrefix = (text: string): string => {
   const stripped = text.replace(
-    new RegExp(`^(?:${_DATE_PREFIX.source})\\s*[-–-·]\\s*`, "i"),
+    new RegExp(`^(?:${_DATE_PREFIX.source})\\s*[-–·]\\s*`, "i"),
     "",
   );
   return stripped || text;
