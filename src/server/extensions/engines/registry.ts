@@ -12,6 +12,7 @@ import {
   getTypeOverride,
   isDisabled,
   maskSecrets,
+  asBoolean,
   mergeDefaults,
 } from "../../utils/plugin-settings";
 import { bootCircuitFromPath } from "../../utils/translation-circuit";
@@ -21,8 +22,20 @@ import {
 } from "../transports/registry";
 import { enginesDir, defaultEnginesFile } from "../../utils/paths";
 import { readFileSync } from "fs";
+import { join } from "path";
 import { createRegistry } from "../registry-factory";
 import { extensionReadmeExists } from "../../utils/extension-docs";
+import { logger } from "../../utils/logger";
+import { getInstanceSettings } from "../../utils/server-settings";
+
+const builtinsDir = join(import.meta.dir, "builtins");
+
+const TYPE_CACHE_TTL_MS = 60_000;
+const _typeCache = new Map<string, { types: string[]; at: number }>();
+
+const clearTypeCache = (): void => {
+  _typeCache.clear();
+};
 
 export type EngineSearchType = string;
 
@@ -61,6 +74,17 @@ const resolveTypes = (
 export const primaryType = (types: string[]): string =>
   types.length > 0 ? types[0] : "web";
 
+const DEGOOG_ENGINE_ID = "degoog-engine";
+
+const isEngineEnabled = (
+  id: string,
+  config: EngineConfig,
+  indexerOn: boolean,
+): boolean => {
+  if (id in config) return !!config[id];
+  return indexerOn && id === DEGOOG_ENGINE_ID;
+};
+
 export const resolveTabSearchType = (
   types: string[],
   preferred?: string,
@@ -72,9 +96,45 @@ export const resolveTabSearchType = (
   return primaryType(types);
 };
 
+type TypeFn = () => string[] | Promise<string[]>;
+
+const _coerceTypeList = (raw: unknown): string[] => {
+  if (Array.isArray(raw)) {
+    return raw.filter(
+      (t): t is string => typeof t === "string" && t.trim() !== "",
+    );
+  }
+  if (typeof raw === "string" && raw.trim()) return [raw];
+  return [];
+};
+
+const _resolving = new Set<string>();
+
 const resolveEngineTypes = async (entry: PluginEntry): Promise<string[]> => {
+  const cached = _typeCache.get(entry.id);
+  if (cached && Date.now() - cached.at < TYPE_CACHE_TTL_MS) return cached.types;
+  const types = await computeEngineTypes(entry);
+  _typeCache.set(entry.id, { types, at: Date.now() });
+  return types;
+};
+
+const computeEngineTypes = async (entry: PluginEntry): Promise<string[]> => {
   const override = await getTypeOverride(entry.id);
-  return resolveTypes(entry.searchTypes, override);
+  const dyn = (entry.instance as SearchEngine & { __typeFn?: TypeFn }).__typeFn;
+  let base: string[] = entry.searchTypes;
+  if (dyn && !_resolving.has(entry.id)) {
+    _resolving.add(entry.id);
+    try {
+      const result = await dyn();
+      base = _coerceTypeList(result);
+      if (base.length === 0) base = entry.searchTypes;
+    } catch (err) {
+      logger.warn("engines", `dynamic type() failed for ${entry.id}`, err);
+    } finally {
+      _resolving.delete(entry.id);
+    }
+  }
+  return resolveTypes(base.length > 0 ? base : ["web"], override);
 };
 
 const isSearchEngine = (val: unknown): val is SearchEngine => {
@@ -89,27 +149,28 @@ const isSearchEngine = (val: unknown): val is SearchEngine => {
 };
 
 const engineRegistry = createRegistry<PluginEntry>({
-  dirs: () => [{ dir: enginesDir() }],
+  dirs: () => [{ dir: builtinsDir, source: "builtin" }, { dir: enginesDir() }],
   canonicalIdKind: "engine",
   match: (mod) => {
     const Export = mod.default ?? mod.engine ?? mod.Engine;
-    const instance: SearchEngine =
-      typeof Export === "function"
-        ? new (Export as new () => SearchEngine)()
-        : (Export as SearchEngine);
-    if (!isSearchEngine(instance)) return null;
-    const modType = mod.type;
-    const searchTypes: string[] = Array.isArray(modType)
-      ? modType.filter(
-          (t): t is string => typeof t === "string" && t.trim() !== "",
-        )
-      : typeof modType === "string" && modType.trim()
-        ? [modType as string]
-        : ["web"];
+    let instance: SearchEngine | null = null;
+    if (typeof Export === "function") {
+      instance = new (Export as new () => SearchEngine)();
+    } else if (Export && isSearchEngine(Export)) {
+      instance = Export as SearchEngine;
+    } else if (isSearchEngine(mod)) {
+      instance = mod as SearchEngine;
+    }
+    if (!instance) return null;
+    const isFn = typeof mod.type === "function";
+    (instance as SearchEngine & { __typeFn?: TypeFn }).__typeFn = isFn
+      ? (mod.type as TypeFn)
+      : undefined;
+    const declared = isFn ? [] : _coerceTypeList(mod.type);
     return {
       id: "",
       displayName: instance.name,
-      searchTypes: searchTypes.length > 0 ? searchTypes : ["web"],
+      searchTypes: declared.length > 0 ? declared : isFn ? [] : ["web"],
       description:
         typeof mod.description === "string" ? mod.description : undefined,
       instance,
@@ -154,8 +215,11 @@ export const getEnginesForCustomType = async (
   config?: EngineConfig,
 ): Promise<{ id: string; instance: SearchEngine }[]> => {
   const results: { id: string; instance: SearchEngine }[] = [];
+  const settings = await getInstanceSettings();
+  const indexerOn = asBoolean(settings.degoogIndexerEnabled);
   for (const e of engineRegistry.items()) {
-    if (config && !config[e.id]) continue;
+    const enabled = !config || isEngineEnabled(e.id, config, indexerOn);
+    if (!enabled) continue;
     if (await isDisabled(e.id)) continue;
     const types = await resolveEngineTypes(e);
     if (types.includes(engineType))
@@ -171,6 +235,17 @@ export const getCustomEngineTypes = async (): Promise<string[]> => {
     for (const t of await resolveEngineTypes(e)) {
       if (t !== "web") types.add(t);
     }
+  }
+  return [...types];
+};
+
+export const getInstalledSearchTypes = async (
+  excludeId?: string,
+): Promise<string[]> => {
+  const types = new Set<string>();
+  for (const e of engineRegistry.items()) {
+    if (excludeId && e.id === excludeId) continue;
+    for (const t of await resolveEngineTypes(e)) types.add(t);
   }
   return [...types];
 };
@@ -208,9 +283,12 @@ const hasRequiredConfig = async (
 export const getActiveWebEngines = async (
   config: EngineConfig,
 ): Promise<{ id: string; instance: SearchEngine; score: number }[]> => {
+  const settings = await getInstanceSettings();
+  const indexerOn = asBoolean(settings.degoogIndexerEnabled);
   const active: { id: string; instance: SearchEngine; score: number }[] = [];
   for (const e of engineRegistry.items()) {
-    if (!config[e.id]) continue;
+    const enabled = isEngineEnabled(e.id, config, indexerOn);
+    if (!enabled) continue;
     const types = await resolveEngineTypes(e);
     if (!types.includes("web")) continue;
     if (
@@ -230,6 +308,10 @@ const _loadDefaultEngineOverrides = (): Record<string, boolean> => {
     const raw = readFileSync(defaultEnginesFile(), "utf-8");
     return JSON.parse(raw) as Record<string, boolean>;
   } catch {
+    logger.debug(
+      "engines",
+      "No default engines file found, returning empty object.",
+    );
     return {};
   }
 };
@@ -456,6 +538,7 @@ export const getEngineExtensionMeta = async (
 };
 
 export const initEngines = async (bust = false): Promise<void> => {
+  clearTypeCache();
   await (bust ? engineRegistry.reload() : engineRegistry.init());
 };
 

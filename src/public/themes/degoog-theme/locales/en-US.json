@@ -81,6 +81,7 @@
       "white": "White"
     },
     "result": {
+      "just-indexed": "just indexed",
       "insecure": "Insecure",
       "insecure-tooltip": "This site is served over an unencrypted HTTP connection.",
       "actions": {

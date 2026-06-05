@@ -81,6 +81,7 @@
       "white": "לבן"
     },
     "result": {
+      "just-indexed": "אומת כעת",
       "insecure": "בלתי מאובטח",
       "insecure-tooltip": "אתר זה משובץ על חיבור HTTP לא מאובטח.",
       "actions": {

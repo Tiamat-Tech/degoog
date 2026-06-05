@@ -6,6 +6,7 @@ import type {
   TimeFilter,
   EngineContext,
 } from "./search";
+import { SlotPanelPosition } from "../../shared/search-types";
 
 export type TranslationVars = string | number | boolean;
 export type TranslationRecord = {
@@ -53,7 +54,8 @@ export interface SettingField {
   | "url"
   | "toggle"
   | "textarea"
-  | "select";
+  | "select"
+  | "info";
   required?: boolean;
   placeholder?: string;
   description?: string;
@@ -150,24 +152,7 @@ export interface AutocompleteProvider {
   ): Promise<AutocompleteSuggestion[]>;
 }
 
-export enum SlotPanelPosition {
-  AboveResults = "above-results",
-  BelowResults = "below-results",
-  AboveSidebar = "above-sidebar",
-  BelowSidebar = "below-sidebar",
-  KnowledgePanel = "knowledge-panel",
-  AtAGlance = "at-a-glance",
-}
-
 export const SLOT_POSITION_SETTING_KEY = "slotPosition";
-
-export interface SlotPanelResult {
-  id: string;
-  title?: string;
-  html: string;
-  position: SlotPanelPosition;
-  gridSize?: 1 | 2 | 3 | 4;
-}
 
 export interface SlotPluginContext {
   clientIp?: string;
@@ -307,6 +292,18 @@ export interface TransportContext {
   fetch: ProxyAwareFetch;
 }
 
+export interface TransportWsSocket {
+  send(data: string): void;
+  close(code?: number, reason?: string): void;
+}
+
+export interface TransportWsHandlers {
+  onUpgrade?(passwordPath: string): boolean;
+  onOpen(ws: TransportWsSocket): void;
+  onMessage(ws: TransportWsSocket, msg: string): void;
+  onClose(ws: TransportWsSocket): void;
+}
+
 export interface Transport {
   name: string;
   displayName?: string;
@@ -320,6 +317,7 @@ export interface Transport {
     options: TransportFetchOptions,
     context: TransportContext,
   ): Promise<Response>;
+  wsHandler?: TransportWsHandlers;
 }
 
 export interface InterceptorOverrides {

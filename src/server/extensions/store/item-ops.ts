@@ -20,7 +20,8 @@ import { addRepo } from "./repo-ops";
 import { STORE_TYPE_SPECS } from "./store-types";
 import { bumpPluginRegistryReload } from "../registry-factory";
 import { createMutex } from "../../utils/mutex";
-import { makeExtID } from "../extension-id";
+import { makeExtID } from "../../utils/extension-id";
+import { logger } from "../../utils/logger";
 
 const _storeMutex = createMutex();
 
@@ -41,7 +42,8 @@ function repoAuthorAndName(repoUrl: string): { author: string; name: string } {
     const authorRaw = parts[0] ?? "unknown";
     const repoRaw = (parts[1] ?? "repo").replace(/\.git$/, "");
     return { author: slugifyIdPart(authorRaw), name: slugifyIdPart(repoRaw) };
-  } catch {
+  } catch (err) {
+    logger.debug("store:item", `invalid repo URL "${repoUrl}"`, err);
     return { author: "unknown", name: "repo" };
   }
 }
@@ -182,21 +184,21 @@ async function installDependencies(dependencies: string[]): Promise<void> {
     if (!repo) {
       try {
         repo = await addRepo(parsed.repoUrl);
-      } catch {
+      } catch (err) {
+        logger.warn("store:item", `failed to add repo ${parsed.repoUrl}`, err);
         continue;
       }
     }
     try {
       await _installItem(parsed.repoUrl, parsed.itemPath, parsed.type);
-    } catch {
-      //
+    } catch (err) {
+      logger.warn("store:item", `install failed for ${parsed.itemPath}`, err);
     }
   }
 }
 
 const ENGINE_TYPE_STRING_RE = /export\s+const\s+type\s*=\s*["']([^"']+)["']/;
-const ENGINE_TYPE_ARRAY_RE =
-  /export\s+const\s+type\s*=\s*\[([^\]]+)\]/;
+const ENGINE_TYPE_ARRAY_RE = /export\s+const\s+type\s*=\s*\[([^\]]+)\]/;
 const engineTypesCache = new Map<string, string[] | null>();
 
 const parseEngineTypesFromSource = (src: string): string[] | null => {
@@ -223,6 +225,9 @@ const readEngineTypes = async (dir: string): Promise<string[] | null> => {
       result = parseEngineTypesFromSource(src);
       if (result) break;
     } catch {
+      // I'm leaving an empty catch here to avoid log spam, this is an expected error as we are optimistically checking for an index file of some sort.
+      // It was showing an annoying `DEBUG [store:item] engine type file index.ts read failed in /app/data/store/degoog-org-official-extensions/engines/google`
+      // over and over and there's absolutely no need for it.
       continue;
     }
   }
@@ -254,7 +259,12 @@ export async function listRepoItems(repoUrl?: string): Promise<StoreItem[]> {
     try {
       const raw = await readFile(join(repoPath, "package.json"), "utf-8");
       pkg = JSON.parse(raw) as RepoPackageJson;
-    } catch {
+    } catch (err) {
+      logger.warn(
+        "store:item",
+        `package.json read failed for ${repo.localPath}`,
+        err,
+      );
       continue;
     }
     const topAuthor =
@@ -279,7 +289,8 @@ export async function listRepoItems(repoUrl?: string): Promise<StoreItem[]> {
         try {
           const st = await stat(fullPath);
           if (!st.isDirectory()) continue;
-        } catch {
+        } catch (err) {
+          logger.debug("store:item", `item path stat failed ${fullPath}`, err);
           continue;
         }
         const author = await readAuthorJson(fullPath);
@@ -386,7 +397,8 @@ async function _installItem(
       throw new Error("Invalid item path.");
     try {
       await stat(srcDir);
-    } catch {
+    } catch (err) {
+      logger.debug("store:item", `item path not found ${srcDir}`, err);
       throw new Error("Item path not found in repository.");
     }
     const pkg = JSON.parse(
@@ -495,7 +507,8 @@ async function _updateItem(
   const srcDir = join(storeDir, repo.localPath, normalizedPath);
   try {
     await stat(srcDir);
-  } catch {
+  } catch (err) {
+    logger.debug("store:item", `item path not found ${srcDir}`, err);
     throw new Error("Item path not found in repository.");
   }
   const pkg = JSON.parse(
@@ -511,7 +524,9 @@ async function _updateItem(
   const siblings = await readdir(destBase).catch(() => [] as string[]);
   for (const entry of siblings) {
     if (entry.toLowerCase() === lowerTarget) {
-      await rm(join(destBase, entry), { recursive: true, force: true }).catch(() => {});
+      await rm(join(destBase, entry), { recursive: true, force: true }).catch(
+        () => {},
+      );
     }
   }
   await copyItemDir(srcDir, destDir, STORE_METADATA);
