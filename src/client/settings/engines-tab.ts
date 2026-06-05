@@ -181,7 +181,18 @@ export async function initEnginesTab(
     html += `</div></div>`;
   }
 
+  const hasStoreEngines = allExtensions.engines.some((e) => e.source !== "builtin");
+  if (!hasStoreEngines) {
+    const storeBtn = `<button class="degoog-link-btn" type="button" data-switch-tab="store">${escapeHtml(t("settings-page.extensions.no-engines-store"))}</button>`;
+    html += `<div class="ext-group"><p class="degoog-text degoog-text--sm degoog-text--secondary">${t("settings-page.extensions.no-engines", { store: storeBtn })}</p></div>`;
+  }
+
   container.innerHTML = html;
+
+  container.querySelector<HTMLButtonElement>("[data-switch-tab]")?.addEventListener("click", (e) => {
+    const tab = (e.currentTarget as HTMLButtonElement).dataset.switchTab;
+    if (tab) document.querySelector<HTMLButtonElement>(`[data-tab="${tab}"]`)?.click();
+  });
 
   container
     .querySelectorAll<HTMLInputElement>(".engine-toggle-input")

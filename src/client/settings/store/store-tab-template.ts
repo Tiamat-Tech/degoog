@@ -17,6 +17,7 @@ export function getStoreTabHtml(): string {
       </div>
       <p class="settings-desc">Add a git repository URL to browse and install plugins, themes, engines, and transports. Set <code>repo-image</code> in the repo’s package.json to show an image next to the URL.</p>
       <div class="store-repo-list-wrap"></div>
+      <div class="store-repo-errors" style="display:none"></div>
     </section>
     <section class="store-catalog-section settings-section">
       <div class="store-catalog-header">

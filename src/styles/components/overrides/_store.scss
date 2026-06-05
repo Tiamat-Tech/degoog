@@ -148,6 +148,12 @@
   }
 }
 
+.store-repo-errors {
+  font-size: $font-size-small;
+  color: $danger;
+  margin-bottom: $space-3;
+}
+
 .header-actions {
   display: flex;
   align-items: center;

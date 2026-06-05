@@ -41,8 +41,16 @@ export function initAutocompleteTab(allExtensions: AllExtensions): void {
     html += `<div class="ext-group"><h3 class="ext-group-label">${escapeHtml(t("settings-page.extensions.group-autocomplete"))}</h3><div class="ext-cards">`;
     for (const provider of providers) html += _renderAutocompleteCard(provider);
     html += "</div></div>";
+  } else {
+    const storeBtn = `<button class="degoog-link-btn" type="button" data-switch-tab="store">${escapeHtml(t("settings-page.extensions.no-autocomplete-store"))}</button>`;
+    html += `<div class="ext-group"><p class="degoog-text degoog-text--sm degoog-text--secondary">${t("settings-page.extensions.no-autocomplete", { store: storeBtn })}</p></div>`;
   }
   container.innerHTML = html;
+
+  container.querySelector<HTMLButtonElement>("[data-switch-tab]")?.addEventListener("click", (e) => {
+    const tab = (e.currentTarget as HTMLButtonElement).dataset.switchTab;
+    if (tab) document.querySelector<HTMLButtonElement>(`[data-tab="${tab}"]`)?.click();
+  });
 
   container
     .querySelectorAll<HTMLInputElement>(".autocomplete-toggle-input")

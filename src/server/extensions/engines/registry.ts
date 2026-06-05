@@ -23,7 +23,7 @@ import {
 import { enginesDir, defaultEnginesFile } from "../../utils/paths";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { createRegistry } from "../registry-factory";
+import { createRegistry, type RegistrySource } from "../registry-factory";
 import { extensionReadmeExists } from "../../utils/extension-docs";
 import { logger } from "../../utils/logger";
 import { getInstanceSettings } from "../../utils/server-settings";
@@ -57,6 +57,7 @@ interface PluginEntry {
   description?: string;
   instance: SearchEngine;
   disabledByDefault?: boolean;
+  source?: RegistrySource;
 }
 
 const resolveTypes = (
@@ -176,8 +177,9 @@ const engineRegistry = createRegistry<PluginEntry>({
       instance,
     };
   },
-  onLoad: async (entry, { entryPath, canonicalId, folderName }) => {
+  onLoad: async (entry, { entryPath, canonicalId, folderName, source }) => {
     entry.id = canonicalId ?? `${folderName}-engine`;
+    entry.source = source;
     entry.instance.t = await bootCircuitFromPath(entryPath);
     if (entry.instance.configure && entry.instance.settingsSchema?.length) {
       const stored = await getSettings(entry.id);
@@ -531,6 +533,7 @@ export const getEngineExtensionMeta = async (
       settings: maskedSettings,
       extensionDocsAvailable: exists,
       defaultEnabled: defaults[entry.id],
+      source: entry.source,
     });
   }
 

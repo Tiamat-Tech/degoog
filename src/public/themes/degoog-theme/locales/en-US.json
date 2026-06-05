@@ -80,6 +80,10 @@
       "black": "Black",
       "white": "White"
     },
+    "no-results": "No results found.",
+    "search-failed": "Search failed. Please try again.",
+    "no-engines": "No search engines installed. {store} to browse and install some.",
+    "no-engines-store": "Go to the Store",
     "result": {
       "just-indexed": "just indexed",
       "insecure": "Insecure",

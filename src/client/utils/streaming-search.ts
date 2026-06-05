@@ -35,6 +35,9 @@ import {
 } from "./search-utils";
 import { buildSearchUrl, imgFilterRecord } from "./url";
 import { appendSearchAuthParams } from "./request";
+import { getBase } from "./base-url";
+
+const t = window.scopedT("themes/degoog");
 import {
   updateEngineTimings,
   updateResults,
@@ -278,7 +281,11 @@ export async function performStreamingSearch(
     }
 
     if (currentResults.length === 0 && resultsList) {
-      resultsList.innerHTML = '<div class="no-results">No results found.</div>';
+      const storeLink = `<a href="${getBase()}/settings/store" class="degoog-link">${t("search-templates.no-engines-store")}</a>`;
+      const msg = engineTimings.length === 0
+        ? t("search-templates.no-engines", { store: storeLink })
+        : t("search-templates.no-results");
+      resultsList.innerHTML = `<div class="no-results">${msg}</div>`;
     }
 
     if (resultsList) attachVideoPlayers(resultsList);
@@ -295,7 +302,6 @@ export async function performStreamingSearch(
     _activeSource = null;
     if (resultsMeta) resultsMeta.textContent = "";
     if (resultsList)
-      resultsList.innerHTML =
-        '<div class="no-results">Search failed. Please try again.</div>';
+      resultsList.innerHTML = `<div class="no-results">${t("search-templates.search-failed")}</div>`;
   });
 }

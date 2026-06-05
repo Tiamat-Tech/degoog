@@ -235,7 +235,11 @@
       "status-configured": "Configured",
       "status-needs-config": "Needs configuration",
       "extra-types": "Extra types:",
-      "requires-newer-version": "Requires a newer version of Degoog"
+      "requires-newer-version": "Requires a newer version of Degoog",
+      "no-engines": "No search engines installed. Head to the {store} tab to browse and install some.",
+      "no-engines-store": "Store",
+      "no-autocomplete": "No autocomplete providers installed. Head to the {store} tab to browse and install some.",
+      "no-autocomplete-store": "Store"
     },
     "errors": {
       "load-extensions": "Failed to load extensions.",
