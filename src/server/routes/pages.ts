@@ -53,7 +53,7 @@ function buildOpenSearchXml(origin: string): string {
 </OpenSearchDescription>`;
 }
 
-router.get("/ping/:token", async (c) => {
+router.get("/style/v/:token", async (c) => {
   const token = c.req.param("token");
   const ip = getClientIp(c);
   if (ip && verifyToken(token)) ping(ip);
