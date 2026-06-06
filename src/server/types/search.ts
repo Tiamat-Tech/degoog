@@ -1,4 +1,11 @@
-import type { SlotPanelResult } from "./extension";
+export type {
+  SearchResult,
+  ScoredResult,
+  EngineTiming,
+  SlotPanel,
+  SearchResponse,
+} from "../../shared/search-types";
+export { SlotPanelPosition } from "../../shared/search-types";
 
 export enum ImgColor {
   ANY = "any",
@@ -55,17 +62,6 @@ export interface ImageFilter {
   nsfw?: ImgNsfw;
 }
 
-export interface SearchResult {
-  title: string;
-  url: string;
-  snippet: string;
-  source: string;
-  thumbnail?: string;
-  imageUrl?: string;
-  isGif?: boolean;
-  duration?: string;
-}
-
 export interface SearchBody {
   query: string;
   engines: string[];
@@ -102,12 +98,6 @@ export interface SearchParams {
   imageFilter?: ImageFilter;
 }
 
-export interface ScoredResult extends SearchResult {
-  score: number;
-  sources: string[];
-  insecure?: boolean;
-}
-
 export type SearchType = string;
 
 export type TimeFilter =
@@ -120,15 +110,6 @@ export type TimeFilter =
   | "custom";
 export type EngineConfig = Record<string, boolean>;
 
-export interface EngineTiming {
-  name: string;
-  time: number;
-  resultCount: number;
-  status?: string;
-  errorReason?: string;
-  httpStatus?: number;
-}
-
 export type EngineFetch = (
   url: string,
   options?: {
@@ -140,6 +121,7 @@ export type EngineFetch = (
 
 export interface EngineContext {
   fetch: EngineFetch;
+  searchType?: SearchType;
   lang?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -161,14 +143,4 @@ export interface EngineContext {
     message: string,
     opts?: { httpStatus?: number; engine?: string },
   ) => Error;
-}
-
-export interface SearchResponse {
-  results: ScoredResult[];
-  query: string;
-  totalTime: number;
-  type: SearchType;
-  engineTimings: EngineTiming[];
-  relatedSearches: string[];
-  slotPanels?: SlotPanelResult[];
 }

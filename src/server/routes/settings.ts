@@ -9,74 +9,20 @@ import { getServerKeyHex, regenerateServerKey } from "../utils/server-key";
 import { resolveBanHours, syncBlocklist } from "../utils/bot-trap";
 import { addEntry, listActive, removeEntry } from "../utils/blocklist";
 import { guardSettingsRoute, isPasswordRequired } from "./settings-auth";
+import { readObjectBody } from "../utils/hono";
 import {
   getInstanceSettings,
   setInstanceSettings,
   updateInstanceSettings,
 } from "../utils/server-settings";
+import {
+  SETTINGS_SCHEMA,
+  coerceSetting,
+  type SettingKey,
+} from "../utils/settings-schema";
+import { logger } from "../utils/logger";
 
 const router = new Hono();
-
-const GENERAL_ALLOWED_KEYS = [
-  "proxyEnabled",
-  "proxyUrls",
-  "imageProxyAllowLocal",
-  "imageProxyAllowList",
-  "rateLimitEnabled",
-  "rateLimitBurstWindow",
-  "rateLimitBurstMax",
-  "rateLimitLongWindow",
-  "rateLimitLongMax",
-  "rateLimitSuggestEnabled",
-  "rateLimitSuggestBurstWindow",
-  "rateLimitSuggestBurstMax",
-  "rateLimitSuggestLongWindow",
-  "rateLimitSuggestLongMax",
-  "acDebounceMs",
-  "languagesEnabled",
-  "languages",
-  "streamingEnabled",
-  "streamingAutoRetry",
-  "streamingMaxRetries",
-  "postMethodEnabled",
-  "defaultTheme",
-  "domainBlockEnabled",
-  "domainBlockList",
-  "domainBlockUiEnabled",
-  "domainReplaceEnabled",
-  "domainReplaceList",
-  "domainReplaceUiEnabled",
-  "domainScoreEnabled",
-  "domainScoreList",
-  "domainScoreUiEnabled",
-  "customCss",
-  "apiKeySearchEnabled",
-  "apiKeySuggestEnabled",
-  "honeypotEnabled",
-  "honeypotCssCheck",
-  "honeypotBanDuration",
-] as const;
-
-const BOOLEAN_SETTING_KEYS = new Set<(typeof GENERAL_ALLOWED_KEYS)[number]>([
-  "proxyEnabled",
-  "imageProxyAllowLocal",
-  "rateLimitEnabled",
-  "rateLimitSuggestEnabled",
-  "languagesEnabled",
-  "streamingEnabled",
-  "streamingAutoRetry",
-  "postMethodEnabled",
-  "domainBlockEnabled",
-  "domainBlockUiEnabled",
-  "domainReplaceEnabled",
-  "domainReplaceUiEnabled",
-  "domainScoreEnabled",
-  "domainScoreUiEnabled",
-  "apiKeySearchEnabled",
-  "apiKeySuggestEnabled",
-  "honeypotEnabled",
-  "honeypotCssCheck",
-]);
 
 const _normalizeHostname = (raw: string): string =>
   raw
@@ -140,9 +86,22 @@ const fetchIp = async (useFn: typeof fetch): Promise<string | null> => {
     if (!res.ok) return null;
     const data = (await res.json()) as { ip?: string };
     return data.ip ?? null;
-  } catch {
+  } catch (err) {
+    logger.debug("settings", "public IP lookup failed", err);
     return null;
   }
+};
+
+const _applySchemaUpdates = (
+  body: Record<string, string>,
+): Record<string, string | boolean> => {
+  const updates: Record<string, string | boolean> = {};
+  for (const [key, def] of Object.entries(SETTINGS_SCHEMA)) {
+    const raw = body[key];
+    if (raw === undefined || typeof raw !== "string") continue;
+    updates[key] = coerceSetting(def, raw);
+  }
+  return updates;
 };
 
 router.get("/api/settings/streaming", async (c) => {
@@ -177,22 +136,29 @@ router.get("/api/settings/general", async (c) => {
 router.post("/api/settings/general", async (c) => {
   const denied = await guardSettingsRoute(c, "POST /api/settings/general");
   if (denied) return denied;
-  let body: Record<string, string>;
-  try {
-    body = await c.req.json<Record<string, string>>();
-  } catch {
-    return c.json({ error: "Invalid JSON" }, 400);
-  }
+  const body = await readObjectBody<Record<string, string>>(c);
+  if (!body) return c.json({ error: "Invalid JSON" }, 400);
   const existing = await getInstanceSettings();
-  const updates: Record<string, string | boolean> = {};
-  for (const key of GENERAL_ALLOWED_KEYS) {
-    if (key in body && typeof body[key] === "string") {
-      updates[key] = BOOLEAN_SETTING_KEYS.has(key)
-        ? body[key] === "true"
-        : body[key];
-    }
-  }
+  const updates = _applySchemaUpdates(body);
   await setInstanceSettings({ ...existing, ...updates });
+  await syncBlocklist();
+  return c.json({ ok: true });
+});
+
+router.post("/api/settings/field", async (c) => {
+  const denied = await guardSettingsRoute(c, "POST /api/settings/field");
+  if (denied) return denied;
+  const body = await readObjectBody<{ key?: string; value?: string }>(c);
+  if (!body) return c.json({ error: "Invalid JSON" }, 400);
+  const { key, value } = body;
+  if (!key || typeof key !== "string" || !(key in SETTINGS_SCHEMA)) {
+    return c.json({ error: "Unknown setting" }, 400);
+  }
+  if (value === undefined || typeof value !== "string") {
+    return c.json({ error: "Invalid value" }, 400);
+  }
+  const coerced = coerceSetting(SETTINGS_SCHEMA[key as SettingKey], value);
+  await updateInstanceSettings({ [key]: coerced });
   await syncBlocklist();
   return c.json({ ok: true });
 });
@@ -204,17 +170,9 @@ router.post("/api/settings/domain-action", async (c) => {
   );
   if (denied) return denied;
 
-  let body: {
-    kind?: string;
-    source?: string;
-    target?: string;
-    score?: number;
-  };
-  try {
-    body = await c.req.json();
-  } catch {
-    return c.json({ error: "Invalid JSON" }, 400);
-  }
+  type DomainActionBody = { kind?: string; source?: string; target?: string; score?: number };
+  const body = await readObjectBody<DomainActionBody>(c);
+  if (!body) return c.json({ error: "Invalid JSON" }, 400);
 
   const kind = body.kind;
   const source = _normalizeHostname(body.source ?? "");
@@ -330,12 +288,8 @@ router.get("/api/settings/honeypot/blocklist", async (c) => {
 router.post("/api/settings/honeypot/ban", async (c) => {
   const denied = await guardSettingsRoute(c, "POST /api/settings/honeypot/ban");
   if (denied) return denied;
-  let body: { ip?: string };
-  try {
-    body = await c.req.json();
-  } catch {
-    return c.json({ error: "Invalid JSON" }, 400);
-  }
+  const body = await readObjectBody<{ ip?: string }>(c);
+  if (!body) return c.json({ error: "Invalid JSON" }, 400);
   const ip = (body.ip ?? "").trim();
   if (!ip) return c.json({ error: "Missing ip" }, 400);
   await addEntry(ip);
@@ -348,12 +302,8 @@ router.post("/api/settings/honeypot/unban", async (c) => {
     "POST /api/settings/honeypot/unban",
   );
   if (denied) return denied;
-  let body: { ip?: string };
-  try {
-    body = await c.req.json();
-  } catch {
-    return c.json({ error: "Invalid JSON" }, 400);
-  }
+  const body = await readObjectBody<{ ip?: string }>(c);
+  if (!body) return c.json({ error: "Invalid JSON" }, 400);
   const ip = (body.ip ?? "").trim();
   if (!ip) return c.json({ error: "Missing ip" }, 400);
   await removeEntry(ip);
@@ -376,12 +326,8 @@ router.get("/api/settings/tab-order", async (c) => {
 router.post("/api/settings/tab-order", async (c) => {
   const denied = await guardSettingsRoute(c, "POST /api/settings/tab-order");
   if (denied) return denied;
-  let body: { engineTabsOrder?: unknown };
-  try {
-    body = await c.req.json<{ engineTabsOrder?: unknown }>();
-  } catch {
-    return c.json({ error: "Invalid JSON" }, 400);
-  }
+  const body = await readObjectBody<{ engineTabsOrder?: unknown }>(c);
+  if (!body) return c.json({ error: "Invalid JSON" }, 400);
   if (
     !Array.isArray(body.engineTabsOrder) ||
     !body.engineTabsOrder.every((v) => typeof v === "string")
@@ -403,7 +349,8 @@ router.get("/api/settings/default-engines", async (c) => {
   try {
     const raw = await readFile(defaultEnginesFile(), "utf-8");
     return c.json(JSON.parse(raw));
-  } catch {
+  } catch (err) {
+    logger.debug("settings", "default engines file read failed", err);
     return c.json({});
   }
 });
@@ -414,12 +361,8 @@ router.post("/api/settings/default-engines", async (c) => {
     "POST /api/settings/default-engines",
   );
   if (denied) return denied;
-  let body: Record<string, boolean>;
-  try {
-    body = await c.req.json<Record<string, boolean>>();
-  } catch {
-    return c.json({ error: "Invalid JSON" }, 400);
-  }
+  const body = await readObjectBody<Record<string, boolean>>(c);
+  if (!body) return c.json({ error: "Invalid JSON" }, 400);
   await writeFile(defaultEnginesFile(), JSON.stringify(body, null, 2), "utf-8");
   return c.json({ ok: true });
 });

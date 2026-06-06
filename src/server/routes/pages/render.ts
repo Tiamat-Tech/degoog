@@ -219,7 +219,7 @@ export async function applyPagePlaceholders(
       const tok = mintToken();
       result = result.replace(
         "</head>",
-        `<link rel="stylesheet" href="/ping/${tok}">\n  </head>`,
+        `<link rel="stylesheet" href="/style/v/${tok}">\n  </head>`,
       );
     } catch (e) {
       logger.error(

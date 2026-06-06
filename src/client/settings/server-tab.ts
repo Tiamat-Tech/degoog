@@ -12,6 +12,8 @@ import {
 import { renderScoreRows, scoreRowTemplate } from "./server/domain-score";
 import { initHoneypot } from "./server/honeypot";
 import { bindToggleAutoSave, injectFieldSaveBtns } from "./server/auto-save";
+import { setIndexerNavVisible } from "./indexer-tab";
+import { renderServerContent } from "./server/render";
 
 const t = window.scopedT("core");
 
@@ -51,6 +53,7 @@ type ServerSettingsData = {
   honeypotEnabled?: BoolSetting;
   honeypotCssCheck?: BoolSetting;
   honeypotBanDuration?: string;
+  degoogIndexerEnabled?: BoolSetting;
 };
 
 let _apiKey = "";
@@ -118,7 +121,14 @@ async function _loadServerSettings(
     setToggle("honeypot-enabled", data.honeypotEnabled ?? "true");
     setToggle("honeypot-css-check", data.honeypotCssCheck ?? "true");
     setVal("honeypot-ban-duration", data.honeypotBanDuration);
-  } catch {}
+
+    setToggle("degoog-indexer-enabled", data.degoogIndexerEnabled);
+    setIndexerNavVisible(
+      data.degoogIndexerEnabled === true || data.degoogIndexerEnabled === "true",
+    );
+  } catch (err) {
+    console.warn("[settings] server settings load failed", err);
+  }
 }
 
 const _bindToggles = (): void => {
@@ -206,6 +216,9 @@ const _initApiKeyControls = (
 export async function initServerTab(
   getToken: () => string | null,
 ): Promise<void> {
+  const container = document.getElementById("server-content");
+  if (container) container.innerHTML = renderServerContent();
+
   _bindToggles();
 
   document
@@ -223,6 +236,8 @@ export async function initServerTab(
     const apiKeyRes = await fetch(`${getBase()}/api/settings/api-key`, {
       headers: authHeaders(getToken),
     });
+    const controls = document.getElementById("settings-api-key-controls");
+    const locked = document.getElementById("settings-api-key-locked");
     if (apiKeyRes.ok) {
       const apiKeyData = (await apiKeyRes.json()) as {
         key: string;
@@ -231,8 +246,13 @@ export async function initServerTab(
       };
       _apiKey = apiKeyData.key;
       _renderApiKey();
+      if (controls) controls.hidden = false;
+    } else if (apiKeyRes.status === 403) {
+      if (locked) locked.hidden = false;
     }
-  } catch {}
+  } catch (err) {
+    console.warn("[settings] api key load failed", err);
+  }
 
   initHoneypot(getToken);
 
@@ -265,6 +285,13 @@ export async function initServerTab(
 
   bindToggleAutoSave(getToken);
   injectFieldSaveBtns(getToken);
+
+  document
+    .getElementById("settings-degoog-indexer-enabled")
+    ?.addEventListener("change", (e) => {
+      const on = (e.target as HTMLInputElement).checked;
+      setIndexerNavVisible(on);
+    });
 
   _initApiKeyControls(getToken, handleButtonState);
 

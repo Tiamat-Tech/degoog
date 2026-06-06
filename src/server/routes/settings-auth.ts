@@ -130,11 +130,6 @@ export async function gandalf(token: string | undefined): Promise<boolean> {
     logger.debug("settings-auth", "token validation failed: token expired");
     return false;
   }
-  const ttlMs = expiresAt - Date.now();
-  logger.debug(
-    "settings-auth",
-    `token valid (expires in ${Math.round(ttlMs / 1000 / 60)}m)`,
-  );
   return true;
 }
 
@@ -227,7 +222,8 @@ router.post("/api/settings/auth", async (c) => {
   let body: { password?: string };
   try {
     body = await c.req.json<{ password?: string }>();
-  } catch {
+  } catch (err) {
+    logger.debug("settings-auth", "invalid JSON body on auth", err);
     recordAuthFailure(ip);
     return c.json({ ok: false }, 400);
   }

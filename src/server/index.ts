@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { serveStatic } from "hono/bun";
+import { serveStatic, createBunWebSocket } from "hono/bun";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import pkg from "../../package.json";
 import { getBasePath } from "./utils/base-url";
@@ -22,6 +22,10 @@ import { initServerKey } from "./utils/server-key";
 import { initValkey } from "./utils/cache-valkey";
 import { getInstanceId } from "./utils/server-settings";
 import { runMigrations } from "./migrations";
+import { closeAllDbs } from "./indexer/db";
+import { startQueue, stopQueue } from "./indexer/queue";
+import { logger } from "./utils/logger";
+import { getTransportWsHandlers } from "./extensions/transports/ws-registry";
 
 const BASE_PATH = getBasePath();
 
@@ -117,9 +121,52 @@ const initExtensionRegistries = async (): Promise<void> => {
   await initPluginRoutes();
 };
 
+const shutdown = (signal: string): void => {
+  logger.info("server", `received ${signal}, shutting down`);
+  stopQueue()
+    .finally(() => {
+      closeAllDbs();
+      process.exit(0);
+    });
+};
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
 Promise.all([initServerKey(), initExtensionRegistries()])
   .then(() => {
-    Bun.serve({ port, fetch: app.fetch, idleTimeout: 120 });
+    startQueue();
+
+    const { upgradeWebSocket, websocket } = createBunWebSocket();
+
+    for (const [name] of getTransportWsHandlers()) {
+      app.get(`/ws/${name}/:password?`, upgradeWebSocket((c) => {
+        const transportName = name;
+        const passwordPath = `/${c.req.param("password") ?? ""}`;
+        const handlers = getTransportWsHandlers().get(transportName);
+        if (handlers?.onUpgrade?.(passwordPath) === false) {
+          return {
+            onOpen(_evt, ws) { ws.close(1008, "unauthorized"); },
+            onMessage() {},
+            onClose() {},
+          };
+        }
+        return {
+          onOpen(_evt, ws) {
+            getTransportWsHandlers().get(transportName)?.onOpen(ws);
+          },
+          onMessage(evt, ws) {
+            const raw = typeof evt.data === "string" ? evt.data : String(evt.data);
+            getTransportWsHandlers().get(transportName)?.onMessage(ws, raw);
+          },
+          onClose(_evt, ws) {
+            getTransportWsHandlers().get(transportName)?.onClose(ws);
+          },
+        };
+      }));
+    }
+
+    Bun.serve({ port, fetch: app.fetch, websocket, idleTimeout: 120 });
     markReady();
   })
   .catch((err) => {

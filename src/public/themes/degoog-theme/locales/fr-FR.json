@@ -81,6 +81,7 @@
       "white": "Blanc"
     },
     "result": {
+      "just-indexed": "vient d'être indexé",
       "insecure": "Insecure",
       "insecure-tooltip": "Ce site est servi sur une connexion HTTP non chiffrée.",
       "actions": {

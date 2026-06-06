@@ -106,6 +106,20 @@ export async function initStoreTab(
       });
     }
 
+    const repoErrorsEl = repoSection?.querySelector<HTMLElement>(".store-repo-errors");
+    if (repoErrorsEl) {
+      const errored = repos.filter((r) => r.error);
+      if (errored.length > 0) {
+        repoErrorsEl.innerHTML = errored
+          .map((r) => escapeHtml(`${r.name || r.url}: ${r.error ?? ""}`))
+          .join("<br>");
+        repoErrorsEl.style.display = "";
+      } else {
+        repoErrorsEl.textContent = "";
+        repoErrorsEl.style.display = "none";
+      }
+    }
+
     const catalogSection = container.querySelector<HTMLElement>(
       ".store-catalog-section",
     );

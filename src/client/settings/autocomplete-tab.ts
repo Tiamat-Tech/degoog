@@ -1,4 +1,5 @@
-import { escapeHtml, getConfigStatus } from "../utils/dom";
+import { escapeHtml } from "../utils/dom";
+import { extCardBadge, extCardConfigureBtn, extCardVersionWarning } from "./ext-card";
 import { openModal } from "../modules/modals/settings-modal/modal";
 import type { ExtensionMeta, AllExtensions } from "../types";
 import { getBase } from "../utils/base-url";
@@ -7,19 +8,9 @@ const t = window.scopedT("core");
 
 const _renderAutocompleteCard = (provider: ExtensionMeta): string => {
   const isEnabled = provider.settings["disabled"] !== "true";
-  const versionWarning = provider.requiresNewerVersion
-    ? `<span class="ext-version-warning">${escapeHtml(t("settings-page.extensions.requires-newer-version"))}</span>`
-    : "";
-  const status = provider.configurable ? getConfigStatus(provider) : null;
-  const badge =
-    status === "configured"
-      ? '<span class="ext-configured-badge" data-tooltip="' + escapeHtml(t("settings-page.extensions.status-configured")) + '"></span>'
-      : status === "needs-config"
-        ? '<span class="ext-needs-config-badge" data-tooltip="' + escapeHtml(t("settings-page.extensions.status-needs-config")) + '"></span>'
-        : "";
-  const configureBtn = provider.configurable
-    ? `<button class="ext-card-configure btn btn--secondary degoog-btn degoog-btn--secondary" data-id="${escapeHtml(provider.id)}" type="button">${escapeHtml(t("settings-page.extensions.configure"))}</button>`
-    : "";
+  const versionWarning = extCardVersionWarning(provider);
+  const badge = extCardBadge(provider);
+  const configureBtn = extCardConfigureBtn(provider);
   return `
     <div class="ext-card degoog-panel degoog-panel--ext-card" data-id="${escapeHtml(provider.id)}">
       <div class="ext-card-main">
@@ -50,8 +41,16 @@ export function initAutocompleteTab(allExtensions: AllExtensions): void {
     html += `<div class="ext-group"><h3 class="ext-group-label">${escapeHtml(t("settings-page.extensions.group-autocomplete"))}</h3><div class="ext-cards">`;
     for (const provider of providers) html += _renderAutocompleteCard(provider);
     html += "</div></div>";
+  } else {
+    const storeBtn = `<button class="degoog-link-btn" type="button" data-switch-tab="store">${escapeHtml(t("settings-page.extensions.no-autocomplete-store"))}</button>`;
+    html += `<div class="ext-group"><p class="degoog-text degoog-text--sm degoog-text--secondary">${t("settings-page.extensions.no-autocomplete", { store: storeBtn })}</p></div>`;
   }
   container.innerHTML = html;
+
+  container.querySelector<HTMLButtonElement>("[data-switch-tab]")?.addEventListener("click", (e) => {
+    const tab = (e.currentTarget as HTMLButtonElement).dataset.switchTab;
+    if (tab) document.querySelector<HTMLButtonElement>(`[data-tab="${tab}"]`)?.click();
+  });
 
   container
     .querySelectorAll<HTMLInputElement>(".autocomplete-toggle-input")

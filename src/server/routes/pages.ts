@@ -1,4 +1,5 @@
 import { Context, Hono } from "hono";
+import { logger } from "../utils/logger";
 import { SETTINGS_TABS } from "../../shared/settings-tabs";
 import {
   getDefaultEngineConfig,
@@ -52,7 +53,7 @@ function buildOpenSearchXml(origin: string): string {
 </OpenSearchDescription>`;
 }
 
-router.get("/ping/:token", async (c) => {
+router.get("/style/v/:token", async (c) => {
   const token = c.req.param("token");
   const ip = getClientIp(c);
   if (ip && verifyToken(token)) ping(ip);
@@ -215,7 +216,8 @@ router.get("/opensearch.xml", (c) => {
     ? (() => {
         try {
           return new URL(BASE_URL).pathname.replace(/\/+$/, "");
-        } catch {
+        } catch (err) {
+          logger.debug("pages", `invalid DEGOOG_BASE_URL "${BASE_URL}"`, err);
           return BASE_URL;
         }
       })()

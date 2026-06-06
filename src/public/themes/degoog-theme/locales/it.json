@@ -81,6 +81,7 @@
       "white": "Bianco"
     },
     "result": {
+      "just-indexed": "appena indicizzato",
       "insecure": "Non sicuro",
       "insecure-tooltip": "Questo sito è servito su una connessione HTTP non crittata.",
       "actions": {

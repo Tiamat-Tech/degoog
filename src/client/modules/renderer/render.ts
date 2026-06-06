@@ -8,10 +8,13 @@ import { renderTemplate } from "../../utils/template";
 import { attachFaviconFallback } from "../../utils/favicon";
 import { faviconHostname, faviconUrl } from "../../utils/url";
 import { isImageSearchType } from "../../utils/engines";
+import { getBase } from "../../utils/base-url";
 import { destroyMediaObserver, setupMediaObserver } from "../media/media";
 import { renderImageGrid } from "./render-media";
 
 import { clearSlotPanels as _clearSlots } from "./render-slots";
+
+const t = window.scopedT("themes/degoog");
 
 export { renderSidebar } from "./render-sidebar";
 export {
@@ -81,7 +84,12 @@ export function renderResults(results: ScoredResult[]): void {
   }
 
   if (results.length === 0) {
-    container.innerHTML = '<div class="no-results">No results found.</div>';
+    const noEngines = state.currentData?.engineTimings.length === 0;
+    const storeLink = `<a href="${getBase()}/settings/store" class="degoog-link">${t("search-templates.no-engines-store")}</a>`;
+    const msg = noEngines
+      ? t("search-templates.no-engines", { store: storeLink })
+      : t("search-templates.no-results");
+    container.innerHTML = `<div class="no-results">${msg}</div>`;
     if (!isImageType) {
       renderPagination(MAX_PAGE, state.currentPage);
     }

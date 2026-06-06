@@ -313,7 +313,7 @@
   display: block;
   font-size: $font-size-small;
   color: var(--text-secondary);
-  margin: 0;
+  margin: 0 0 $space-2 0;
 }
 
 .settings-proxy-urls {
@@ -609,5 +609,159 @@
   &:disabled {
     opacity: 0.6;
     cursor: default;
+  }
+}
+
+.degoog-fieldset--disabled {
+  opacity: 0.5;
+}
+
+.degoog-indexer-disabled-note {
+  margin: 0 0 $space-4;
+}
+
+.degoog-indexer-stats {
+  display: grid;
+  gap: $space-4;
+}
+
+.degoog-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: $space-3;
+  margin: 0;
+  padding: 0;
+
+  > div {
+    background: var(--bg);
+    padding: $space-3;
+    border-radius: $radius-md;
+  }
+
+  dt {
+    font-size: $font-size-small;
+    color: var(--text-secondary);
+    margin: 0 0 $space-1;
+  }
+
+  dd {
+    font-size: $font-size-lg;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  &--types:empty {
+    display: none;
+  }
+}
+
+.degoog-action-row {
+  display: flex;
+  gap: $space-2;
+  align-items: center;
+  flex-wrap: wrap;
+
+  .degoog-input {
+    flex: 1;
+    min-width: min(100%, 12rem);
+  }
+
+  &--buttons {
+    gap: $space-3;
+  }
+}
+
+.degoog-manage-filters {
+  display: flex;
+  gap: $space-3;
+  align-items: center;
+
+  .degoog-input {
+    background: var(--bg);
+  }
+
+  input[type="search"] {
+    flex: 1;
+    min-width: 0;
+  }
+
+  select {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 8rem;
+  }
+}
+
+.degoog-manage-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: $space-3 0;
+  font-size: $font-size-small;
+
+  th,
+  td {
+    text-align: left;
+    padding: $space-2 $space-3;
+    vertical-align: middle;
+  }
+
+  th {
+    color: var(--text-secondary);
+    font-weight: 500;
+    min-width: 120px;
+
+    &:first-child {
+      min-width: auto;
+    }
+  }
+
+  td:last-child {
+    white-space: nowrap;
+    width: 1%;
+  }
+
+  td:first-child {
+    width: 1%;
+  }
+
+  tbody tr {
+    background: var(--bg);
+  }
+
+  tbody tr:nth-child(even) {
+    background: var(--bg-secondary);
+  }
+
+  td a {
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+
+  td a:hover {
+    text-decoration: underline;
+  }
+}
+
+.degoog-manage-pager {
+  justify-content: space-between;
+}
+
+.ext-modal--wide {
+  width: min(56rem, 92vw);
+}
+
+.settings-api-wrapper {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+
+  .settings-api-key-value {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

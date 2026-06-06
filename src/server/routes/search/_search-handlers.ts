@@ -6,6 +6,9 @@ import { signResultThumbnails } from "../../utils/proxy-sign";
 import { logger } from "../../utils/logger";
 import { applyDomainRules } from "./_domain-rules";
 import { runIntercepts } from "../../utils/run-interceptors";
+import { getInstanceSettings } from "../../utils/server-settings";
+import { asBoolean } from "../../utils/plugin-settings";
+import { DEGOOG_ENGINE_NAME, maybeIndex } from "../../indexer/store";
 
 export async function handleSearch(params: SearchParams) {
   const {
@@ -64,12 +67,36 @@ export async function handleSearch(params: SearchParams) {
     imageFilter,
   );
 
-  const ttl = cache.hasFailedEngines(response) ? cache.SHORT_TTL_MS : undefined;
-  await cache.set(key, response, ttl);
+  const settings = await getInstanceSettings();
+  let finalResponse = response;
+
+  const indexed = maybeIndex(
+    asBoolean(settings.degoogIndexerEnabled),
+    query,
+    type,
+    response.results,
+  );
+  if (indexed) {
+    const degoogTiming = response.engineTimings.find(
+      (et) => et.name === DEGOOG_ENGINE_NAME,
+    );
+    if (degoogTiming?.resultCount === 0) {
+      finalResponse = {
+        ...response,
+        engineTimings: response.engineTimings.map((et) =>
+          et.name === DEGOOG_ENGINE_NAME ? { ...et, indexed: true } : et,
+        ),
+      };
+    }
+  }
+
+  if (!cache.hasFailedEngines(finalResponse)) {
+    await cache.set(key, finalResponse);
+  }
 
   return {
-    ...response,
-    results: signResultThumbnails(await applyDomainRules(response.results)),
+    ...finalResponse,
+    results: signResultThumbnails(await applyDomainRules(finalResponse.results)),
   };
 }
 
@@ -89,6 +116,8 @@ export async function handleRetry(
     imageFilter,
   } = params;
 
+  const { overrides } = await runIntercepts(query, lang);
+  const type = (overrides.searchType ?? searchType) as typeof searchType;
   const { results: newResults, timing } = await searchSingleEngine(
     engineName,
     query,
@@ -98,6 +127,8 @@ export async function handleRetry(
     dateFrom,
     dateTo,
     imageFilter,
+    undefined,
+    type,
   );
   const key = cacheKey(
     query,
@@ -130,6 +161,10 @@ export async function handleRetry(
       updated,
       cache.hasFailedEngines(updated) ? cache.SHORT_TTL_MS : undefined,
     );
+
+    const settings = await getInstanceSettings();
+    maybeIndex(asBoolean(settings.degoogIndexerEnabled), query, type, merged);
+
     return {
       ...updated,
       results: signResultThumbnails(await applyDomainRules(merged)),

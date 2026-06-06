@@ -1,5 +1,11 @@
-input {
+input,
+select {
   color: var(--text-primary);
+}
+
+select.degoog-input {
+  background: var(--bg);
+  padding-inline-end: $space-8;
 }
 
 .degoog-input {

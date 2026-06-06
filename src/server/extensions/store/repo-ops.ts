@@ -85,7 +85,9 @@ const fetchRef = async (
   if (exit === 0) return { ok: true, notFound: false, error: "" };
   const stderr = await new Response(proc.stderr).text();
   const notFound =
-    /couldn't find remote ref|remote ref does not exist|invalid refspec/i.test(stderr);
+    /couldn't find remote ref|remote ref does not exist|invalid refspec/i.test(
+      stderr,
+    );
   return {
     ok: false,
     notFound,
@@ -129,7 +131,7 @@ const syncBranch = async (repoPath: string): Promise<void> => {
     const result = await switchBranch(repoPath, BETA_BRANCH);
     if (!result.ok) {
       if (result.notFound) {
-        logger.info(
+        logger.debug(
           "store:branch",
           `repo has no "${BETA_BRANCH}" branch, staying on "${current}" - normal for third-party repos`,
         );
@@ -192,7 +194,8 @@ export function isValidGitUrl(url: string): boolean {
     return (
       u.protocol === "http:" || u.protocol === "https:" || u.protocol === "ssh:"
     );
-  } catch {
+  } catch (err) {
+    logger.debug("store:repo", `invalid git URL "${trimmed}"`, err);
     return false;
   }
 }
@@ -248,7 +251,8 @@ export async function addRepo(url: string): Promise<RepoInfo> {
   try {
     const raw = await readFile(pkgPath, "utf-8");
     pkg = JSON.parse(raw) as RepoPackageJson;
-  } catch {
+  } catch (err) {
+    logger.warn("store:repo", `invalid package.json at ${pkgPath}`, err);
     await rm(dest, { recursive: true, force: true });
     throw new Error("Repository has no valid package.json in the root.");
   }
@@ -340,7 +344,8 @@ export async function refreshAllRepos(): Promise<
       const updated = await readReposData();
       const r = getRepoByUrl(updated, repo.url);
       results.push({ url: repo.url, error: r?.error ?? null });
-    } catch {
+    } catch (err) {
+      logger.warn("store:repo", `refresh failed for ${repo.url}`, err);
       results.push({ url: repo.url, error: "Refresh failed" });
     }
   }
@@ -399,14 +404,16 @@ export async function getReposStatus(): Promise<RepoStatus[]> {
           }, FETCH_TIMEOUT_MS),
         ),
       ]);
-    } catch {
+    } catch (err) {
+      logger.warn("store:repo", `fetch failed for ${repo.url}`, err);
       results.push({ url: repo.url, behind: 0 });
       continue;
     }
     try {
       const behind = await getBehindCount(repoPath);
       results.push({ url: repo.url, behind });
-    } catch {
+    } catch (err) {
+      logger.warn("store:repo", `behind count failed for ${repo.url}`, err);
       results.push({ url: repo.url, behind: 0 });
     }
   }
@@ -425,7 +432,8 @@ async function _migrateOfficialRepo(): Promise<void> {
   if (!data.repos.some((r) => normalizeRepoUrl(r.url) === newNormalized)) {
     try {
       await addRepo(OFFICIAL_REPO_URL);
-    } catch {
+    } catch (err) {
+      logger.warn("store:repo", "official repo migration add failed", err);
       return;
     }
   }
@@ -451,8 +459,8 @@ export async function ensureOfficialRepo(): Promise<void> {
   if (data.repos.length > 0) return;
   try {
     await addRepo(OFFICIAL_REPO_URL);
-  } catch {
-    //
+  } catch (err) {
+    logger.warn("store:repo", "official repo bootstrap failed", err);
   }
 }
 

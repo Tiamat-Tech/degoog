@@ -45,3 +45,12 @@ export const blocklistFile = (): string =>
 
 export const serverSettingsFile = (): string =>
   process.env.DEGOOG_SERVER_SETTINGS_FILE ?? join(_dataDir(), "server-settings.json");
+
+export const indexerDir = (): string =>
+  process.env.DEGOOG_INDEXER_DIR ?? join(_dataDir(), "indexer");
+
+export const indexerDbFile = (): string =>
+  process.env.DEGOOG_INDEXER_DB ?? join(indexerDir(), "index.db");
+
+export const indexerDbForType = (type: string): string =>
+  join(indexerDir(), `index-${type}.db`);
