@@ -1,5 +1,6 @@
 import type { SearchResponse, RichSuggestion } from "../types";
 import { logger } from "./logger";
+import { THREAT_LEVEL } from "./sentinel";
 import {
   INVALIDATE_SCOPE,
   isValkeyEnabled,
@@ -245,9 +246,12 @@ export const clear = (): Promise<string[]> => clearByScope(CACHE_SCOPE.ALL);
 
 export const listCacheNamespaces = (): string[] => Array.from(_registry.keys());
 
+const engineErrored = (status: string | undefined): boolean =>
+  status !== undefined && status !== THREAT_LEVEL.OK;
+
 export const someEnginesFailed = (response: SearchResponse): boolean =>
-  response.engineTimings.some((et) => et.resultCount === 0);
+  response.engineTimings.some((et) => engineErrored(et.status));
 
 export const allEnginesFailed = (response: SearchResponse): boolean =>
   response.engineTimings.length > 0 &&
-  response.engineTimings.every((et) => et.resultCount === 0);
+  response.engineTimings.every((et) => engineErrored(et.status));

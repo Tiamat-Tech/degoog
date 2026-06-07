@@ -292,7 +292,7 @@ export const searchSingleEngine = async (
   if (!engine) {
     return {
       results: [],
-      timing: { name: engineName, time: 0, resultCount: 0 },
+      timing: { name: engineName, time: 0, resultCount: 0, status: THREAT_LEVEL.BLOCKED },
     };
   }
   const p = Math.max(1, Math.min(MAX_PAGE, Math.floor(page) || 1));
@@ -326,10 +326,11 @@ export const searchSingleEngine = async (
     };
   } catch (err) {
     const elapsed = Math.round(performance.now() - t0);
-    logger.warn("engine", `${engine.name} failed after ${elapsed}ms`, err);
+    const classified = _classifyReject(err);
+    logger.warn("engine", `${engine.name} failed after ${elapsed}ms status=${classified.status}`, err);
     return {
       results: [],
-      timing: { name: engine.name, time: elapsed, resultCount: 0 },
+      timing: { name: engine.name, time: elapsed, resultCount: 0, status: classified.status, errorReason: classified.reason, httpStatus: classified.httpStatus },
     };
   }
 };
