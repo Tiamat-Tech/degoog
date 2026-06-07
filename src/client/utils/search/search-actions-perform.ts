@@ -203,7 +203,7 @@ async function _performSearchWithBang(
   try {
     const [cmdRes, searchRes] = await Promise.all([
       fetch(`${getBase()}/api/command?q=${encodeURIComponent(bangQuery)}`),
-      fetch(searchUrl),
+      fetch(appendSearchAuthParams(searchUrl)),
     ]);
     const searchData = (await searchRes.json()) as SearchResponse;
     const isMediaType = isImageSearchType(type);
