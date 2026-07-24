@@ -1,5 +1,5 @@
 import { Database } from "bun:sqlite";
-import { writeFileSync, unlinkSync, readFileSync } from "fs";
+import { writeFileSync, unlinkSync, readFileSync, openSync, readSync, closeSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { randomBytes } from "crypto";
@@ -44,29 +44,80 @@ export interface ImportResult {
   hits: number;
 }
 
+interface BatchWriter {
+  add: (row: ExportRow) => Promise<void>;
+  finish: () => Promise<ImportResult>;
+}
+
+const makeBatchWriter = (type: string): BatchWriter => {
+  const adapter = getAdapter();
+  let pending: ExportRow[] = [];
+  let urls = 0;
+  let hits = 0;
+
+  const flush = async (): Promise<void> => {
+    if (pending.length === 0) return;
+    const result = await adapter.importRows(type, pending);
+    urls += result.urls;
+    hits += result.hits;
+    pending = [];
+  };
+
+  return {
+    add: async (row) => {
+      pending.push(row);
+      if (pending.length >= BATCH_SIZE) await flush();
+    },
+    finish: async () => {
+      await flush();
+      return { urls, hits };
+    },
+  };
+};
+
 const isSqliteFile = (path: string): boolean => {
+  let fd: number | undefined;
   try {
+    fd = openSync(path, "r");
     const header = Buffer.alloc(SQLITE_MAGIC.length);
-    const fd = readFileSync(path);
-    fd.copy(header, 0, 0, SQLITE_MAGIC.length);
-    return header.toString("binary") === SQLITE_MAGIC;
+    const read = readSync(fd, header, 0, SQLITE_MAGIC.length, 0);
+    return read === SQLITE_MAGIC.length && header.toString("binary") === SQLITE_MAGIC;
   } catch {
     return false;
+  } finally {
+    if (fd !== undefined) {
+      try {
+        closeSync(fd);
+      } catch (err) {
+        logger.warn("indexer", "importer: failed to close file handle", err);
+      }
+    }
   }
 };
 
-const readSqliteRows = (path: string, type: string): ExportRow[] => {
+const importSqlite = async (path: string, type: string): Promise<ImportResult> => {
   const sourceDb = new Database(path, { readonly: true });
+  const batch = makeBatchWriter(type);
+  let read = 0;
   try {
-    const rows = sourceDb.prepare(buildSelectSql(sourceDb)).all() as ExportRow[];
-    logger.info("indexer", `importer: read ${rows.length} sqlite rows for type=${type}`);
-    return rows;
+    for (const row of sourceDb
+      .prepare(buildSelectSql(sourceDb))
+      .iterate() as Iterable<ExportRow>) {
+      await batch.add(row);
+      read++;
+    }
   } catch (err) {
     logger.warn("indexer", "importer: failed to read rows from uploaded db", err);
     throw new Error("Failed to read import file");
   } finally {
     sourceDb.close();
   }
+  const result = await batch.finish();
+  logger.info(
+    "indexer",
+    `import complete type=${type} rows=${read} urls=${result.urls} hits=${result.hits}`,
+  );
+  return result;
 };
 
 const readSqlRows = (path: string, type: string): ExportRow[] => {
@@ -81,29 +132,22 @@ const readSqlRows = (path: string, type: string): ExportRow[] => {
 };
 
 const flushRows = async (rows: ExportRow[], type: string): Promise<ImportResult> => {
-  if (rows.length === 0) return { urls: 0, hits: 0 };
-
-  const adapter = getAdapter();
-  let urls = 0;
-  let hits = 0;
-  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-    const result = await adapter.importRows(type, rows.slice(i, i + BATCH_SIZE));
-    urls += result.urls;
-    hits += result.hits;
-  }
-
-  logger.info("indexer", `import complete type=${type} urls=${urls} hits=${hits}`);
-  return { urls, hits };
+  const batch = makeBatchWriter(type);
+  for (const row of rows) await batch.add(row);
+  const result = await batch.finish();
+  logger.info(
+    "indexer",
+    `import complete type=${type} urls=${result.urls} hits=${result.hits}`,
+  );
+  return result;
 };
 
 export const importFromFile = async (
   path: string,
   type: string,
 ): Promise<ImportResult> => {
-  const rows = isSqliteFile(path)
-    ? readSqliteRows(path, type)
-    : readSqlRows(path, type);
-  return flushRows(rows, type);
+  if (isSqliteFile(path)) return importSqlite(path, type);
+  return flushRows(readSqlRows(path, type), type);
 };
 
 export const importFromBuffer = async (
