@@ -27,13 +27,30 @@ const splitColumns = (list: string): string[] =>
     .map((c) => stripQuotes(c.trim()).toLowerCase())
     .filter(Boolean);
 
+const COPY_ESCAPES: Record<string, string> = {
+  t: "\t",
+  n: "\n",
+  r: "\r",
+  "\\": "\\",
+};
+
 const unescapeCopy = (value: string): Cell => {
   if (value === "\\N") return null;
-  return value
-    .replace(/\\t/g, "\t")
-    .replace(/\\n/g, "\n")
-    .replace(/\\r/g, "\r")
-    .replace(/\\\\/g, "\\");
+  let out = "";
+  for (let i = 0; i < value.length; i++) {
+    if (value[i] !== "\\") {
+      out += value[i];
+      continue;
+    }
+    const next = value[i + 1];
+    if (next === undefined) {
+      out += "\\";
+      break;
+    }
+    out += COPY_ESCAPES[next] ?? next;
+    i++;
+  }
+  return out;
 };
 
 const namedFrom = (cols: string[], cells: Cell[]): NamedRow => {

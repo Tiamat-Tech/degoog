@@ -223,7 +223,8 @@ router.get("/api/search/stream", async (c) => {
         },
       );
 
-      void Promise.all(enginePromises).then(async () => {
+      void Promise.all(enginePromises)
+        .then(async () => {
         const totalTime = Math.round(performance.now() - start);
         const rawScoredResults = scoreResults(allRawResults);
 
@@ -274,11 +275,16 @@ router.get("/api/search/stream", async (c) => {
           indexedUrls,
           relatedSearches: [],
         });
-        if (!closed) {
-          closed = true;
-          controller.close();
-        }
-      });
+        })
+        .catch((err) => {
+          logger.error("search-stream", "stream finalization failed", err);
+        })
+        .finally(() => {
+          if (!closed) {
+            closed = true;
+            controller.close();
+          }
+        });
     },
     cancel() {
       closed = true;

@@ -17,7 +17,7 @@ export const registerServerHandle = (server: Server): void => {
 export const isDockerRuntime = (): boolean =>
   envTruthy("DEGOOG_DOCKER") || existsSync("/.dockerenv");
 
-export const isProxmoxLXCRuntime = (): boolean => {
+export const isLXCRuntime = (): boolean => {
   try {
     return readFileSync("/run/systemd/container", "utf8").trim() === "lxc";
   } catch {
@@ -35,7 +35,7 @@ const hasControllingTerminal = (): boolean => Boolean(process.stdout.isTTY);
  * current one as you exit to give the illusion it's restarting.
  */
 const spawnReplacementProcess = (): Subprocess | undefined => {
-  if (isDockerRuntime() || isProxmoxLXCRuntime()) return undefined;
+  if (isDockerRuntime() || isLXCRuntime()) return undefined;
 
   try {
     const child = Bun.spawn({
@@ -67,7 +67,7 @@ export const requestRestart = (reason: string): void => {
   clearRestartPending();
   setTimeout(() => {
     _serverHandle?.stop(true);
-    const exitCode = isProxmoxLXCRuntime() ? 1 : 0;
+    const exitCode = isLXCRuntime() ? 1 : 0;
     const child = spawnReplacementProcess();
     stopQueue()
       .finally(async () => {

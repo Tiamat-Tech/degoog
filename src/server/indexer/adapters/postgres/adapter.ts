@@ -107,20 +107,27 @@ export class PgAdapter implements IndexerAdapter {
   }
 
   private async _ensureHitsColumns(schema: string): Promise<void> {
-    const [col] = await this._sql<{ ok: number }[]>`
-      SELECT 1 AS ok
+    const existing = await this._sql<{ column_name: string }[]>`
+      SELECT column_name
       FROM information_schema.columns
       WHERE table_schema = ${schema}
         AND table_name = 'query_hits'
-        AND column_name = 'pos_sum'
+        AND column_name IN ('pos_sum', 'sources_json', 'filters_json', 'meta_json')
     `;
-    if (col) return;
+    const present = new Set(existing.map((c) => c.column_name));
+    const hadPosSum = present.has("pos_sum");
 
-    await this._sql`ALTER TABLE ${this._sql(schema)}.query_hits ADD COLUMN IF NOT EXISTS pos_sum BIGINT NOT NULL DEFAULT 9999`;
-    await this._sql`ALTER TABLE ${this._sql(schema)}.query_hits ADD COLUMN IF NOT EXISTS sources_json TEXT`;
-    await this._sql`ALTER TABLE ${this._sql(schema)}.query_hits ADD COLUMN IF NOT EXISTS filters_json TEXT`;
-    await this._sql`ALTER TABLE ${this._sql(schema)}.query_hits ADD COLUMN IF NOT EXISTS meta_json TEXT`;
-    await this._sql`UPDATE ${this._sql(schema)}.query_hits SET pos_sum = best_position * hit_count`;
+    if (!hadPosSum)
+      await this._sql`ALTER TABLE ${this._sql(schema)}.query_hits ADD COLUMN IF NOT EXISTS pos_sum BIGINT NOT NULL DEFAULT 9999`;
+    if (!present.has("sources_json"))
+      await this._sql`ALTER TABLE ${this._sql(schema)}.query_hits ADD COLUMN IF NOT EXISTS sources_json TEXT`;
+    if (!present.has("filters_json"))
+      await this._sql`ALTER TABLE ${this._sql(schema)}.query_hits ADD COLUMN IF NOT EXISTS filters_json TEXT`;
+    if (!present.has("meta_json"))
+      await this._sql`ALTER TABLE ${this._sql(schema)}.query_hits ADD COLUMN IF NOT EXISTS meta_json TEXT`;
+
+    if (!hadPosSum)
+      await this._sql`UPDATE ${this._sql(schema)}.query_hits SET pos_sum = best_position * hit_count`;
   }
 
   discoverTypes(): string[] {

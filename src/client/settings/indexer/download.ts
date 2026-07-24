@@ -85,11 +85,12 @@ export const downloadIndexerExport = async (
 
     const { sessionId, size } = start;
     const filename = `degoog-index-${type}.db`;
-    const writer = await openWriter(filename);
-    if (!writer) return;
 
-    let done = 0;
     try {
+      const writer = await openWriter(filename);
+      if (!writer) return;
+
+      let done = 0;
       for (let pos = 0; pos < size; pos += CHUNK_BYTES) {
         const end = Math.min(size, pos + CHUNK_BYTES);
         const res = await fetch(
@@ -101,6 +102,10 @@ export const downloadIndexerExport = async (
           return;
         }
         const bytes = new Uint8Array(await res.arrayBuffer());
+        if (bytes.byteLength !== end - pos) {
+          setStatus("Export failed (incomplete chunk)");
+          return;
+        }
         await writer.write(bytes);
         done += bytes.byteLength;
         opts?.onProgress?.(done, size);

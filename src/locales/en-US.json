@@ -438,6 +438,8 @@
       "manage-col-actions": "",
       "manage-delete": "Delete",
       "manage-delete-selected": "Delete selected",
+      "manage-select-all-aria": "Select all indexed results on this page",
+      "manage-select-row-aria": "Select this indexed result",
       "manage-empty": "No indexed results.",
       "manage-prev": "Previous",
       "manage-next": "Next",

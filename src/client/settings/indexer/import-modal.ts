@@ -153,44 +153,43 @@ export const openImportModal = async (onDone: () => void): Promise<void> => {
   };
   closeBtn?.addEventListener("click", close, { once: true });
 
-  saveEl.addEventListener(
-    "click",
-    async () => {
-      const sel = bodyEl.querySelector<HTMLSelectElement>("#indexer-import-type");
-      const customEl = bodyEl.querySelector<HTMLInputElement>("#indexer-import-custom-type");
-      const fileEl = bodyEl.querySelector<HTMLInputElement>("#indexer-import-file");
-      const type = sel?.value === IMPORT_CUSTOM_TYPE ? customEl?.value.trim() : sel?.value.trim();
-      const file = fileEl?.files?.[0];
-      if (!type || !file) {
-        statusEl.textContent = tr("import-missing");
+  const onSave = async (): Promise<void> => {
+    const sel = bodyEl.querySelector<HTMLSelectElement>("#indexer-import-type");
+    const customEl = bodyEl.querySelector<HTMLInputElement>("#indexer-import-custom-type");
+    const fileEl = bodyEl.querySelector<HTMLInputElement>("#indexer-import-file");
+    const type = sel?.value === IMPORT_CUSTOM_TYPE ? customEl?.value.trim() : sel?.value.trim();
+    const file = fileEl?.files?.[0];
+    if (!type || !file) {
+      statusEl.textContent = tr("import-missing");
+      return;
+    }
+    saveEl.disabled = true;
+    saveEl.hidden = true;
+
+    try {
+      const data = await runImport(type, file, bodyEl, statusEl);
+      if (!data) {
+        saveEl.disabled = false;
+        saveEl.hidden = false;
         return;
       }
-      saveEl.disabled = true;
-      saveEl.hidden = true;
+      statusEl.textContent = tr("import-done", {
+        type,
+        urls: String(data.urls ?? 0),
+        hits: String(data.hits ?? 0),
+      });
+      onDone();
+      saveEl.removeEventListener("click", onSave);
+      saveEl.textContent = tr("import-close");
+      saveEl.disabled = false;
+      saveEl.hidden = false;
+      saveEl.addEventListener("click", close, { once: true });
+    } catch {
+      statusEl.textContent = "Import failed";
+      saveEl.disabled = false;
+      saveEl.hidden = false;
+    }
+  };
 
-      try {
-        const data = await runImport(type, file, bodyEl, statusEl);
-        if (!data) {
-          saveEl.disabled = false;
-          saveEl.hidden = false;
-          return;
-        }
-        statusEl.textContent = tr("import-done", {
-          type,
-          urls: String(data.urls ?? 0),
-          hits: String(data.hits ?? 0),
-        });
-        onDone();
-        saveEl.textContent = tr("import-close");
-        saveEl.disabled = false;
-        saveEl.hidden = false;
-        saveEl.addEventListener("click", close, { once: true });
-      } catch {
-        statusEl.textContent = "Import failed";
-        saveEl.disabled = false;
-        saveEl.hidden = false;
-      }
-    },
-    { once: true },
-  );
+  saveEl.addEventListener("click", onSave);
 };

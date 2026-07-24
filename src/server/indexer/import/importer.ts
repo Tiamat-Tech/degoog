@@ -63,7 +63,7 @@ const readSqliteRows = (path: string, type: string): ExportRow[] => {
     return rows;
   } catch (err) {
     logger.warn("indexer", "importer: failed to read rows from uploaded db", err);
-    return [];
+    throw new Error("Failed to read import file");
   } finally {
     sourceDb.close();
   }
@@ -76,7 +76,7 @@ const readSqlRows = (path: string, type: string): ExportRow[] => {
     return rows;
   } catch (err) {
     logger.warn("indexer", "importer: failed to read rows from uploaded sql", err);
-    return [];
+    throw new Error("Failed to read import file");
   }
 };
 
