@@ -20,17 +20,22 @@ const hasDegoog = (list: { id: string }[]): boolean =>
   list.some((e) => e.id === DEGOOG);
 
 let enginesRestore: string | undefined;
+let searxRestore: string | undefined;
 
 describe("indexer engine selection", () => {
   beforeAll(async () => {
     enginesRestore = process.env.DEGOOG_ENGINES_DIR;
+    searxRestore = process.env.DEGOOG_SEARX_ENGINES_DIR;
     process.env.DEGOOG_ENGINES_DIR = "/nonexistent-dir-for-indexer-tests";
+    process.env.DEGOOG_SEARX_ENGINES_DIR = "/nonexistent-dir-for-indexer-tests";
     await initEngines(true);
   });
 
   afterAll(() => {
     if (enginesRestore !== undefined) process.env.DEGOOG_ENGINES_DIR = enginesRestore;
     else delete process.env.DEGOOG_ENGINES_DIR;
+    if (searxRestore !== undefined) process.env.DEGOOG_SEARX_ENGINES_DIR = searxRestore;
+    else delete process.env.DEGOOG_SEARX_ENGINES_DIR;
     rmSync(SHARED, { recursive: true, force: true });
   });
 

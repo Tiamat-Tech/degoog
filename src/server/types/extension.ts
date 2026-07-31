@@ -102,6 +102,7 @@ export interface ExtensionMeta {
   settingsSchema: SettingField[];
   settings: Record<string, SettingValue>;
   source?: "builtin" | "plugin";
+  compatibilityLayer?: string;
   extensionDocsAvailable?: boolean;
   defaultEnabled?: boolean;
   defaultFeedUrls?: string[];

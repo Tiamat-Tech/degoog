@@ -117,6 +117,9 @@ const _renderEngineCard = (
           escapeHtml(t("settings-page.extensions.status-needs-config")) +
           '"></span>'
         : "";
+  const searxBadge = engine.compatibilityLayer === "searx"
+    ? '<span class="degoog-badge degoog-badge--engine-type">searx</span>'
+    : "";
   const configureBtn =
     allowConfigure && engine.configurable
       ? `<button class="ext-card-configure btn btn--secondary degoog-btn degoog-btn--secondary" data-id="${escapeHtml(engine.id)}" type="button">${escapeHtml(t("settings-page.extensions.configure"))}</button>`
@@ -128,6 +131,7 @@ const _renderEngineCard = (
           <div class="ext-card-name-row">
             ${restartWarning}
             <label for="engine-toggle-${escapeHtml(engine.id)}" class="ext-card-name engine-toggle-label">${escapeHtml(engine.displayName)}</label>
+            ${searxBadge}
           </div>
           ${desc}
           ${extraTypesHtml}
