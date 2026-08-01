@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import os
 import sys
 
@@ -9,15 +10,9 @@ GROUPING_CATEGORY = "web"
 GENERAL_CATEGORY = "general"
 FALLBACK_TYPE = "web"
 FALLBACK_CATEGORY = "other"
+TRAITS_SUFFIX = ".traits.json"
 
 ENGINE_DEFAULTS = {
-    "wiki_netloc": "en.wikipedia.org",
-    "language": "en-US",
-    "language_all": False,
-    "lang_region": "en-US",
-    "brave_category": "search",
-    "google_play_category": "apps",
-    "ceid": "US:en",
     "play_categ": "apps",
 }
 
@@ -36,13 +31,22 @@ def _import(path, name):
     return mod
 
 
-def _adopt(mod):
+def _traits(path):
+    found = os.path.splitext(path)[0] + TRAITS_SUFFIX
+    try:
+        with open(found, "r", encoding="utf-8") as handle:
+            return EngineTraits(json.load(handle))
+    except (OSError, ValueError):
+        return EngineTraits()
+
+
+def _adopt(mod, path):
     if not hasattr(mod, "logger"):
         setattr(mod, "logger", Logger())
     if not hasattr(mod, "CACHE"):
         setattr(mod, "CACHE", EngineCache())
     if not hasattr(mod, "traits"):
-        setattr(mod, "traits", EngineTraits())
+        setattr(mod, "traits", _traits(path))
     about = getattr(mod, "about", {})
     website = str(about.get("website", "")).rstrip("/") if isinstance(about, dict) else ""
     base = getattr(mod, "base_url", None)
@@ -94,7 +98,7 @@ def load(path):
     engines = sys.modules.get("searx.engines")
     if engines is not None:
         getattr(engines, "engines", {})[code_of(path)] = mod
-    _adopt(mod)
+    _adopt(mod, path)
     _setup(mod, name)
     return mod
 

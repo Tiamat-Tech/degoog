@@ -22,7 +22,7 @@ const withSearxEnv = async <T>(fn: (dir: string) => Promise<T>): Promise<T> => {
   process.env.DEGOOG_PLUGIN_SETTINGS_FILE = join(dir, "plugin-settings.json");
   process.env.DEGOOG_SERVER_SETTINGS_FILE = join(dir, "server-settings.json");
   delete process.env.DEGOOG_SEARX_ENGINES_DIR;
-  process.env.DEGOOG_SEARX_EXTRA_ENGINES = "tiny,statics,pager";
+  process.env.DEGOOG_SEARX_EXTRA_ENGINES = "tiny,statics,pager,traits";
   mkdirSync(process.env.DEGOOG_ENGINES_DIR, { recursive: true });
   mkdirSync(process.env.DEGOOG_TRANSPORTS_DIR, { recursive: true });
   mkdirSync(join(dir, "searx", "engines"), { recursive: true });
@@ -128,6 +128,32 @@ def response(resp):
     return [{"url": "https://cache.example/a", "title": "hit", "content": "c"}]
 `;
 
+const TRAITS_ENGINE = `about = {"website": "https://traits.example"}
+base_url = "https://traits.example"
+categories = ["general"]
+paging = False
+
+def request(query, params):
+    lang = traits.get_language(params["searxng_locale"], "lang_en")
+    region = traits.get_region(params["searxng_locale"], traits.all_locale)
+    host = traits.custom["supported_domains"].get(str(region).upper(), "fallback.example")
+    params["url"] = base_url + "/?lang=" + str(lang) + "&region=" + str(region) + "&host=" + host
+
+def response(resp):
+    return [{"url": "https://traits.example/a", "title": "hit", "content": "c"}]
+`;
+
+const TRAITS_FILE = JSON.stringify({
+  languages: { de: "lang_de" },
+  regions: { "de-DE": "DE" },
+  all_locale: "ZZ",
+  custom: { supported_domains: { DE: "www.example.de", ZZ: "www.example.com" } },
+});
+
+const writeTraits = (dir: string, name: string, body: string): void => {
+  writeFileSync(join(dir, "searx", "engines", `${name}.traits.json`), body);
+};
+
 const okFetch = async (): Promise<Response> =>
   new Response("<html></html>", { status: 200 });
 
@@ -206,6 +232,28 @@ describe("SearX engine parity with native engines", () => {
       await engine.executeSearch("q", 1, "any", { fetch: capture });
       expect(seen[0]).toContain("id=abc&n=1");
       expect(seen[1]).toBe(seen[0]);
+    });
+  });
+
+  test("engine traits are loaded from the sidecar traits file", async () => {
+    await withSearxEnv(async (dir) => {
+      writeEngine(dir, "traits", TRAITS_ENGINE);
+      writeTraits(dir, "traits", TRAITS_FILE);
+      const { initEngines, getEngineMap } = await import(
+        "../../src/server/extensions/engines/registry"
+      );
+      await initEngines(true);
+      let seen = "";
+      await getEngineMap()["searx-traits-engine"].executeSearch("q", 1, "any", {
+        lang: "de-DE",
+        fetch: async (url: string) => {
+          seen = url;
+          return new Response("<html></html>", { status: 200 });
+        },
+      });
+      expect(seen).toBe(
+        "https://traits.example/?lang=lang_de&region=DE&host=www.example.de",
+      );
     });
   });
 

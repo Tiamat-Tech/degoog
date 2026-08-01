@@ -4,7 +4,20 @@ import { PythonLib } from "./python-deps";
 export const SEARX_SOURCE_BASE_URL =
   "https://raw.githubusercontent.com/searxng/searxng/master/searx/engines";
 
+export const SEARX_TRAITS_URL =
+  "https://raw.githubusercontent.com/searxng/searxng/master/searx/data/engine_traits.json";
+
 const { Babel, DateUtil, Lxml } = PythonLib;
+
+/**
+ * @fccview here - Hey! You thought it was magic? Well kinda.
+ * However there's a big ass list of engines painfully manually tested and curated by yours truly.
+ * 
+ * The biggest effort was made by the incredible SearxNG team however, I do not manintain these, nor I ever will, I just found a clever
+ * way to route them within degoog to give my users the best experience possible.
+ * 
+ * Big up to open source my friends <3 
+ */
 
 export const SEARX_CATALOG: readonly SearxCatalogEntry[] = [
   { code: "360search_videos", name: "360Search Videos", types: ["videos"], site: "https://tv.360kan.com" },

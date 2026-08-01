@@ -4,6 +4,7 @@ from .runtime import set_agent
 
 ANY_TIME_FILTER = (None, "any")
 URL_SCHEMES = ("http://", "https://")
+DEFAULT_TRANSLATE = ("English", "en", "english")
 
 
 def _agent_from(payload):
@@ -23,13 +24,10 @@ def _params(payload):
         "category": payload.get("category") or "general",
         "engine_data": {},
         "data": {},
-        "from_lang": "en",
-        "to_lang": "en",
+        "from_lang": list(DEFAULT_TRANSLATE),
+        "to_lang": list(DEFAULT_TRANSLATE),
         "from": "USD",
         "to": "USD",
-        "lang_region": "en-US",
-        "language_all": False,
-        "wiki_netloc": "en.wikipedia.org",
         "search_urls": {
             "data:image": "",
             "http": query if str(query).startswith(URL_SCHEMES) else "",
@@ -37,6 +35,10 @@ def _params(payload):
         "headers": dict(payload.get("headers") or {}),
         "cookies": {},
     }
+
+
+def _sent(mapping):
+    return {str(key): str(value) for key, value in (mapping or {}).items() if value is not None}
 
 
 def _echo_params(payload):
@@ -60,8 +62,8 @@ def build_request(payload):
     return {
         "url": params.get("url"),
         "method": params.get("method") or "GET",
-        "headers": params.get("headers") or {},
-        "cookies": params.get("cookies") or {},
+        "headers": _sent(params.get("headers")),
+        "cookies": _sent(params.get("cookies")),
         "data": data,
     }
 

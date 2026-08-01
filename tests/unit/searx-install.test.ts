@@ -32,7 +32,9 @@ const withEnginesDir = async <T>(fn: (dir: string) => Promise<T>): Promise<T> =>
 const stubFetch = (body: string, status = 200): string[] => {
   const calls: string[] = [];
   globalThis.fetch = (async (input: RequestInfo | URL) => {
-    calls.push(String(input));
+    const url = String(input);
+    if (url.endsWith("/engine_traits.json")) return Response.json({});
+    calls.push(url);
     return new Response(body, { status });
   }) as typeof fetch;
   return calls;

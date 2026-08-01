@@ -113,33 +113,42 @@ class EngineCache:
 
 class TraitCustom(dict):
     def __missing__(self, key):
-        if key == "supported_domains":
-            value = {"US": "www.google.com", "GB": "www.google.co.uk"}
-        elif key == "ui_lang":
-            value = {"en-US": "en-us", "en-GB": "en-gb", "en": "en-us"}
-        elif key == "ceid":
-            value = {"en-US": "US:en", "en-GB": "GB:en", "en": "US:en"}
-        else:
-            value = {}
-        self[key] = value
-        return value
+        self[key] = {}
+        return self[key]
+
+
+def match_locale(table, locale, default=None):
+    if not isinstance(table, dict) or not table or not locale:
+        return default
+    key = str(locale).replace("_", "-")
+    exact = table.get(key)
+    if exact is not None:
+        return exact
+    lang, _, region = key.partition("-")
+    by_lang = table.get(lang)
+    if by_lang is not None:
+        return by_lang
+    for known in sorted(table):
+        if region and known.rpartition("-")[2].upper() == region.upper():
+            return table[known]
+    return default
 
 
 class EngineTraits:
-    def __init__(self):
-        self.languages = {"en": "lang_en"}
-        self.regions = {"en-US": "US", "en-GB": "GB"}
-        self.all_locale = "US"
-        self.custom = TraitCustom({"supported_domains": {"US": "www.google.com", "GB": "www.google.co.uk"}})
+    def __init__(self, data=None):
+        found = data if isinstance(data, dict) else {}
+        self.languages = found.get("languages") or {}
+        self.regions = found.get("regions") or {}
+        self.all_locale = found.get("all_locale")
+        self.custom = TraitCustom(found.get("custom") or {})
 
     def get_language(self, locale, default=None):
-        if not locale or locale == "all":
-            return default or "lang_en"
-        key = str(locale).replace("_", "-")
-        return self.languages.get(key) or self.languages.get(key.split("-")[0]) or default or "lang_en"
+        return self._pick(self.languages, locale, default)
 
     def get_region(self, locale, default=None):
+        return self._pick(self.regions, locale, default)
+
+    def _pick(self, table, locale, default):
         if not locale or locale == "all":
-            return default or self.all_locale
-        key = str(locale).replace("_", "-")
-        return self.regions.get(key) or key.split("-")[-1].upper() or default or self.all_locale
+            return self.all_locale if self.all_locale is not None else default
+        return match_locale(table, locale, default)

@@ -6,6 +6,7 @@ import { logger } from "../../../utils/logger";
 import {
   SEARX_CATALOG,
   SEARX_SOURCE_BASE_URL,
+  SEARX_TRAITS_URL,
   catalogDeps,
   catalogEntry,
   dependants,
@@ -19,6 +20,8 @@ import { LIB_PACKAGES, missingPythonLibs, type PythonLib } from "./python-deps";
 const NS = "searx-install";
 const PYCACHE_DIR = "__pycache__";
 const DOWNLOAD_TIMEOUT_MS = 20_000;
+const TRAITS_SUFFIX = ".traits.json";
+const SHORTEST_ALIAS = 4;
 
 let _queue: Promise<unknown> = Promise.resolve();
 
@@ -61,18 +64,69 @@ const _download = async (code: string): Promise<string> => {
 const _missingDeps = (code: string): string[] =>
   catalogDeps(code).filter((dep) => !_isInstalled(dep));
 
-const _fetchFile = async (code: string, dir: string): Promise<void> => {
-  const target = _enginePath(code);
+const _writeSwap = async (target: string, body: string): Promise<void> => {
   const tmp = `${target}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`;
   try {
-    const source = await _download(code);
-    await mkdir(dir, { recursive: true });
-    await writeFile(tmp, source, "utf-8");
+    await mkdir(resolve(searxEnginesDir()), { recursive: true });
+    await writeFile(tmp, body, "utf-8");
     await rename(tmp, target);
-    await _dropCache(code);
   } catch (err) {
     await unlink(tmp).catch(() => undefined);
     throw err;
+  }
+};
+
+const _fetchFile = async (code: string, dir: string): Promise<void> => {
+  const source = await _download(code);
+  await mkdir(dir, { recursive: true });
+  await _writeSwap(_enginePath(code), source);
+  await _dropCache(code);
+};
+
+const _traitsPath = (code: string): string =>
+  join(resolve(searxEnginesDir()), `${code}${TRAITS_SUFFIX}`);
+
+const _slug = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const _traitsKey = (keys: readonly string[], code: string): string | undefined => {
+  const want = _slug(code);
+  const exact = keys.find((key) => _slug(key) === want);
+  if (exact) return exact;
+  const shorter = keys.find((key) => {
+    const other = _slug(key);
+    return other.length >= SHORTEST_ALIAS && want.startsWith(other);
+  });
+  if (shorter) return shorter;
+  return keys.find(
+    (key) => want.length >= SHORTEST_ALIAS && _slug(key).startsWith(want),
+  );
+};
+
+const _traitsBook = async (): Promise<Record<string, unknown>> => {
+  const resp = await fetch(SEARX_TRAITS_URL, {
+    signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
+  });
+  if (!resp.ok) throw new Error(`Traits download failed with HTTP ${resp.status}`);
+  const book: unknown = await resp.json();
+  if (!book || typeof book !== "object") throw new Error("Traits file was not an object");
+  return book as Record<string, unknown>;
+};
+
+const _saveTraits = async (code: string, book: Record<string, unknown>): Promise<void> => {
+  const key = _traitsKey(Object.keys(book), code);
+  const entry = key ? book[key] : undefined;
+  await _writeSwap(_traitsPath(code), JSON.stringify(entry ?? {}));
+};
+
+const _pullTraits = async (codes: readonly string[]): Promise<void> => {
+  if (codes.length === 0) return;
+  try {
+    const book = await _traitsBook();
+    for (const code of codes) await _saveTraits(code, book);
+    logger.debug(NS, `stored SearX traits for ${codes.join(", ")}`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.warn(NS, `could not fetch SearX engine traits: ${message}`);
   }
 };
 
@@ -113,6 +167,7 @@ const _pull = async (
   const dir = resolve(searxEnginesDir());
   try {
     for (const file of queue) await _fetchFile(file, dir);
+    await _pullTraits(queue);
     logger.info(NS, `${verb} SearX engine ${engine} (${queue.join(", ")})`);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -140,6 +195,7 @@ export const uninstallSearx = async (code: string): Promise<void> => {
   try {
     for (const file of queue) {
       await unlink(_enginePath(file));
+      await unlink(_traitsPath(file)).catch(() => undefined);
       await _dropCache(file);
     }
     logger.info(NS, `uninstalled SearX engine ${engine} (${queue.join(", ")})`);

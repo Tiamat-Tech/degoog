@@ -26,7 +26,7 @@ from .results import (
     Translations,
     WeatherAnswer,
 )
-from .runtime import EngineCache, EngineTraits, Logger, user_agent
+from .runtime import EngineCache, EngineTraits, Logger, match_locale, user_agent
 
 SETTINGS = {
     "general": {"debug": False},
@@ -144,11 +144,7 @@ def _locales():
         region_tag=lambda locale, *a, **k: str(locale).replace("_", "-"),
         get_official_locales=lambda country, languages=None, regional=True, *a, **k: [f"en-{country}"],
         LOCALE_BEST_MATCH={},
-        get_engine_locale=lambda locale, traits=None, default=None: (
-            (traits or {}).get(locale, default or locale or "en-US")
-            if isinstance(traits, dict)
-            else (default or locale or "en-US")
-        ),
+        get_engine_locale=lambda locale, traits=None, default=None: match_locale(traits, locale, default),
     )
 
 
