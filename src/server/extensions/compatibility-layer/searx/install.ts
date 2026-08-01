@@ -89,18 +89,32 @@ export const listSearxItems = async (): Promise<SearxCatalogItem[]> =>
     missingDeps: _missingDeps(entry.code),
   }));
 
-export const installSearx = async (code: string): Promise<void> => {
-  const engine = _known(code);
+const _pull = async (
+  engine: string,
+  queue: string[],
+  verb: string,
+): Promise<void> => {
   const dir = resolve(searxEnginesDir());
-  const queue = [..._missingDeps(engine), engine];
   try {
     for (const file of queue) await _fetchFile(file, dir);
-    logger.info(NS, `installed SearX engine ${engine} (${queue.join(", ")})`);
+    logger.info(NS, `${verb} SearX engine ${engine} (${queue.join(", ")})`);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    logger.warn(NS, `install of SearX engine ${engine} failed: ${message}`);
+    logger.warn(NS, `could not fetch SearX engine ${engine}: ${message}`);
     throw new Error(message);
   }
+};
+
+export const installSearx = async (code: string): Promise<void> => {
+  const engine = _known(code);
+  await _pull(engine, [..._missingDeps(engine), engine], "installed");
+};
+
+export const updateSearx = async (code: string): Promise<void> => {
+  const engine = _known(code);
+  if (!_isInstalled(engine))
+    throw new Error(`SearX engine "${engine}" is not installed`);
+  await _pull(engine, [...catalogDeps(engine), engine], "updated");
 };
 
 export const uninstallSearx = async (code: string): Promise<void> => {

@@ -59,6 +59,12 @@ const _depsBadge = (item: SearxCatalogItem): string => {
   return `<span class="degoog-badge degoog-badge--deps" title="${escapeHtml(item.missingDeps.join(", "))}">${escapeHtml(label)}</span>`;
 };
 
+const _updateBtn = (item: SearxCatalogItem): string => {
+  if (!item.installed) return "";
+  const label = t("settings-page.extensions.searx-update");
+  return `<button class="degoog-icon-btn degoog-icon-btn--padded searx-btn-update" type="button" data-code="${escapeHtml(item.code)}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}"><i class="fa-solid fa-arrows-rotate"></i></button>`;
+};
+
 const _card = (item: SearxCatalogItem): string => {
   const action = item.installed
     ? `<button class="btn btn--secondary degoog-btn degoog-btn--secondary searx-btn-uninstall" type="button" data-code="${escapeHtml(item.code)}">${escapeHtml(t("settings-page.extensions.searx-uninstall"))}</button>`
@@ -74,7 +80,7 @@ const _card = (item: SearxCatalogItem): string => {
         <div class="searx-card-name">${escapeHtml(item.name)}</div>
         ${meta}
       </div>
-      <div class="searx-card-actions">${installed}${action}</div>
+      <div class="searx-card-actions">${installed}${_updateBtn(item)}${action}</div>
     </div>`;
 };
 

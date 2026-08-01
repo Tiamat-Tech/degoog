@@ -4,6 +4,7 @@ import {
   installSearx,
   listSearxItems,
   uninstallSearx,
+  updateSearx,
   withSearxLock,
 } from "../extensions/compatibility-layer/searx/install";
 import { isSearxCompatOn } from "../extensions/compatibility-layer/searx";
@@ -56,6 +57,23 @@ router.post("/api/searx/install", async (c) => {
     return c.json({ ok: true });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Install failed";
+    return c.json({ error: message }, 400);
+  }
+});
+
+router.post("/api/searx/update", async (c) => {
+  const denied = await _guard(c);
+  if (denied) return denied;
+  const code = await _codeFrom(c);
+  if (!code) return c.json({ error: "Missing code" }, 400);
+  try {
+    await withSearxLock(async () => {
+      await updateSearx(code);
+      await _refresh(code);
+    });
+    return c.json({ ok: true });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Update failed";
     return c.json({ error: message }, 400);
   }
 });

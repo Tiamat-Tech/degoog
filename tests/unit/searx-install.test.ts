@@ -6,6 +6,7 @@ import {
   installSearx,
   listSearxItems,
   uninstallSearx,
+  updateSearx,
 } from "../../src/server/extensions/compatibility-layer/searx/install";
 import {
   SEARX_CATALOG,
@@ -148,10 +149,49 @@ describe("searx install layer", () => {
     });
   });
 
+  test("update re-pulls the engine source over the installed copy", async () => {
+    await withEnginesDir(async (dir) => {
+      writeFileSync(join(dir, "mojeek.py"), "stale");
+      const calls = stubFetch("fresh");
+      await updateSearx("mojeek");
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toContain("/mojeek.py");
+      expect(await Bun.file(join(dir, "mojeek.py")).text()).toBe("fresh");
+    });
+  });
+
+  test("update refreshes shared dependency files that are already there", async () => {
+    await withEnginesDir(async (dir) => {
+      stubFetch("def request(query, params):\n    return params\n");
+      await installSearx("google_cse");
+      const calls = stubFetch("fresher");
+      await updateSearx("google_cse");
+      expect(calls).toHaveLength(2);
+      expect(calls[0]).toContain("/google.py");
+      expect(await Bun.file(join(dir, "google.py")).text()).toBe("fresher");
+    });
+  });
+
+  test("update leaves the installed copy alone when the download fails", async () => {
+    await withEnginesDir(async (dir) => {
+      writeFileSync(join(dir, "mojeek.py"), "stale");
+      stubFetch("nope", 500);
+      await expect(updateSearx("mojeek")).rejects.toThrow("HTTP 500");
+      expect(await Bun.file(join(dir, "mojeek.py")).text()).toBe("stale");
+    });
+  });
+
+  test("update refuses engines that are not installed", async () => {
+    await withEnginesDir(async () => {
+      await expect(updateSearx("mojeek")).rejects.toThrow("not installed");
+    });
+  });
+
   test("rejects codes outside the catalogue", async () => {
     await withEnginesDir(async () => {
       await expect(installSearx("../../etc/passwd")).rejects.toThrow("Unknown SearX engine");
       await expect(uninstallSearx("not_an_engine")).rejects.toThrow("Unknown SearX engine");
+      await expect(updateSearx("not_an_engine")).rejects.toThrow("Unknown SearX engine");
     });
   });
 });

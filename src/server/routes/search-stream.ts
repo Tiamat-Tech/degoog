@@ -3,22 +3,16 @@ import {
   scoreResults,
   searchSingleEngine,
 } from "../search";
-import { selectActiveEngines, engineSettingsFingerprint } from "../search/engine-selection";
+import { selectActiveEngines } from "../search/engine-selection";
 import {
   EngineTiming,
-  SearchResponse,
   SearchResult,
   SearchType,
   TimeFilter,
 } from "../types";
-import * as cache from "../utils/cache";
 import { logger } from "../utils/logger";
 import { asBoolean, asString } from "../utils/plugin-settings";
-import {
-  _applyRateLimit,
-  cacheKey,
-  isValidQuery,
-} from "../utils/search";
+import { _applyRateLimit, isValidQuery } from "../utils/search";
 import { guardApiKey } from "../utils/api-key-guard";
 import { applyDomainRules } from "./search/_domain-rules";
 import { signResultThumbnails } from "../utils/proxy-sign";
@@ -46,68 +40,6 @@ router.get("/api/search/stream", async (c) => {
   const type = (overrides.searchType ?? searchType) as SearchType;
   const resolvedLang = overrides.lang ?? lang;
   const resolvedTime = (overrides.timeFilter ?? timeFilter) as TimeFilter;
-
-  const key = cacheKey(
-    query,
-    engines,
-    type,
-    page,
-    resolvedTime,
-    resolvedLang,
-    dateFrom,
-    dateTo,
-    imageFilter,
-    await engineSettingsFingerprint(type, engines),
-  );
-
-  const cached = await cache.get(key);
-  if (cached) {
-    const qShort = query.trim().slice(0, 80);
-    const enginesOn = Object.values(engines).filter(Boolean).length;
-    logger.debug(
-      "search-stream",
-      `cache hit q="${qShort}" type=${type} page=${page} enginesOn=${enginesOn} results=${cached.results.length} timings=${cached.engineTimings.length}`,
-    );
-    const liveResults = signResultThumbnails(
-      tagIndexRelation(await applyDomainRules(cached.results)),
-    );
-    const encoder = new TextEncoder();
-    const body = new ReadableStream({
-      start(controller) {
-        for (const et of cached.engineTimings) {
-          controller.enqueue(
-            encoder.encode(
-              `event: engine-result\ndata: ${JSON.stringify({
-                engine: et.name,
-                timing: et,
-                results: liveResults,
-                retry: false,
-                attempt: 0,
-              })}\n\n`,
-            ),
-          );
-        }
-        controller.enqueue(
-          encoder.encode(
-            `event: done\ndata: ${JSON.stringify({
-              totalTime: cached.totalTime,
-              engineTimings: cached.engineTimings,
-              relatedSearches: [],
-            })}\n\n`,
-          ),
-        );
-        controller.close();
-      },
-    });
-
-    return new Response(body, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
-    });
-  }
 
   const settings = await getInstanceSettings();
   const autoRetry = asBoolean(settings.streamingAutoRetry);
@@ -181,6 +113,7 @@ router.get("/api/search/stream", async (c) => {
               imageFilter,
               cancelController.signal,
               type,
+              { forceFresh: isRetry },
             );
             lastTiming = timing;
 
@@ -228,15 +161,6 @@ router.get("/api/search/stream", async (c) => {
         const totalTime = Math.round(performance.now() - start);
         const rawScoredResults = scoreResults(allRawResults);
 
-        const response: SearchResponse = {
-          results: rawScoredResults,
-          query,
-          totalTime,
-          type,
-          engineTimings: allTimings,
-          relatedSearches: [],
-        };
-
         const indexerSettings = await getInstanceSettings();
         const displayResults = await applyDomainRules(rawScoredResults);
         const indexBasis = await applyDomainRules(
@@ -256,18 +180,6 @@ router.get("/api/search/stream", async (c) => {
           indexBasis,
           filtersTag,
         );
-
-        const degoogTiming = allTimings.find((et) => et.name === DEGOOG_ENGINE_NAME);
-        const justIndexed = indexedUrls.length > 0 && degoogTiming?.resultCount === 0;
-
-        if (!cache.allEnginesFailed(response)) {
-          const ttl = justIndexed
-            ? cache.JUST_INDEXED_TTL_MS
-            : cache.someEnginesFailed(response)
-              ? cache.SHORT_TTL_MS
-              : undefined;
-          await cache.set(key, response, ttl);
-        }
 
         _send("done", {
           totalTime,

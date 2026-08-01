@@ -5,6 +5,7 @@ import type { SearxCatalogItem } from "../../types/searx-catalog";
 
 export enum SearxAction {
   Install = "install",
+  Update = "update",
   Uninstall = "uninstall",
 }
 
