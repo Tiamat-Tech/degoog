@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import {
   getEngineExtensionMeta,
   getEngineMap,
@@ -53,6 +54,9 @@ import { logger } from "../utils/logger";
 import type { SettingField } from "../types";
 
 const router = new Hono();
+
+const FALLBACK_UPLOAD_KB = 5 * 1024;
+const UPLOAD_BODY_LIMIT_BYTES = 25 * 1024 * 1024;
 
 const _allExtensionMeta = async (): Promise<ExtensionMeta[]> => {
   const coreT = await getCoreTranslator();
@@ -349,51 +353,56 @@ router.post("/api/extensions/:id/settings", async (c) => {
   return c.json({ ok: true });
 });
 
-router.post("/api/extensions/:id/upload", async (c) => {
-  const token = canBalrogPass(c);
-  if (!(await gandalf(token)))
-    return c.json({ error: "You shall not pass!" }, 401);
+router.post(
+  "/api/extensions/:id/upload",
+  bodyLimit({ maxSize: UPLOAD_BODY_LIMIT_BYTES }),
+  async (c) => {
+    const token = canBalrogPass(c);
+    if (!(await gandalf(token)))
+      return c.json({ error: "You shall not pass!" }, 401);
 
-  const id = c.req.param("id");
-  let form: FormData;
-  try {
-    form = await c.req.formData();
-  } catch {
-    return c.json({ error: "Invalid upload" }, 400);
-  }
+    const id = c.req.param("id");
+    let form: FormData;
+    try {
+      form = await c.req.formData();
+    } catch {
+      return c.json({ error: "Invalid upload" }, 400);
+    }
 
-  const key = form.get("key");
-  const file = form.get("file");
-  if (typeof key !== "string" || !(file instanceof File)) {
-    return c.json({ error: "Missing file or key" }, 400);
-  }
+    const key = form.get("key");
+    const file = form.get("file");
+    if (typeof key !== "string" || !(file instanceof File)) {
+      return c.json({ error: "Missing file or key" }, 400);
+    }
 
-  const ext = (await _allExtensionMeta()).find((e) => e.id === id);
-  if (!ext) return c.json({ error: "Extension not found" }, 404);
+    const ext = (await _allExtensionMeta()).find((e) => e.id === id);
+    if (!ext) return c.json({ error: "Extension not found" }, 404);
 
-  const field = _fileFieldByKey(ext.settingsSchema, key);
-  if (!field) return c.json({ error: "Unknown file field" }, 400);
+    const field = _fileFieldByKey(ext.settingsSchema, key);
+    if (!field) return c.json({ error: "Unknown file field" }, 400);
 
-  if (field.accept && !_matchesAccept(file, field.accept)) {
-    return c.json({ error: "File type not allowed" }, 400);
-  }
-  const sizeKb = file.size / 1024;
-  const maxKb = field.maxSizeKb ? Number(field.maxSizeKb) : 0;
-  const minKb = field.minSizeKb ? Number(field.minSizeKb) : 0;
-  if (maxKb > 0 && sizeKb > maxKb) {
-    return c.json({ error: `File exceeds ${maxKb} KB` }, 400);
-  }
-  if (minKb > 0 && sizeKb < minKb) {
-    return c.json({ error: `File smaller than ${minKb} KB` }, 400);
-  }
+    if (field.accept && !_matchesAccept(file, field.accept)) {
+      return c.json({ error: "File type not allowed" }, 400);
+    }
+    const sizeKb = file.size / 1024;
+    const configuredMax = field.maxSizeKb ? Number(field.maxSizeKb) : 0;
+    const maxKb = configuredMax > 0 ? configuredMax : FALLBACK_UPLOAD_KB;
+    const minKb = field.minSizeKb ? Number(field.minSizeKb) : 0;
+    if (sizeKb > maxKb) {
+      return c.json({ error: `File exceeds ${maxKb} KB` }, 400);
+    }
+    if (minKb > 0 && sizeKb < minKb) {
+      return c.json({ error: `File smaller than ${minKb} KB` }, 400);
+    }
 
-  const data = new Uint8Array(await file.arrayBuffer());
-  const saved = await savePluginUpload(id, file.name, data);
-  if (!saved) return c.json({ error: "Upload rejected" }, 400);
+    const data = new Uint8Array(await file.arrayBuffer());
+    const saved = await savePluginUpload(id, file.name, data);
+    if (!saved) return c.json({ error: "Upload rejected" }, 400);
 
-  logger.debug("uploads", `stored ${saved.name} for ${id} field=${key}`);
-  return c.json({ ok: true, path: saved.path });
-});
+    logger.debug("uploads", `stored ${saved.name} for ${id} field=${key}`);
+    return c.json({ ok: true, path: saved.path });
+  },
+);
 
 router.post("/api/extensions/transports/:name/test", async (c) => {
   const token = canBalrogPass(c);

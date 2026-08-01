@@ -13,10 +13,12 @@ import { logger } from "../../../utils/logger";
 import { getRandomUserAgent } from "../../../utils/user-agents";
 import { useCache } from "../../../utils/cache";
 import {
+  asBoolean,
   getSettings,
   mergeDefaults,
   type SettingValue,
 } from "../../../utils/plugin-settings";
+import { getInstanceSettings } from "../../../utils/server-settings";
 import { runPython, type RpcFetchReply, type RpcHandlers } from "./rpc";
 import { isSupportedEngine } from "./supported";
 import { isSupportFile } from "./catalog";
@@ -150,6 +152,15 @@ const _setCookies = (headers: Headers): Record<string, string> => {
   return out;
 };
 
+const _isWebUrl = (raw: string): boolean => {
+  try {
+    const { protocol } = new URL(raw);
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 const _toReply = async (resp: Response, fallbackUrl: string): Promise<RpcFetchReply> => ({
   url: resp.url || fallbackUrl,
   status: resp.status,
@@ -163,6 +174,10 @@ const _bridge = (engineId: string, context?: EngineContext): RpcHandlers => {
   const store = useCache<string>(`${CACHE_NAMESPACE}:${engineId}`, CACHE_TTL_MS);
   return {
     onFetch: async (req) => {
+      if (!_isWebUrl(req.url)) {
+        logger.warn(NS, `${engineId} blocked non-http request ${req.url}`);
+        throw new Error("only http(s) requests are allowed");
+      }
       const headers = { ..._browserHeaders(context), ...req.headers };
       const cookie = _cookieHeader(req.cookies);
       if (cookie && !Object.keys(headers).some((k) => k.toLowerCase() === "cookie")) {
@@ -175,6 +190,10 @@ const _bridge = (engineId: string, context?: EngineContext): RpcHandlers => {
         ...(req.method !== "GET" ? { method: req.method } : {}),
         ...(req.data ? { body: req.data } : {}),
       });
+      if (resp.url && !_isWebUrl(resp.url)) {
+        logger.warn(NS, `${engineId} blocked non-http redirect target ${resp.url}`);
+        throw new Error("only http(s) responses are allowed");
+      }
       return _toReply(resp, req.url);
     },
     onCache: async (req) => {
@@ -324,7 +343,14 @@ class SearxCompatEngine implements SearchEngine {
   }
 }
 
+export const isSearxCompatOn = async (): Promise<boolean> =>
+  asBoolean((await getInstanceSettings()).searxCompatEnabled);
+
 export const loadSearxCompatibilityEngines = async (): Promise<SearxCompatEntry[]> => {
+  if (!(await isSearxCompatOn())) {
+    logger.debug(NS, "SearX compatibility layer is off, skipping engine discovery");
+    return [];
+  }
   const dir = resolve(searxEnginesDir());
   let names: string[];
   try {

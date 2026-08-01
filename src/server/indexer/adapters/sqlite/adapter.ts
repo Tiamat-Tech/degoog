@@ -54,8 +54,10 @@ export class SqliteAdapter implements IndexerAdapter {
     db.exec("PRAGMA synchronous = NORMAL");
     db.exec("PRAGMA foreign_keys = ON");
     try {
-      for (const sql of SQLITE_SCHEMA_DDL) db.exec(sql);
-      this._migrateHits(db);
+      db.transaction(() => {
+        for (const sql of SQLITE_SCHEMA_DDL) db.exec(sql);
+        this._migrateHits(db);
+      })();
     } catch (err) {
       logger.error("indexer", `schema init failed for type=${key}`, err);
       throw err;
@@ -78,12 +80,15 @@ export class SqliteAdapter implements IndexerAdapter {
     const addColumn = (name: string, ddl: string): void => {
       if (!existing.has(name)) db.exec(`ALTER TABLE query_hits ADD COLUMN ${ddl}`);
     };
+    const needsBackfill = !existing.has("pos_sum");
     addColumn("pos_sum", "pos_sum INTEGER NOT NULL DEFAULT 9999");
     addColumn("sources_json", "sources_json TEXT");
     addColumn("filters_json", "filters_json TEXT");
     addColumn("meta_json", "meta_json TEXT");
 
-    db.exec("UPDATE query_hits SET pos_sum = best_position * hit_count");
+    if (needsBackfill) {
+      db.exec("UPDATE query_hits SET pos_sum = best_position * hit_count");
+    }
     db.exec(`PRAGMA user_version = ${HITS_SCHEMA_VERSION}`);
   }
 

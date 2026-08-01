@@ -8,6 +8,20 @@ export enum SearxAction {
   Uninstall = "uninstall",
 }
 
+export const searxOn = async (): Promise<boolean> => {
+  try {
+    const res = await fetch(`${getBase()}/api/settings/general`, {
+      headers: authHeaders(getStoredToken),
+    });
+    if (!res.ok) return false;
+    const data = (await res.json()) as { searxCompatEnabled?: boolean | string };
+    return data.searxCompatEnabled === true || data.searxCompatEnabled === "true";
+  } catch (err) {
+    console.warn("[settings] searx compatibility flag load failed", err);
+    return false;
+  }
+};
+
 export const fetchSearx = async (): Promise<SearxCatalogItem[]> => {
   const res = await fetch(`${getBase()}/api/searx/engines`, {
     headers: authHeaders(getStoredToken),

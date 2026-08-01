@@ -15,6 +15,7 @@ import { openTabOrderModal } from "../shared/tab-order-modal";
 import { extCardRestartWarning } from "../shared/ext-card";
 import { typeLabel } from "./type-label";
 import { openSearxModal } from "./searx-modal";
+import { searxOn } from "./searx-api";
 
 const t = window.scopedT("core");
 
@@ -169,6 +170,7 @@ export async function initEnginesTab(
     ...savedEnginesMap,
   };
 
+  const searxEnabled = allowConfigure && (await searxOn());
   const rawGroups = _groupByType(allExtensions.engines);
   const savedOrder = await getTabOrder();
   const groups = _sortGroups(rawGroups, savedOrder);
@@ -190,7 +192,9 @@ export async function initEnginesTab(
         ${resetBtn}
       </div>
     </section>`;
+  }
 
+  if (searxEnabled) {
     html += `<section class="settings-section ext-card degoog-panel degoog-panel--ext-card">
       <div class="setting-section-heading-wrapper">
         <h2 class="settings-section-heading">${escapeHtml(t("settings-page.extensions.searx-heading"))}<span class="degoog-badge degoog-badge--experimental">${escapeHtml(t("settings-page.extensions.searx-experimental"))}</span></h2>
@@ -249,9 +253,11 @@ export async function initEnginesTab(
         });
       });
 
-    document
-      .getElementById("open-searx-modal")
-      ?.addEventListener("click", () => void openSearxModal());
+    if (searxEnabled) {
+      document
+        .getElementById("open-searx-modal")
+        ?.addEventListener("click", () => void openSearxModal());
+    }
 
     document
       .getElementById("save-default-engines")

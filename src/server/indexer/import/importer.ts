@@ -1,5 +1,13 @@
 import { Database } from "bun:sqlite";
-import { writeFileSync, unlinkSync, readFileSync, openSync, readSync, closeSync } from "fs";
+import {
+  writeFileSync,
+  unlinkSync,
+  readFileSync,
+  openSync,
+  readSync,
+  closeSync,
+  statSync,
+} from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { randomBytes } from "crypto";
@@ -9,6 +17,7 @@ import { parseSqlDump } from "./sql-parser";
 import { logger } from "../../utils/logger";
 
 const BATCH_SIZE = 500;
+const MAX_SQL_DUMP_BYTES = 256 * 1024 * 1024;
 const SQLITE_MAGIC = "SQLite format 3\0";
 const OPTIONAL_HIT_COLUMNS = [
   "best_position",
@@ -121,6 +130,13 @@ const importSqlite = async (path: string, type: string): Promise<ImportResult> =
 };
 
 const readSqlRows = (path: string, type: string): ExportRow[] => {
+  const size = statSync(path).size;
+  if (size > MAX_SQL_DUMP_BYTES) {
+    logger.warn("indexer", `importer: sql dump rejected, ${size} bytes is too large`);
+    throw new Error(
+      `SQL dump is larger than ${Math.round(MAX_SQL_DUMP_BYTES / (1024 * 1024))} MB`,
+    );
+  }
   try {
     const rows = parseSqlDump(readFileSync(path, "utf8"));
     logger.info("indexer", `importer: read ${rows.length} sql rows for type=${type}`);

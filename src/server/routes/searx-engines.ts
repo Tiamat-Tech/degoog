@@ -4,13 +4,23 @@ import {
   installSearx,
   listSearxItems,
   uninstallSearx,
+  withSearxLock,
 } from "../extensions/compatibility-layer/searx/install";
+import { isSearxCompatOn } from "../extensions/compatibility-layer/searx";
 import { reloadEngines } from "../extensions/engines/registry";
 import { logger } from "../utils/logger";
 
 const NS = "searx-engines";
 
 const router = new Hono();
+
+const _guard = async (c: Context): Promise<Response | null> => {
+  if (!(await gandalf(canBalrogPass(c))))
+    return c.json({ error: "You shall not pass!" }, 401);
+  if (!(await isSearxCompatOn()))
+    return c.json({ error: "SearX compatibility layer is disabled" }, 404);
+  return null;
+};
 
 const _refresh = async (code: string): Promise<void> => {
   try {
@@ -28,19 +38,21 @@ const _codeFrom = async (c: Context): Promise<string> => {
 };
 
 router.get("/api/searx/engines", async (c) => {
-  if (!(await gandalf(canBalrogPass(c))))
-    return c.json({ error: "You shall not pass!" }, 401);
+  const denied = await _guard(c);
+  if (denied) return denied;
   return c.json({ engines: await listSearxItems() });
 });
 
 router.post("/api/searx/install", async (c) => {
-  if (!(await gandalf(canBalrogPass(c))))
-    return c.json({ error: "You shall not pass!" }, 401);
+  const denied = await _guard(c);
+  if (denied) return denied;
   const code = await _codeFrom(c);
   if (!code) return c.json({ error: "Missing code" }, 400);
   try {
-    await installSearx(code);
-    await _refresh(code);
+    await withSearxLock(async () => {
+      await installSearx(code);
+      await _refresh(code);
+    });
     return c.json({ ok: true });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Install failed";
@@ -49,13 +61,15 @@ router.post("/api/searx/install", async (c) => {
 });
 
 router.post("/api/searx/uninstall", async (c) => {
-  if (!(await gandalf(canBalrogPass(c))))
-    return c.json({ error: "You shall not pass!" }, 401);
+  const denied = await _guard(c);
+  if (denied) return denied;
   const code = await _codeFrom(c);
   if (!code) return c.json({ error: "Missing code" }, 400);
   try {
-    await uninstallSearx(code);
-    await _refresh(code);
+    await withSearxLock(async () => {
+      await uninstallSearx(code);
+      await _refresh(code);
+    });
     return c.json({ ok: true });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Uninstall failed";

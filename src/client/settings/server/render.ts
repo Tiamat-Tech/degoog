@@ -124,6 +124,18 @@ const _renderIndexerSection = (): string => `
     </fieldset>
   </section>`;
 
+const _renderSearxSection = (): string => `
+  <section class="settings-section ext-card degoog-panel degoog-panel--ext-card" id="settings-section-searx">
+    ${_h("settings-page.server.searx-heading", "fa-solid fa-flask")}
+    ${_desc("settings-page.server.searx-desc")}
+    <fieldset class="settings-fieldset">
+      ${_toggle("settings-searx-compat-enabled", "settings-page.server.searx-enable", { aria: "settings-page.server.searx-enable-aria" })}
+      ${_desc("settings-page.server.searx-enable-desc")}
+      ${_toggle("settings-searx-api-enabled", "settings-page.server.searx-api-enable", { aria: "settings-page.server.searx-api-enable-aria" })}
+      ${_desc("settings-page.server.searx-api-enable-desc")}
+    </fieldset>
+  </section>`;
+
 const _renderStreamingSection = (): string => `
   <section class="settings-section ext-card degoog-panel degoog-panel--ext-card" id="settings-section-streaming">
     ${_h("settings-page.server.streaming-heading", "fa-solid fa-arrow-down-1-9")}
@@ -325,6 +337,7 @@ export const renderServerContent = (): string =>
     _renderCacheSection(),
     _renderApiKeySection(),
     _renderIndexerSection(),
+    _renderSearxSection(),
     _renderStreamingSection(),
     _renderLanguagesSection(),
     _renderDomainBlockSection(),

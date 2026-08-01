@@ -65,12 +65,13 @@ const readCopyBlock = (
   lines: string[],
   startIdx: number,
   cols: string[],
-  sink: NamedRow[],
+  sink: NamedRow[] | null,
 ): number => {
   let i = startIdx;
   for (; i < lines.length; i++) {
     const line = lines[i];
     if (line === COPY_TERMINATOR) break;
+    if (!sink) continue;
     const cells = line.split("\t").map(unescapeCopy);
     sink.push(namedFrom(cols, cells));
   }
@@ -139,25 +140,88 @@ const splitTuples = (values: string): string[] => {
   return tuples;
 };
 
+const QUOTES: Record<string, boolean> = { "'": true, '"': true, "`": true };
+
+const skipQuoted = (sql: string, start: number, quote: string): number => {
+  let i = start + 1;
+  while (i < sql.length) {
+    if (sql[i] !== quote) {
+      i++;
+      continue;
+    }
+    if (sql[i + 1] === quote) {
+      i += 2;
+      continue;
+    }
+    return i + 1;
+  }
+  return i;
+};
+
+const skipComment = (sql: string, start: number): number => {
+  if (sql[start] === "-" && sql[start + 1] === "-") {
+    const end = sql.indexOf("\n", start);
+    return end === -1 ? sql.length : end;
+  }
+  if (sql[start] === "/" && sql[start + 1] === "*") {
+    const end = sql.indexOf("*/", start + 2);
+    return end === -1 ? sql.length : end + 2;
+  }
+  return start;
+};
+
+const splitStatements = (sql: string): string[] => {
+  const out: string[] = [];
+  let current = "";
+  let depth = 0;
+  let i = 0;
+  while (i < sql.length) {
+    const ch = sql[i];
+    if (QUOTES[ch]) {
+      const end = skipQuoted(sql, i, ch);
+      current += sql.slice(i, end);
+      i = end;
+      continue;
+    }
+    const afterComment = skipComment(sql, i);
+    if (afterComment !== i) {
+      current += " ";
+      i = afterComment;
+      continue;
+    }
+    i++;
+    if (ch === "(") depth++;
+    else if (ch === ")" && depth > 0) depth--;
+    else if (ch === ";" && depth === 0) {
+      out.push(current);
+      current = "";
+      continue;
+    }
+    current += ch;
+  }
+  out.push(current);
+  return out.filter((s) => s.trim());
+};
+
+const INSERT_RE = /^\s*INSERT\s+INTO\s+([^\s(]+)\s*(?:\(([^)]*)\))?\s*VALUES\s*([\s\S]+)$/i;
+
 const collectInserts = (
-  sql: string,
+  statements: string[],
   createCols: Map<string, string[]>,
   tables: ParsedTables,
 ): void => {
-  const insertRe =
-    /INSERT\s+INTO\s+([^\s(]+)\s*(\(([^)]*)\))?\s*VALUES\s*(.+?);\s*(?=INSERT|COPY|CREATE|$)/gis;
-  let match: RegExpExecArray | null;
-  while ((match = insertRe.exec(sql)) !== null) {
+  for (const statement of statements) {
+    const match = INSERT_RE.exec(statement);
+    if (!match) continue;
+
     const table = bareTable(match[1]);
     if (table !== URLS_TABLE && table !== HITS_TABLE) continue;
 
-    const cols = match[3]
-      ? splitColumns(match[3])
-      : createCols.get(table);
+    const cols = match[2] ? splitColumns(match[2]) : createCols.get(table);
     if (!cols || cols.length === 0) continue;
 
     const sink = table === URLS_TABLE ? tables.urls : tables.hits;
-    for (const tuple of splitTuples(match[4])) {
+    for (const tuple of splitTuples(match[3])) {
       sink.push(namedFrom(cols, tokenizeTuple(tuple)));
     }
   }
@@ -181,22 +245,31 @@ const readCreateCols = (sql: string): Map<string, string[]> => {
   return cols;
 };
 
+const COPY_RE = /^COPY\s+([^\s(]+)\s*\(([^)]*)\)\s+FROM\s+stdin/i;
+
+const sinkFor = (table: string, tables: ParsedTables): NamedRow[] | null => {
+  if (table === URLS_TABLE) return tables.urls;
+  if (table === HITS_TABLE) return tables.hits;
+  return null;
+};
+
 const parseDump = (sql: string): ParsedTables => {
   const tables: ParsedTables = { urls: [], hits: [] };
-  const createCols = readCreateCols(sql);
 
   const lines = sql.split(/\r?\n/);
-  const copyRe = /^COPY\s+([^\s(]+)\s*\(([^)]*)\)\s+FROM\s+stdin/i;
+  const rest: string[] = [];
   for (let i = 0; i < lines.length; i++) {
-    const copy = lines[i].match(copyRe);
-    if (!copy) continue;
-    const table = bareTable(copy[1]);
-    if (table !== URLS_TABLE && table !== HITS_TABLE) continue;
-    const sink = table === URLS_TABLE ? tables.urls : tables.hits;
+    const copy = lines[i].match(COPY_RE);
+    if (!copy) {
+      rest.push(lines[i]);
+      continue;
+    }
+    const sink = sinkFor(bareTable(copy[1]), tables);
     i = readCopyBlock(lines, i + 1, splitColumns(copy[2]), sink);
   }
 
-  collectInserts(sql, createCols, tables);
+  const statements = rest.join("\n");
+  collectInserts(splitStatements(statements), readCreateCols(statements), tables);
   return tables;
 };
 

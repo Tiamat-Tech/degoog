@@ -179,6 +179,8 @@ async function _loadServerSettings(
     setToggle("honeypot-css-check", data.honeypotCssCheck ?? "true");
     setVal("honeypot-ban-duration", data.honeypotBanDuration);
 
+    setToggle("searx-compat-enabled", data.searxCompatEnabled);
+    setToggle("searx-api-enabled", data.searxApiEnabled);
     setToggle("degoog-indexer-enabled", data.degoogIndexerEnabled);
     setIndexerNavVisible(
       data.degoogIndexerEnabled === true || data.degoogIndexerEnabled === "true",

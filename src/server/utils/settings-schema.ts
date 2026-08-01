@@ -58,6 +58,8 @@ export const SETTINGS_SCHEMA = {
   degoogIndexerDomainAllowlist: { kind: "lines",   default: "" },
   degoogIndexerDomainBlocklist: { kind: "lines",   default: "" },
   degoogIndexerWordBlocklist:   { kind: "lines",   default: "" },
+  searxCompatEnabled:           { kind: "boolean", default: false },
+  searxApiEnabled:              { kind: "boolean", default: false },
 } satisfies Record<string, SettingDef>;
 
 export type SettingKey = keyof typeof SETTINGS_SCHEMA;

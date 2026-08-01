@@ -185,9 +185,6 @@ export async function init(): Promise<void> {
       .getElementById("results-page")
       ?.classList.toggle("centered-mode", v ?? false);
   });
-  void idbGet<boolean>(HIDE_URL_PARAMS).then((v) => {
-    if (v !== null) state.hideUrlParams = v;
-  });
 
   document.body.addEventListener("click", (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>(".uuid-copy");
@@ -208,6 +205,9 @@ export async function init(): Promise<void> {
 
   const postMethodEnabled = await idbGet<boolean>(POST_METHOD_ENABLED);
   if (postMethodEnabled !== null) state.postMethodEnabled = postMethodEnabled;
+
+  const hideUrlParams = await idbGet<boolean>(HIDE_URL_PARAMS);
+  if (hideUrlParams !== null) state.hideUrlParams = hideUrlParams;
 
   const params = new URLSearchParams(window.location.search);
   const q = params.get("q");

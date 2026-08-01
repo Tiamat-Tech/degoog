@@ -38,6 +38,8 @@ export type ServerSettingsData = {
   honeypotCssCheck?: BoolSetting;
   honeypotBanDuration?: string;
   degoogIndexerEnabled?: BoolSetting;
+  searxCompatEnabled?: BoolSetting;
+  searxApiEnabled?: BoolSetting;
 };
 
 export type ButtonStateHandler = (

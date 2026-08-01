@@ -61,6 +61,31 @@ describe("parseSqlDump", () => {
     expect(parseSqlDump("not sql at all").length).toBe(0);
   });
 
+  test("keeps semicolons that live inside quoted values", () => {
+    const dump = `
+INSERT INTO urls (id, url_norm, url, title, snippet, first_seen, last_seen) VALUES
+  (1, 'example.com/a', 'https://example.com/a', 'Title; INSERT INTO urls VALUES', 'ends with; INSERT', 1000, 2000);
+INSERT INTO query_hits (id, query_norm, engine_type, url_id, first_seen, last_seen) VALUES
+  (1, 'q', 'web', 1, 1000, 2000);
+`;
+    const rows = parseSqlDump(dump);
+    expect(rows.length).toBe(1);
+    expect(rows[0].title).toBe("Title; INSERT INTO urls VALUES");
+    expect(rows[0].snippet).toBe("ends with; INSERT");
+  });
+
+  test("ignores inserts hidden in comments", () => {
+    const dump = `
+-- INSERT INTO urls (id, url_norm, url) VALUES (9, 'nope', 'https://nope');
+/* INSERT INTO urls (id, url_norm, url) VALUES (8, 'nope2', 'https://nope2'); */
+INSERT INTO urls (id, url_norm, url, first_seen, last_seen) VALUES (1, 'example.com/a', 'https://example.com/a', 1, 2);
+INSERT INTO query_hits (id, query_norm, engine_type, url_id, first_seen, last_seen) VALUES (1, 'q', 'web', 1, 1, 2);
+`;
+    const rows = parseSqlDump(dump);
+    expect(rows.length).toBe(1);
+    expect(rows[0].url_norm).toBe("example.com/a");
+  });
+
   test("skips hits with no matching url", () => {
     const dump = `INSERT INTO query_hits (id, query_norm, engine_type, url_id, first_seen, last_seen) VALUES (1, 'q', 'web', 999, 1, 2);`;
     expect(parseSqlDump(dump).length).toBe(0);

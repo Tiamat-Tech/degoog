@@ -31,6 +31,7 @@ import {
 } from "../utils/server-settings";
 import { writeSyncedDefaults } from "../utils/synced-settings";
 import { startQueue, stopQueue } from "../indexer/queue";
+import { reloadEngines } from "../extensions/engines/registry";
 import {
   SETTINGS_SCHEMA,
   coerceSetting,
@@ -216,6 +217,14 @@ router.get("/api/settings/general", async (c) => {
   return c.json(trimBigFields({ ...settings, ...indexerLists, ...domainLists }));
 });
 
+const _reloadSearx = async (): Promise<void> => {
+  try {
+    await reloadEngines();
+  } catch (err) {
+    logger.warn("settings", "engine reload after a searx toggle failed", err);
+  }
+};
+
 const _reconcileIndexerQueue = async (): Promise<void> => {
   const settings = await getInstanceSettings();
   if (asBoolean(settings.degoogIndexerEnabled)) startQueue();
@@ -229,10 +238,14 @@ router.post("/api/settings/general", async (c) => {
   if (!body) return c.json({ error: "Invalid JSON" }, 400);
   const existing = await getInstanceSettings();
   const updates = _applySchemaUpdates(body);
+  const searxWasOn = asBoolean(existing.searxCompatEnabled);
   await setInstanceSettings({ ...existing, ...updates });
   await _persistListFields(body);
   await syncBlocklist();
   await _reconcileIndexerQueue();
+  if ("searxCompatEnabled" in updates && asBoolean(updates.searxCompatEnabled) !== searxWasOn) {
+    await _reloadSearx();
+  }
   return c.json({ ok: true });
 });
 
@@ -256,6 +269,7 @@ router.post("/api/settings/field", async (c) => {
   }
   await syncBlocklist();
   if (key === "degoogIndexerEnabled") await _reconcileIndexerQueue();
+  if (key === "searxCompatEnabled") await _reloadSearx();
   return c.json({ ok: true });
 });
 

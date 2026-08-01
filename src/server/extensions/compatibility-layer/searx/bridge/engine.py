@@ -45,7 +45,7 @@ def _adopt(mod):
         setattr(mod, "traits", EngineTraits())
     about = getattr(mod, "about", {})
     website = str(about.get("website", "")).rstrip("/") if isinstance(about, dict) else ""
-    base = getattr(mod, "base_url", "__missing__")
+    base = getattr(mod, "base_url", None)
     if (base is None or base == []) and website:
         setattr(mod, "base_url", website)
     for key, value in ENGINE_DEFAULTS.items():

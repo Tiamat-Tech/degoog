@@ -1,4 +1,6 @@
+import hashlib
 import json
+from datetime import timedelta
 
 from . import rpc
 
@@ -22,6 +24,16 @@ def decode(stored):
         return json.loads(stored[len(CACHE_ENVELOPE):])
     except ValueError:
         return stored
+
+
+def ttl_seconds(expire):
+    if expire is None or isinstance(expire, bool):
+        return None
+    if isinstance(expire, timedelta):
+        return int(expire.total_seconds())
+    if isinstance(expire, (int, float)):
+        return int(expire)
+    return None
 
 
 def user_agent():
@@ -79,13 +91,21 @@ class EngineCache:
         if stored is None:
             return value
         try:
-            rpc.call({"rpc": "cache", "op": "set", "key": str(key), "value": stored, "ttl": expire})
+            rpc.call(
+                {
+                    "rpc": "cache",
+                    "op": "set",
+                    "key": str(key),
+                    "value": stored,
+                    "ttl": ttl_seconds(expire),
+                }
+            )
         except Exception:
             pass
         return value
 
     def secret_hash(self, value):
-        return str(abs(hash(str(value))))
+        return hashlib.sha256(str(value).encode("utf-8")).hexdigest()[:16]
 
     def delete(self, key):
         self._local.pop(key, None)

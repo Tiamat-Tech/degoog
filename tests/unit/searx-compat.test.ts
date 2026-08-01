@@ -27,7 +27,12 @@ const withSearxEnv = async <T>(fn: (dir: string) => Promise<T>): Promise<T> => {
   mkdirSync(process.env.DEGOOG_TRANSPORTS_DIR, { recursive: true });
   mkdirSync(join(dir, "searx", "engines"), { recursive: true });
   writeFileSync(process.env.DEGOOG_PLUGIN_SETTINGS_FILE, "{}");
-  writeFileSync(process.env.DEGOOG_SERVER_SETTINGS_FILE, JSON.stringify({ degoogIndexerEnabled: false }));
+  writeFileSync(
+    process.env.DEGOOG_SERVER_SETTINGS_FILE,
+    JSON.stringify({
+      settings: { degoogIndexerEnabled: false, searxCompatEnabled: true },
+    }),
+  );
   clearServerSettingsCache();
   clearTypeCache();
   try {

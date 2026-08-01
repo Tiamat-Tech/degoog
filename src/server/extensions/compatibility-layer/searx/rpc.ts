@@ -1,6 +1,8 @@
 import { logger } from "../../../utils/logger";
 
 const NS = "searx-compat";
+const RUNNER_TIMEOUT_MS = 60_000;
+const RUNNER_KILL_SIGNAL = "SIGKILL";
 
 export const RPC_KIND = {
   FETCH: "fetch",
@@ -75,20 +77,26 @@ const _handle = async (msg: RpcMessage, handlers: RpcHandlers): Promise<unknown>
   throw new Error(`unknown rpc "${String(msg.rpc)}"`);
 };
 
+interface RpcStdin {
+  write: (chunk: string) => unknown;
+  flush: () => unknown;
+}
+
 const _reply = (
-  stdin: { write: (chunk: string) => unknown },
+  stdin: RpcStdin,
   id: number | undefined,
   result: unknown,
   error?: string,
 ): void => {
   const payload = error ? { id, ok: false, error } : { id, ok: true, data: result };
   stdin.write(`${JSON.stringify(payload)}\n`);
+  stdin.flush();
 };
 
 const _serve = async (
   msg: RpcMessage,
   handlers: RpcHandlers,
-  stdin: { write: (chunk: string) => unknown },
+  stdin: RpcStdin,
 ): Promise<void> => {
   try {
     _reply(stdin, msg.id, await _handle(msg, handlers));
@@ -112,6 +120,8 @@ export const runPython = async <T>(
     stdin: "pipe",
     stdout: "pipe",
     stderr: "pipe",
+    timeout: RUNNER_TIMEOUT_MS,
+    killSignal: RUNNER_KILL_SIGNAL,
   });
   const stderrPromise = new Response(proc.stderr).text();
   let envelope: RpcEnvelope<T> | null = null;
@@ -141,7 +151,11 @@ export const runPython = async <T>(
       lastLine = tail;
       envelope = JSON.parse(tail) as RpcEnvelope<T>;
     }
+  } catch (err) {
+    proc.kill();
+    throw err;
   } finally {
+    if (!envelope) proc.kill();
     try {
       proc.stdin.end();
     } catch {

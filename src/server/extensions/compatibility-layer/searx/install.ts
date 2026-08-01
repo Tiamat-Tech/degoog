@@ -1,5 +1,6 @@
 import { mkdir, readdir, rename, unlink, writeFile } from "fs/promises";
 import { existsSync } from "fs";
+import { randomBytes } from "crypto";
 import { join, resolve } from "path";
 import { logger } from "../../../utils/logger";
 import {
@@ -16,6 +17,14 @@ import { searxEnginesDir } from "./paths";
 const NS = "searx-install";
 const PYCACHE_DIR = "__pycache__";
 const DOWNLOAD_TIMEOUT_MS = 20_000;
+
+let _queue: Promise<unknown> = Promise.resolve();
+
+export const withSearxLock = <T>(task: () => Promise<T>): Promise<T> => {
+  const run = _queue.then(task, task);
+  _queue = run.catch(() => undefined);
+  return run;
+};
 
 const _enginePath = (code: string): string => join(resolve(searxEnginesDir()), `${code}.py`);
 
@@ -52,7 +61,7 @@ const _missingDeps = (code: string): string[] =>
 
 const _fetchFile = async (code: string, dir: string): Promise<void> => {
   const target = _enginePath(code);
-  const tmp = `${target}.${process.pid}.tmp`;
+  const tmp = `${target}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`;
   try {
     const source = await _download(code);
     await mkdir(dir, { recursive: true });
