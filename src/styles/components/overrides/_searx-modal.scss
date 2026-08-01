@@ -1,0 +1,125 @@
+.searx-modal {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.searx-note {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  margin: 0 0 $space-4;
+  padding: $space-3 $space-4;
+  border-radius: $radius-lg;
+  background: var(--bg);
+}
+
+.searx-note-intro {
+  margin: 0;
+  font-size: $font-size-small;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.searx-note-list {
+  margin: 0;
+  padding-left: $space-4;
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  font-size: $font-size-small;
+  line-height: 1.5;
+  color: var(--text-secondary);
+
+  li::marker {
+    color: $warning;
+  }
+}
+
+.searx-search-input {
+  width: 100%;
+  padding: $space-3;
+  border: 1px solid transparent;
+  box-shadow: $box-shadow;
+}
+
+.searx-status {
+  font-size: $font-size-small;
+  color: var(--text-secondary);
+
+  &:empty {
+    display: none;
+  }
+
+  &--error {
+    color: $danger;
+  }
+}
+
+.searx-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.searx-group-label {
+  margin: 0 0 $space-2;
+  font-size: $font-size-small;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.searx-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-2;
+
+  @media (min-width: 520px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.searx-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  background: var(--bg-hover);
+  border-radius: $radius-lg;
+  padding: $space-3 $space-4;
+}
+
+.searx-card-info {
+  min-width: 0;
+}
+
+.searx-card-name {
+  font-size: $font-size-base;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.searx-card-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $space-2;
+  font-size: $font-size-small;
+  color: var(--text-secondary);
+}
+
+.searx-card-actions {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex-shrink: 0;
+}
+
+.searx-empty {
+  margin: 0;
+  font-size: $font-size-small;
+  color: var(--text-secondary);
+}

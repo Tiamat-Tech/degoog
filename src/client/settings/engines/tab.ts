@@ -13,18 +13,20 @@ import { getTabOrder, applyTabOrder } from "../../utils/tab-order";
 import { getStoredToken } from "../../utils/settings-token";
 import { openTabOrderModal } from "../shared/tab-order-modal";
 import { extCardRestartWarning } from "../shared/ext-card";
+import { typeLabel } from "./type-label";
+import { openSearxModal } from "./searx-modal";
 
 const t = window.scopedT("core");
-const themeT = window.scopedT("themes/degoog");
 
 let _orderSavedHandler: (() => void) | null = null;
 
-const _typeLabel = (type: string): string => {
-  const translated = themeT(`search-templates.tabs.${type}`);
-  return translated !== `search-templates.tabs.${type}`
-    ? translated
-    : type.charAt(0).toUpperCase() + type.slice(1);
-};
+const SEARX_NOTES = [
+  "settings-page.extensions.searx-note-native",
+  "settings-page.extensions.searx-note-upstream",
+  "settings-page.extensions.searx-note-filters",
+  "settings-page.extensions.searx-note-shared",
+];
+
 
 const _engineTypes = (engine: ExtensionMeta): string[] => {
   if (engine.searchTypes?.length) return engine.searchTypes;
@@ -49,7 +51,7 @@ const _groupByType = (engines: ExtensionMeta[]): GroupEntry[] => {
     })
     .map((key) => ({
       key,
-      label: _typeLabel(key),
+      label: typeLabel(key),
       engines: map.get(key) ?? [],
     }));
 };
@@ -62,7 +64,7 @@ const _allTypeEntries = (engines: ExtensionMeta[]): TypeEntry[] => {
       const key = type.toLowerCase();
       if (!seen.has(key)) {
         seen.add(key);
-        result.push({ key, label: _typeLabel(key) });
+        result.push({ key, label: typeLabel(key) });
       }
     }
   }
@@ -85,7 +87,7 @@ const _extraTypeLabels = (engine: ExtensionMeta): string[] => {
   const primary = _primaryType(types).toLowerCase();
   return types
     .filter((type) => type.toLowerCase() !== primary)
-    .map((type) => _typeLabel(type.toLowerCase()));
+    .map((type) => typeLabel(type.toLowerCase()));
 };
 
 const _renderEngineCard = (
@@ -188,6 +190,21 @@ export async function initEnginesTab(
         ${resetBtn}
       </div>
     </section>`;
+
+    html += `<section class="settings-section ext-card degoog-panel degoog-panel--ext-card">
+      <div class="setting-section-heading-wrapper">
+        <h2 class="settings-section-heading">${escapeHtml(t("settings-page.extensions.searx-heading"))}<span class="degoog-badge degoog-badge--experimental">${escapeHtml(t("settings-page.extensions.searx-experimental"))}</span></h2>
+        <div class="floating-section-icon"><i class="fa-solid fa-flask"></i></div>
+      </div>
+      <p class="settings-desc">${escapeHtml(t("settings-page.extensions.searx-desc"))}</p>
+      <div class="searx-note">
+        <p class="searx-note-intro">${escapeHtml(t("settings-page.extensions.searx-note"))}</p>
+        <ul class="searx-note-list">${SEARX_NOTES.map((key) => `<li>${escapeHtml(t(key))}</li>`).join("")}</ul>
+      </div>
+      <div class="settings-page-actions">
+        <button class="btn btn--secondary degoog-btn degoog-btn--secondary" id="open-searx-modal" type="button">${escapeHtml(t("settings-page.extensions.searx-open"))}</button>
+      </div>
+    </section>`;
   }
 
   for (const { label, engines } of groups) {
@@ -231,6 +248,10 @@ export async function initEnginesTab(
           if (ext) openModal(ext);
         });
       });
+
+    document
+      .getElementById("open-searx-modal")
+      ?.addEventListener("click", () => void openSearxModal());
 
     document
       .getElementById("save-default-engines")

@@ -1,13 +1,26 @@
 import { readdir } from "fs/promises";
 import { basename, join, resolve } from "path";
-import type { EngineContext, SearchResult, SearchEngine, TimeFilter } from "../../../types";
+import type {
+  EngineContext,
+  SearchResult,
+  SearchEngine,
+  SettingField,
+  TimeFilter,
+} from "../../../types";
 import type { EngineFilters } from "../../../../shared/engine-filters";
 import { makeExtID } from "../../../utils/extension-id";
 import { logger } from "../../../utils/logger";
 import { getRandomUserAgent } from "../../../utils/user-agents";
 import { useCache } from "../../../utils/cache";
+import {
+  getSettings,
+  mergeDefaults,
+  type SettingValue,
+} from "../../../utils/plugin-settings";
 import { runPython, type RpcFetchReply, type RpcHandlers } from "./rpc";
 import { isSupportedEngine } from "./supported";
+import { isSupportFile } from "./catalog";
+import { searxEnginesDir } from "./paths";
 
 export interface SearxCompatEntry {
   id: string;
@@ -25,8 +38,9 @@ interface DiscoverPayload {
   path: string;
   id: string;
   name: string;
-  description?: string;
   types: string[];
+  paging?: boolean;
+  timeRangeSupport?: boolean;
   offline?: boolean;
   error?: string;
 }
@@ -61,9 +75,44 @@ const CACHE_NAMESPACE = "searx-compat";
 const CACHE_TTL_MS = 60 * 60 * 1000;
 const NS = "searx-compat";
 
-const searxEnginesDir = (): string =>
-  process.env.DEGOOG_SEARX_ENGINES_DIR ??
-  join(process.env.DEGOOG_DATA_DIR ?? join(process.cwd(), "data"), "searx", "engines");
+export const SAFE_SEARCH_KEY = "safeSearch";
+
+export enum SafeSearch {
+  Off = "off",
+  Moderate = "moderate",
+  Strict = "strict",
+}
+
+const SAFE_SEARCH_LEVELS: Record<SafeSearch, number> = {
+  [SafeSearch.Off]: 0,
+  [SafeSearch.Moderate]: 1,
+  [SafeSearch.Strict]: 2,
+};
+
+const NSFW_TO_SAFE: Record<string, SafeSearch> = {
+  on: SafeSearch.Strict,
+  moderate: SafeSearch.Moderate,
+  off: SafeSearch.Off,
+};
+
+const GUARDED_TYPES = ["images", "videos"];
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const SEARX_TIME_RANGES = [
+  { range: "day", within: DAY_MS },
+  { range: "week", within: 7 * DAY_MS },
+  { range: "month", within: 31 * DAY_MS },
+  { range: "year", within: 366 * DAY_MS },
+] as const;
+
+const TIME_FILTER_MAP: Partial<Record<TimeFilter, string>> = {
+  hour: "day",
+  day: "day",
+  week: "week",
+  month: "month",
+  year: "year",
+};
 
 const _runPython = <T>(payload: Record<string, unknown>, handlers: RpcHandlers = {}): Promise<T> =>
   runPython<T>(runnerPath, payload, handlers);
@@ -138,26 +187,72 @@ const _bridge = (engineId: string, context?: EngineContext): RpcHandlers => {
   };
 };
 
-const _safesearch = (context?: EngineContext): number => {
+const _safesearch = (engineSafe: SafeSearch, context?: EngineContext): number => {
   const nsfw = context?.imageFilter?.nsfw;
-  if (nsfw === "on") return 2;
-  if (nsfw === "moderate") return 1;
-  return 0;
+  const resolved = (nsfw && NSFW_TO_SAFE[nsfw]) ?? engineSafe;
+  return SAFE_SEARCH_LEVELS[resolved] ?? SAFE_SEARCH_LEVELS[SafeSearch.Off];
 };
+
+const _rangeFromDates = (dateFrom?: string, dateTo?: string): string | null => {
+  const oldest = dateFrom || dateTo;
+  if (!oldest) return null;
+  const at = Date.parse(oldest);
+  if (Number.isNaN(at)) return null;
+  const elapsed = Date.now() - at;
+  const bucket = SEARX_TIME_RANGES.find((entry) => elapsed <= entry.within);
+  return bucket ? bucket.range : null;
+};
+
+const _timeRange = (
+  timeFilter: TimeFilter,
+  context?: EngineContext,
+): string | null => {
+  if (timeFilter === "custom") {
+    return _rangeFromDates(context?.dateFrom, context?.dateTo);
+  }
+  return TIME_FILTER_MAP[timeFilter] ?? null;
+};
+
+const _defaultSafe = (types: string[]): SafeSearch =>
+  types.some((type) => GUARDED_TYPES.includes(type.toLowerCase()))
+    ? SafeSearch.Moderate
+    : SafeSearch.Off;
 
 class SearxCompatEngine implements SearchEngine {
   name: string;
   bangShortcut: string;
-  needsAppRestart = true;
+  safeSearch: SafeSearch;
+  settingsSchema: SettingField[];
 
   constructor(
     private path: string,
     displayName: string,
     bangShortcut: string,
     private engineId: string,
+    private paging: boolean,
+    private timeRanges: boolean,
+    types: string[],
   ) {
     this.name = displayName;
     this.bangShortcut = bangShortcut;
+    this.safeSearch = _defaultSafe(types);
+    this.settingsSchema = [
+      {
+        key: SAFE_SEARCH_KEY,
+        label: "Safe Search",
+        type: "select",
+        options: Object.values(SafeSearch),
+        default: this.safeSearch,
+        description: "Filter explicit content from this engine's results.",
+      },
+    ];
+  }
+
+  configure(settings: Record<string, SettingValue>): void {
+    const stored = settings[SAFE_SEARCH_KEY];
+    if (typeof stored === "string" && stored in SAFE_SEARCH_LEVELS) {
+      this.safeSearch = stored as SafeSearch;
+    }
   }
 
   async executeSearch(
@@ -166,8 +261,11 @@ class SearxCompatEngine implements SearchEngine {
     timeFilter: TimeFilter = "any",
     context?: EngineContext,
   ): Promise<SearchResult[]> {
+    if (page > 1 && !this.paging) return [];
     const fetcher = context?.fetch ?? fetch;
     const bridge = _bridge(this.engineId, context);
+    const safesearch = _safesearch(this.safeSearch, context);
+    const timeRange = this.timeRanges ? _timeRange(timeFilter, context) : null;
     const req = await _runPython<RequestPayload>(
       {
         action: "request",
@@ -175,9 +273,9 @@ class SearxCompatEngine implements SearchEngine {
         name: this.name,
         query,
         page,
-        timeFilter,
+        timeFilter: timeRange,
         locale: context?.lang ?? "all",
-        safesearch: _safesearch(context),
+        safesearch,
         headers: _browserHeaders(context),
       },
       bridge,
@@ -207,9 +305,9 @@ class SearxCompatEngine implements SearchEngine {
         source: this.name,
         query,
         page,
-        timeFilter,
+        timeFilter: timeRange,
         locale: context?.lang ?? "all",
-        safesearch: _safesearch(context),
+        safesearch,
         headers: _browserHeaders(context),
         request: { ...req, url: req.url, headers },
         response: {
@@ -237,6 +335,7 @@ export const loadSearxCompatibilityEngines = async (): Promise<SearxCompatEntry[
   }
   const files = names
     .filter((name) => name.endsWith(".py") && !name.startsWith("__"))
+    .filter((name) => !isSupportFile(basename(name, ".py")))
     .sort((a, b) => a.localeCompare(b));
   if (files.length === 0) return [];
   const paths = files.map((file) => join(dir, file));
@@ -250,21 +349,37 @@ export const loadSearxCompatibilityEngines = async (): Promise<SearxCompatEntry[
   }
   const entries: SearxCompatEntry[] = [];
   const excluded: string[] = [];
+  const broken: string[] = [];
   for (const meta of discovered) {
     const file = basename(meta.path ?? "", ".py");
     const code = meta.id || file;
-    if (meta.error || meta.offline || !isSupportedEngine(code)) {
+    if (meta.error) {
+      broken.push(`${code} (${meta.error})`);
+      continue;
+    }
+    if (meta.offline || !isSupportedEngine(code)) {
       excluded.push(code);
       continue;
     }
     const rawId = code;
     const id = _safeId(rawId);
+    const types = meta.types?.length ? meta.types : ["web"];
+    const instance = new SearxCompatEngine(
+      meta.path,
+      meta.name || file,
+      rawId,
+      id,
+      meta.paging === true,
+      meta.timeRangeSupport === true,
+      types,
+    );
+    const stored = await getSettings(id);
+    instance.configure(mergeDefaults(stored, instance.settingsSchema));
     entries.push({
       id,
       displayName: meta.name || file,
-      searchTypes: meta.types?.length ? meta.types : ["web"],
-      description: meta.description,
-      instance: new SearxCompatEngine(meta.path, meta.name || file, rawId, id),
+      searchTypes: types,
+      instance,
       source: "plugin",
       compatibilityLayer: "searx",
     });
@@ -272,6 +387,9 @@ export const loadSearxCompatibilityEngines = async (): Promise<SearxCompatEntry[
   logger.info(NS, `SearX compatibility layer imported - ${entries.length} engine(s) available`);
   if (excluded.length > 0) {
     logger.info(NS, `known excluded engines (${excluded.length}): ${excluded.sort().join(", ")}`);
+  }
+  if (broken.length > 0) {
+    logger.warn(NS, `engines that failed to load (${broken.length}): ${broken.sort().join(", ")}`);
   }
   return entries;
 };
