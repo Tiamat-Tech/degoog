@@ -20,8 +20,8 @@ import {
 } from "../../../utils/plugin-settings";
 import { getInstanceSettings } from "../../../utils/server-settings";
 import { runPython, type RpcFetchReply, type RpcHandlers } from "./rpc";
-import { isSupportedEngine } from "./supported";
-import { isSupportFile } from "./catalog";
+import { isSupportFile, isSupportedEngine } from "./catalog";
+import { LIB_PACKAGES, missingPythonLibs } from "./python-deps";
 import { searxEnginesDir } from "./paths";
 
 export interface SearxCompatEntry {
@@ -343,6 +343,16 @@ class SearxCompatEngine implements SearchEngine {
   }
 }
 
+const _pythonHint = async (): Promise<void> => {
+  const missing = await missingPythonLibs();
+  if (missing.length === 0) return;
+  const packages = missing.map((lib) => LIB_PACKAGES[lib]);
+  logger.warn(
+    NS,
+    `missing python libs (${packages.join(", ")}), install them with "pip install ${packages.join(" ")}" and restart`,
+  );
+};
+
 export const isSearxCompatOn = async (): Promise<boolean> =>
   asBoolean((await getInstanceSettings()).searxCompatEnabled);
 
@@ -416,6 +426,7 @@ export const loadSearxCompatibilityEngines = async (): Promise<SearxCompatEntry[
   }
   if (broken.length > 0) {
     logger.warn(NS, `engines that failed to load (${broken.length}): ${broken.sort().join(", ")}`);
+    await _pythonHint();
   }
   return entries;
 };

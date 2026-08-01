@@ -1,7 +1,12 @@
 import { openCustomModal } from "../../modules/modals/settings-modal/modal";
 import { confirmModal } from "../../modules/modals/confirm-modal/confirm";
 import { SearxAction, fetchSearx, sendSearx } from "./searx-api";
-import { searxFilter, searxListHtml, searxShellHtml } from "./searx-render";
+import {
+  searxFilter,
+  searxListHtml,
+  searxPackages,
+  searxShellHtml,
+} from "./searx-render";
 import type { SearxCatalogItem } from "../../types/searx-catalog";
 
 const t = window.scopedT("core");
@@ -29,15 +34,40 @@ const _paint = (items: SearxCatalogItem[], query: string): void => {
   if (list) list.innerHTML = searxListHtml(searxFilter(items, query));
 };
 
+const _warnings = (item: SearxCatalogItem): string[] => {
+  const notes: string[] = [];
+  const packages = searxPackages(item);
+  if (item.missingDeps.length) {
+    notes.push(
+      t("settings-page.extensions.searx-deps-body", {
+        engine: item.name,
+        deps: item.missingDeps.join(", "),
+        count: String(item.missingDeps.length),
+      }),
+    );
+  }
+  if (packages.length) {
+    notes.push(
+      t("settings-page.extensions.searx-libs-body", {
+        engine: item.name,
+        packages: packages.join(" "),
+      }),
+    );
+  }
+  return notes;
+};
+
 const _depsOkay = async (item: SearxCatalogItem | undefined): Promise<boolean> => {
-  if (!item?.missingDeps.length) return true;
+  if (!item) return true;
+  const notes = _warnings(item);
+  if (!notes.length) return true;
   return confirmModal({
-    title: t("settings-page.extensions.searx-deps-title"),
-    message: t("settings-page.extensions.searx-deps-body", {
-      engine: item.name,
-      deps: item.missingDeps.join(", "),
-      count: String(item.missingDeps.length),
-    }),
+    title: t(
+      searxPackages(item).length
+        ? "settings-page.extensions.searx-libs-title"
+        : "settings-page.extensions.searx-deps-title",
+    ),
+    message: notes.join(" "),
   });
 };
 
@@ -48,6 +78,7 @@ export const openSearxModal = async (): Promise<void> => {
   openCustomModal({
     title: t("settings-page.extensions.searx-title"),
     body: searxShellHtml(),
+    wide: true,
   });
 
   const body = document.getElementById(MODAL_BODY_ID);

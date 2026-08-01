@@ -39,69 +39,95 @@ export const searxGroups = (items: SearxCatalogItem[]): SearxCatalogGroup[] => {
     }));
 };
 
-const _extraTypes = (item: SearxCatalogItem): string => {
+export const searxPackages = (item: SearxCatalogItem): string[] =>
+  item.libs.filter((lib) => lib.missing).map((lib) => lib.package);
+
+const _missingDot = (): string =>
+  `<span class="ext-needs-config-badge" data-tooltip="${escapeHtml(t("settings-page.extensions.searx-missing"))}" data-tooltip-below data-tooltip-end></span>`;
+
+const _metaRow = (
+  label: string,
+  value: string,
+  hint: string,
+  missing = false,
+): string => `
+  <span class="ext-card-desc"><strong class="searx-meta-key" data-tooltip="${escapeHtml(hint)}" data-tooltip-below data-tooltip-start>${escapeHtml(label)}</strong>: ${escapeHtml(value)}${missing ? _missingDot() : ""}</span>`;
+
+const _typesRow = (item: SearxCatalogItem): string => {
   const primary = (item.types[0] ?? WEB_TYPE).toLowerCase();
   const extras = item.types.filter((type) => type.toLowerCase() !== primary);
   if (!extras.length) return "";
-  return extras
-    .map(
-      (type) =>
-        `<span class="degoog-badge degoog-badge--engine-type">${escapeHtml(typeLabel(type.toLowerCase()))}</span>`,
-    )
-    .join("");
+  const labels = extras.map((type) => typeLabel(type.toLowerCase()));
+  return _metaRow(
+    t("settings-page.extensions.searx-types-label"),
+    labels.join(", "),
+    t("settings-page.extensions.searx-types-hint"),
+  );
 };
 
-const _depsBadge = (item: SearxCatalogItem): string => {
-  if (item.installed || !item.missingDeps.length) return "";
-  const label = t("settings-page.extensions.searx-deps-badge", {
-    count: String(item.missingDeps.length),
-  });
-  return `<span class="degoog-badge degoog-badge--deps" title="${escapeHtml(item.missingDeps.join(", "))}">${escapeHtml(label)}</span>`;
+const _libsRow = (item: SearxCatalogItem): string => {
+  if (!item.libs.length) return "";
+  return _metaRow(
+    t("settings-page.extensions.searx-libs-label"),
+    item.libs.map((lib) => lib.module).join(", "),
+    t("settings-page.extensions.searx-libs-hint"),
+    searxPackages(item).length > 0,
+  );
+};
+
+const _sharedRow = (item: SearxCatalogItem): string => {
+  const deps = item.deps ?? [];
+  if (!deps.length) return "";
+  return _metaRow(
+    t("settings-page.extensions.searx-shared-label"),
+    deps.join(", "),
+    t("settings-page.extensions.searx-shared-hint"),
+  );
 };
 
 const _updateBtn = (item: SearxCatalogItem): string => {
   if (!item.installed) return "";
   const label = t("settings-page.extensions.searx-update");
-  return `<button class="degoog-icon-btn degoog-icon-btn--padded searx-btn-update" type="button" data-code="${escapeHtml(item.code)}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}"><i class="fa-solid fa-arrows-rotate"></i></button>`;
+  return `<button class="degoog-icon-btn degoog-icon-btn--padded searx-btn-update" type="button" data-code="${escapeHtml(item.code)}" data-tooltip="${escapeHtml(label)}" data-tooltip-below data-tooltip-end aria-label="${escapeHtml(label)}"><i class="fa-solid fa-arrows-rotate"></i></button>`;
 };
 
 const _card = (item: SearxCatalogItem): string => {
   const action = item.installed
-    ? `<button class="btn btn--secondary degoog-btn degoog-btn--secondary searx-btn-uninstall" type="button" data-code="${escapeHtml(item.code)}">${escapeHtml(t("settings-page.extensions.searx-uninstall"))}</button>`
-    : `<button class="btn btn--primary degoog-btn degoog-btn--primary searx-btn-install" type="button" data-code="${escapeHtml(item.code)}">${escapeHtml(t("settings-page.extensions.searx-install"))}</button>`;
+    ? `<button class="btn btn--secondary degoog-btn degoog-btn--secondary degoog-btn--block searx-btn-uninstall" type="button" data-code="${escapeHtml(item.code)}">${escapeHtml(t("settings-page.extensions.searx-uninstall"))}</button>`
+    : `<button class="btn btn--primary degoog-btn degoog-btn--primary degoog-btn--block searx-btn-install" type="button" data-code="${escapeHtml(item.code)}">${escapeHtml(t("settings-page.extensions.searx-install"))}</button>`;
   const installed = item.installed
-    ? '<span class="ext-configured-badge"></span>'
+    ? `<span class="ext-configured-badge" data-tooltip="${escapeHtml(t("settings-page.extensions.searx-installed"))}" data-tooltip-below data-tooltip-end></span>`
     : "";
-  const badges = `${_extraTypes(item)}${_depsBadge(item)}`;
-  const meta = badges ? `<div class="searx-card-meta">${badges}</div>` : "";
+  const meta = `${_typesRow(item)}${_libsRow(item)}${_sharedRow(item)}`;
   return `
-    <div class="searx-card" data-code="${escapeHtml(item.code)}">
-      <div class="searx-card-info">
-        <div class="searx-card-name">${escapeHtml(item.name)}</div>
-        ${meta}
+    <div class="col-12 col-sm-6 col-md-4 ext-card degoog-panel degoog-panel--ext-card degoog-panel--in-modal degoog-vstack degoog-vstack--lg degoog-vstack--fill" data-code="${escapeHtml(item.code)}">
+      <div class="ext-card-main">
+        <div class="ext-card-info">
+          <span class="ext-card-name ext-card-name--lg">${escapeHtml(item.name)}</span>
+        </div>
+        <div class="ext-card-actions">${installed}${_updateBtn(item)}</div>
       </div>
-      <div class="searx-card-actions">${installed}${_updateBtn(item)}${action}</div>
+      ${meta ? `<div class="degoog-vstack degoog-vstack--sm degoog-vstack--meta">${meta}</div>` : ""}
+      ${action}
     </div>`;
 };
 
 export const searxListHtml = (items: SearxCatalogItem[]): string => {
   if (!items.length) {
-    return `<p class="searx-empty">${escapeHtml(t("settings-page.extensions.searx-empty"))}</p>`;
+    return `<p class="ext-field-desc">${escapeHtml(t("settings-page.extensions.searx-empty"))}</p>`;
   }
   return searxGroups(items)
     .map(
       (group) => `
-      <div class="searx-group">
-        <h3 class="searx-group-label">${escapeHtml(group.label)}</h3>
-        <div class="searx-grid">${group.items.map(_card).join("")}</div>
-      </div>`,
+      <section class="ext-group">
+        <h3 class="ext-group-label">${escapeHtml(group.label)}</h3>
+        <div class="degoog-grid">${group.items.map(_card).join("")}</div>
+      </section>`,
     )
     .join("");
 };
 
 export const searxShellHtml = (): string => `
-  <div class="searx-modal">
-    <input type="text" class="searx-search-input degoog-search-bar degoog-search-bar--square-advanced" id="searx-search-input" placeholder="${escapeHtml(t("settings-page.extensions.searx-search"))}" autocomplete="off">
-    <div class="searx-status" id="searx-status" role="status"></div>
-    <div class="searx-list" id="searx-list"></div>
-  </div>`;
+  <input type="text" class="store-search-input degoog-search-bar degoog-search-bar--square-advanced" id="searx-search-input" placeholder="${escapeHtml(t("settings-page.extensions.searx-search"))}" autocomplete="off">
+  <div class="ext-modal-status searx-status" id="searx-status" role="status"></div>
+  <div id="searx-list"></div>`;

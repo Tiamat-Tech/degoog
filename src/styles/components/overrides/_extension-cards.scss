@@ -48,6 +48,10 @@
     &.transport-toggle-label {
       cursor: pointer;
     }
+
+    &--lg {
+      font-size: $font-size-lg;
+    }
   }
 
   &-trigger {

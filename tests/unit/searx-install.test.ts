@@ -11,8 +11,8 @@ import {
 import {
   SEARX_CATALOG,
   isSupportFile,
+  isSupportedEngine,
 } from "../../src/server/extensions/compatibility-layer/searx/catalog";
-import { isSupportedEngine } from "../../src/server/extensions/compatibility-layer/searx/supported";
 
 const realFetch = globalThis.fetch;
 

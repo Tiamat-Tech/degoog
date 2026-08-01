@@ -9,10 +9,12 @@ import {
   catalogDeps,
   catalogEntry,
   dependants,
+  engineLibs,
   isSupportFile,
 } from "./catalog";
-import type { SearxCatalogItem } from "./catalog-types";
+import type { SearxCatalogItem, SearxLibStatus } from "./catalog-types";
 import { searxEnginesDir } from "./paths";
+import { LIB_PACKAGES, missingPythonLibs, type PythonLib } from "./python-deps";
 
 const NS = "searx-install";
 const PYCACHE_DIR = "__pycache__";
@@ -82,12 +84,25 @@ const _orphanDeps = (code: string): string[] =>
       !dependants(dep).some((other) => other !== code && _isInstalled(other)),
   );
 
-export const listSearxItems = async (): Promise<SearxCatalogItem[]> =>
-  SEARX_CATALOG.map((entry) => ({
-    ...entry,
+const _libStatus = (code: string, missing: readonly PythonLib[]): SearxLibStatus[] =>
+  engineLibs(code).map((lib) => ({
+    module: lib,
+    package: LIB_PACKAGES[lib],
+    missing: missing.includes(lib),
+  }));
+
+export const listSearxItems = async (): Promise<SearxCatalogItem[]> => {
+  const missing = await missingPythonLibs();
+  return SEARX_CATALOG.map((entry) => ({
+    code: entry.code,
+    name: entry.name,
+    types: entry.types,
+    deps: entry.deps,
     installed: _isInstalled(entry.code),
     missingDeps: _missingDeps(entry.code),
+    libs: _libStatus(entry.code, missing),
   }));
+};
 
 const _pull = async (
   engine: string,

@@ -308,13 +308,18 @@ export function closeModal(): void {
   currentExt = null;
   if (saveBtn) saveBtn.style.display = "";
   if (statusEl) statusEl.textContent = "";
+  document.getElementById("ext-modal")?.classList.remove("ext-modal--wide");
 }
 
 export function openCustomModal(options: {
   title: string;
   body: string;
+  wide?: boolean;
 }): void {
   currentExt = null;
+  if (options.wide) {
+    document.getElementById("ext-modal")?.classList.add("ext-modal--wide");
+  }
   const docs = docsBtn;
   if (docs) docs.style.display = "none";
   if (saveBtn) saveBtn.style.display = "none";
