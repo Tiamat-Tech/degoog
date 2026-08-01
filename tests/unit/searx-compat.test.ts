@@ -57,9 +57,7 @@ const writeTinyEngine = (dir: string): void => {
   writeFileSync(
     join(dir, "searx", "engines", "tiny.py"),
     `from urllib.parse import urlencode
-from lxml import html
 from searx.result_types import EngineResults
-from searx.utils import eval_xpath_list, extract_text
 
 about = {"website": "https://example.com"}
 base_url = None
@@ -72,10 +70,8 @@ def request(query, params):
     params["cookies"]["CONSENT"] = "YES+"
 
 def response(resp):
-    dom = html.fromstring(resp.text)
     results = EngineResults()
-    for item in eval_xpath_list(dom, "//a[@class='result']"):
-        results.append({"url": item.get("href"), "title": extract_text(item), "content": "from compat"})
+    results.append({"url": "https://result.test/", "title": "Result title", "content": "from compat"})
     return results
 `,
   );
