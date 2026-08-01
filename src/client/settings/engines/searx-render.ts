@@ -42,6 +42,24 @@ export const searxGroups = (items: SearxCatalogItem[]): SearxCatalogGroup[] => {
 export const searxPackages = (item: SearxCatalogItem): string[] =>
   item.libs.filter((lib) => lib.missing).map((lib) => lib.package);
 
+const _host = (site: string | undefined): string => {
+  if (!site) return "";
+  try {
+    return new URL(site).hostname;
+  } catch {
+    return "";
+  }
+};
+
+const _icon = (item: SearxCatalogItem): string => {
+  const letter = escapeHtml((item.name[0] ?? "?").toUpperCase());
+  const host = _host(item.site);
+  if (!host) {
+    return `<span class="degoog-result--favicon result-favicon-fallback" aria-hidden="true">${letter}</span>`;
+  }
+  return `<img class="degoog-result--favicon searx-favicon" alt="" loading="lazy" data-favicon-host="${escapeHtml(host)}" data-favicon-letter="${letter}">`;
+};
+
 const _missingDot = (): string =>
   `<span class="ext-needs-config-badge" data-tooltip="${escapeHtml(t("settings-page.extensions.searx-missing"))}" data-tooltip-below data-tooltip-end></span>`;
 
@@ -103,7 +121,10 @@ const _card = (item: SearxCatalogItem): string => {
     <div class="col-12 col-sm-6 col-md-4 ext-card degoog-panel degoog-panel--ext-card degoog-panel--in-modal degoog-vstack degoog-vstack--lg degoog-vstack--fill" data-code="${escapeHtml(item.code)}">
       <div class="ext-card-main">
         <div class="ext-card-info">
-          <span class="ext-card-name ext-card-name--lg">${escapeHtml(item.name)}</span>
+          <div class="ext-card-name-row">
+            ${_icon(item)}
+            <span class="ext-card-name ext-card-name--lg">${escapeHtml(item.name)}</span>
+          </div>
         </div>
         <div class="ext-card-actions">${installed}${_updateBtn(item)}</div>
       </div>

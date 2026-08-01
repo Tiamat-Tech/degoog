@@ -1,3 +1,4 @@
+import { attachFaviconFallback } from "../../utils/favicon";
 import { openCustomModal } from "../../modules/modals/settings-modal/modal";
 import { confirmModal } from "../../modules/modals/confirm-modal/confirm";
 import { SearxAction, fetchSearx, sendSearx } from "./searx-api";
@@ -31,7 +32,11 @@ const _say = (message: string, failed = false): void => {
 
 const _paint = (items: SearxCatalogItem[], query: string): void => {
   const list = document.querySelector<HTMLElement>(`#${MODAL_BODY_ID} #searx-list`);
-  if (list) list.innerHTML = searxListHtml(searxFilter(items, query));
+  if (!list) return;
+  list.innerHTML = searxListHtml(searxFilter(items, query));
+  list
+    .querySelectorAll<HTMLImageElement>(".searx-favicon")
+    .forEach(attachFaviconFallback);
 };
 
 const _warnings = (item: SearxCatalogItem): string[] => {

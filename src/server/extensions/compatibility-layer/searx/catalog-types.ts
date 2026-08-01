@@ -4,6 +4,7 @@ export interface SearxCatalogEntry {
   code: string;
   name: string;
   types: string[];
+  site?: string;
   deps?: string[];
   libs?: readonly PythonLib[];
 }

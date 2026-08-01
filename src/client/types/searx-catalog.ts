@@ -8,6 +8,7 @@ export interface SearxCatalogItem {
   code: string;
   name: string;
   types: string[];
+  site?: string;
   deps?: string[];
   installed: boolean;
   missingDeps: string[];

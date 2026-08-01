@@ -97,6 +97,7 @@ export const listSearxItems = async (): Promise<SearxCatalogItem[]> => {
     code: entry.code,
     name: entry.name,
     types: entry.types,
+    site: entry.site,
     deps: entry.deps,
     installed: _isInstalled(entry.code),
     missingDeps: _missingDeps(entry.code),
