@@ -120,6 +120,16 @@ const EXTENSION_TYPE_KEY: Record<ExtensionStoreType, ExtensionGroupKey> = {
   [ExtensionStoreType.Shortcut]: "shortcuts",
 };
 
+const EXTENSION_GROUP_KEYS = new Set<string>(Object.values(EXTENSION_TYPE_KEY));
+
+const groupKeyFor = (requested: string): ExtensionGroupKey | null => {
+  const singular = EXTENSION_TYPE_KEY[requested as ExtensionStoreType];
+  if (singular) return singular;
+  return EXTENSION_GROUP_KEYS.has(requested)
+    ? (requested as ExtensionGroupKey)
+    : null;
+};
+
 
 router.get("/api/extensions", async (c) => {
   const coreT = await getCoreTranslator();
@@ -202,7 +212,7 @@ router.get("/api/extensions", async (c) => {
 
   const requestedType = c.req.query("type");
   if (requestedType) {
-    const key = EXTENSION_TYPE_KEY[requestedType as ExtensionStoreType];
+    const key = groupKeyFor(requestedType);
     if (!key) {
       logger.debug("extensions", `unknown type filter '${requestedType}'`);
       return c.json({ error: `Unknown extension type '${requestedType}'` }, 400);

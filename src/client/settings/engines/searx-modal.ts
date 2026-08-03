@@ -100,6 +100,7 @@ export const openSearxModal = async (): Promise<void> => {
       await sendSearx(action, code);
       items = await fetchSearx();
       _paint(items, query);
+      window.dispatchEvent(new CustomEvent("extensions-saved"));
       _say(
         t(
           action === SearxAction.Update
