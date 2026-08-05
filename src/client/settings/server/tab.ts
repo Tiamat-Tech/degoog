@@ -154,6 +154,7 @@ async function _loadServerSettings(
     setVal("ac-debounce-ms", data.acDebounceMs);
 
     setToggle("streaming-enabled", data.streamingEnabled);
+    setToggle("infinite-scroll-enabled", data.infiniteScrollEnabled);
     setToggle("streaming-auto-retry", data.streamingAutoRetry);
     setVal("streaming-max-retries", data.streamingMaxRetries);
     void _initStreamingTypeChecks(data.streamingDisabledTypes ?? "", getToken);

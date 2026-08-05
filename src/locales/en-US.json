@@ -288,7 +288,12 @@
       "shortcuts-desc": "Enable customisable keyboard shortcuts for this instance. When off, the Shortcuts section is hidden and no shortcuts are active.",
       "shortcuts-enable": "Enable keyboard shortcuts",
       "shortcuts-enable-aria": "Enable keyboard shortcuts",
-      "shortcuts-enable-desc": "Power-user shortcuts for focusing search, switching tabs, and navigating results. Configure them in the Shortcuts section."
+      "shortcuts-enable-desc": "Power-user shortcuts for focusing search, switching tabs, and navigating results. Configure them in the Shortcuts section.",
+      "results-heading": "Search results",
+      "results-desc": "Choose how further pages of results are loaded.",
+      "infinite-scroll-enable": "Load more results on scroll",
+      "infinite-scroll-enable-aria": "Load more results on scroll",
+      "infinite-scroll-enable-desc": "Replaces the previous and next links with automatic loading as you reach the end of the page"
     },
     "proxy-test": {
       "not-enabled": "Proxy is not enabled. Enable it and save before testing.",

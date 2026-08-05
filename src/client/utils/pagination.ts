@@ -1,3 +1,27 @@
+const t = window.scopedT("themes/degoog");
+
+export const buildNavPaginationHtml = (
+  activePage: number,
+  hasNext: boolean,
+): string => {
+  const parts: string[] = ['<div class="pagination-pages">'];
+  if (activePage > 1) {
+    parts.push(
+      `<a class="pagination-nav" data-page="${activePage - 1}"><i class="fa-solid fa-chevron-left"></i>${t("search-templates.pagination.previous")}</a>`,
+    );
+  }
+  parts.push(
+    `<span class="pagination-page-label">${t("search-templates.pagination.page", { page: activePage })}</span>`,
+  );
+  if (hasNext) {
+    parts.push(
+      `<a class="pagination-nav" data-page="${activePage + 1}">${t("search-templates.pagination.next")}<i class="fa-solid fa-chevron-right"></i></a>`,
+    );
+  }
+  parts.push("</div>");
+  return parts.join("");
+};
+
 export const buildPaginationHtml = (
   totalPages: number,
   activePage: number,

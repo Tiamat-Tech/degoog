@@ -189,6 +189,7 @@ onInvalidate((payload) => {
 export interface CachedEngineRun {
   results: SearchResult[];
   timing: EngineTiming;
+  pages?: number;
 }
 
 export const engineRunCache = useCache<CachedEngineRun>(

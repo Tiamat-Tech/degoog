@@ -155,6 +155,16 @@ const _renderStreamingSection = (): string => `
     </fieldset>
   </section>`;
 
+const _renderResultsSection = (): string => `
+  <section class="settings-section ext-card degoog-panel degoog-panel--ext-card" id="settings-section-results">
+    ${_h("settings-page.server.results-heading", "fa-solid fa-list")}
+    ${_desc("settings-page.server.results-desc")}
+    <fieldset class="settings-fieldset">
+      ${_toggle("settings-infinite-scroll-enabled", "settings-page.server.infinite-scroll-enable", { aria: "settings-page.server.infinite-scroll-enable-aria" })}
+      ${_desc("settings-page.server.infinite-scroll-enable-desc")}
+    </fieldset>
+  </section>`;
+
 const _renderLanguagesSection = (): string => `
   <section class="settings-section ext-card degoog-panel degoog-panel--ext-card">
     ${_h("settings-page.server.languages-heading", "fa-solid fa-language")}
@@ -339,6 +349,7 @@ export const renderServerContent = (): string =>
     _renderIndexerSection(),
     _renderSearxSection(),
     _renderStreamingSection(),
+    _renderResultsSection(),
     _renderLanguagesSection(),
     _renderDomainBlockSection(),
     _renderDomainReplaceSection(),

@@ -4,6 +4,7 @@ import {
   searchSingleEngine,
 } from "../search";
 import { selectActiveEngines } from "../search/engine-selection";
+import { agreedPageTotal } from "../search/page-counter";
 import {
   EngineTiming,
   SearchResult,
@@ -70,6 +71,7 @@ router.get("/api/search/stream", async (c) => {
     start(controller) {
       const encoder = new TextEncoder();
       const allTimings: EngineTiming[] = [];
+      const allPages: (number | undefined)[] = [];
       const allRawResults: {
         results: SearchResult[];
         multiplier: number;
@@ -99,10 +101,11 @@ router.get("/api/search/stream", async (c) => {
             time: 0,
             resultCount: 0,
           };
+          let lastPages: number | undefined;
 
           while (attempt <= (autoRetry ? maxRetries : 0)) {
             const isRetry = attempt > 0;
-            const { results, timing } = await searchSingleEngine(
+            const { results, timing, pages } = await searchSingleEngine(
               id,
               query,
               page,
@@ -116,10 +119,12 @@ router.get("/api/search/stream", async (c) => {
               { forceFresh: isRetry },
             );
             lastTiming = timing;
+            lastPages = pages;
 
             if (timing.resultCount > 0) {
               allRawResults.push({ results, multiplier: score, name: engineName });
               allTimings.push(timing);
+              allPages.push(pages);
               _send("engine-result", {
                 engine: engineName,
                 timing,
@@ -144,6 +149,7 @@ router.get("/api/search/stream", async (c) => {
           }
 
           allTimings.push(lastTiming);
+          allPages.push(lastPages);
           _send("engine-result", {
             engine: engineName,
             timing: lastTiming,
@@ -186,6 +192,7 @@ router.get("/api/search/stream", async (c) => {
           engineTimings: allTimings,
           indexedUrls,
           relatedSearches: [],
+          totalPages: agreedPageTotal(allPages),
         });
         })
         .catch((err) => {

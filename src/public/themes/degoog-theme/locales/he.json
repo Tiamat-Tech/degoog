@@ -129,6 +129,12 @@
         "modal-cancel": "ביטול",
         "scored": "נקוד"
       }
+    },
+    "pagination": {
+      "previous": "הקודם",
+      "next": "הבא",
+      "page": "עמוד {page}",
+      "end": "אין תוצאות נוספות."
     }
   }
 }

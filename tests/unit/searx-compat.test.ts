@@ -22,7 +22,7 @@ const withSearxEnv = async <T>(fn: (dir: string) => Promise<T>): Promise<T> => {
   process.env.DEGOOG_PLUGIN_SETTINGS_FILE = join(dir, "plugin-settings.json");
   process.env.DEGOOG_SERVER_SETTINGS_FILE = join(dir, "server-settings.json");
   delete process.env.DEGOOG_SEARX_ENGINES_DIR;
-  process.env.DEGOOG_SEARX_EXTRA_ENGINES = "tiny,statics,pager,traits";
+  process.env.DEGOOG_SEARX_EXTRA_ENGINES = "tiny,statics,pager,traits,capped";
   mkdirSync(process.env.DEGOOG_ENGINES_DIR, { recursive: true });
   mkdirSync(process.env.DEGOOG_TRANSPORTS_DIR, { recursive: true });
   mkdirSync(join(dir, "searx", "engines"), { recursive: true });
@@ -112,6 +112,19 @@ def response(resp):
     return [{"url": "https://pager.example/a", "title": "hit", "content": "c"}]
 `;
 
+const CAPPED_ENGINE = `about = {"website": "https://capped.example"}
+base_url = "https://capped.example"
+categories = ["general"]
+paging = True
+max_page = 4
+
+def request(query, params):
+    params["url"] = base_url + "/?q=" + query
+
+def response(resp):
+    return [{"url": "https://capped.example/a", "title": "hit", "content": "c"}]
+`;
+
 const CACHING_ENGINE = `about = {"website": "https://cache.example"}
 base_url = "https://cache.example"
 categories = ["general"]
@@ -170,6 +183,42 @@ describe("SearX engine parity with native engines", () => {
       const second = await engine.executeSearch("q", 2, "any", { fetch: okFetch });
       expect(first.length).toBe(1);
       expect(second).toEqual([]);
+    });
+  });
+
+  test("engines declare their page ceiling through the pagination context", async () => {
+    await withSearxEnv(async (dir) => {
+      writeEngine(dir, "statics", STATIC_ENGINE);
+      writeEngine(dir, "pager", PAGER_ENGINE);
+      writeEngine(dir, "capped", CAPPED_ENGINE);
+      const { initEngines, getEngineMap } = await import(
+        "../../src/server/extensions/engines/registry"
+      );
+      await initEngines(true);
+      const declared: (number | undefined)[] = [];
+      const pagination = (info: { total?: number }): void => {
+        declared.push(info.total);
+      };
+
+      await getEngineMap()["searx-statics-engine"].executeSearch("q", 1, "any", {
+        fetch: okFetch,
+        pagination,
+      });
+      expect(declared).toEqual([1]);
+
+      declared.length = 0;
+      await getEngineMap()["searx-pager-engine"].executeSearch("q", 1, "any", {
+        fetch: okFetch,
+        pagination,
+      });
+      expect(declared).toEqual([]);
+
+      declared.length = 0;
+      await getEngineMap()["searx-capped-engine"].executeSearch("q", 1, "any", {
+        fetch: okFetch,
+        pagination,
+      });
+      expect(declared).toEqual([4]);
     });
   });
 

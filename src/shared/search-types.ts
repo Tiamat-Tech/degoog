@@ -47,6 +47,10 @@ export interface SlotPanel {
   gridSize?: 1 | 2 | 3 | 4;
 }
 
+export interface EnginePagination {
+  total?: number;
+}
+
 export interface SearchResponse {
   results: ScoredResult[];
   query: string;
@@ -55,4 +59,5 @@ export interface SearchResponse {
   engineTimings: EngineTiming[];
   relatedSearches: string[];
   slotPanels?: SlotPanel[];
+  totalPages?: number;
 }

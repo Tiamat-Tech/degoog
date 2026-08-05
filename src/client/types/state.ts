@@ -6,7 +6,7 @@ export interface AppState {
   currentQuery: string;
   currentType: string;
   currentPage: number;
-  lastPage: number;
+  lastPage: number | null;
   currentResults: ScoredResult[];
   currentData: SearchResponse | null;
   currentRelatedSearches: string[];

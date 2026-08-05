@@ -42,6 +42,7 @@ interface DiscoverPayload {
   name: string;
   types: string[];
   paging?: boolean;
+  maxPage?: number;
   timeRangeSupport?: boolean;
   offline?: boolean;
   error?: string;
@@ -249,6 +250,7 @@ class SearxCompatEngine implements SearchEngine {
     bangShortcut: string,
     private engineId: string,
     private paging: boolean,
+    private maxPage: number,
     private timeRanges: boolean,
     types: string[],
   ) {
@@ -280,6 +282,8 @@ class SearxCompatEngine implements SearchEngine {
     timeFilter: TimeFilter = "any",
     context?: EngineContext,
   ): Promise<SearchResult[]> {
+    const declaredPages = !this.paging ? 1 : this.maxPage;
+    if (declaredPages > 0) context?.pagination?.({ total: declaredPages });
     if (page > 1 && !this.paging) return [];
     const fetcher = context?.fetch ?? fetch;
     const bridge = _bridge(this.engineId, context);
@@ -406,6 +410,7 @@ export const loadSearxCompatibilityEngines = async (): Promise<SearxCompatEntry[
       rawId,
       id,
       meta.paging === true,
+      meta.maxPage ?? 0,
       meta.timeRangeSupport === true,
       types,
     );

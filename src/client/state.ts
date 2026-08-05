@@ -7,7 +7,7 @@ export const state: AppState = {
   currentQuery: "",
   currentType: "web",
   currentPage: 1,
-  lastPage: 10,
+  lastPage: null,
   currentResults: [],
   currentData: null,
   currentRelatedSearches: [],

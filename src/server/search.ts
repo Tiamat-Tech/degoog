@@ -13,6 +13,12 @@ import {
   saveRun,
   type RunScope,
 } from "./search/engine-cache";
+import {
+  agreedPageTotal,
+  makePageCounter,
+  sanePage,
+  type PageCounter,
+} from "./search/page-counter";
 import type { CachedEngineRun } from "./utils/cache";
 import type {
   EngineConfig,
@@ -44,7 +50,6 @@ import { buildSignedProxyUrl } from "./utils/proxy-sign";
 import { cleanUrl, normalizeUrl, urlIsGif } from "./search/url-normalize";
 import { DEGOOG_ENGINE_NAME } from "../shared/search-types";
 
-const MAX_PAGE = 10;
 
 export const ENGINE_TIMEOUT_BUFFER_MS = 5000;
 export const ENGINE_TIMEOUT_MIN_MS = 10;
@@ -209,15 +214,29 @@ const _asBool = (v: string | undefined): boolean => {
   return normalized === "true" || normalized === "1" || normalized === "yes";
 };
 
+export interface EngineContextOptions {
+  lang?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  imageFilter?: ImageFilter;
+  signal?: AbortSignal;
+  searchType?: SearchType;
+  pageCounter?: PageCounter;
+}
+
 export const createSearchEngineContext = (
   engineSettingsId: string | undefined,
-  lang?: string,
-  dateFrom?: string,
-  dateTo?: string,
-  imageFilter?: ImageFilter,
-  signal?: AbortSignal,
-  searchType?: SearchType,
+  options: EngineContextOptions = {},
 ): EngineContext => {
+  const {
+    lang,
+    dateFrom,
+    dateTo,
+    imageFilter,
+    signal,
+    searchType,
+    pageCounter,
+  } = options;
   const resolvedLang =
     lang ||
     (process.env.DEGOOG_DEFAULT_SEARCH_LANGUAGE || "")
@@ -272,6 +291,7 @@ export const createSearchEngineContext = (
     engineError: (status, message, opts) =>
       new SentinelBreach(status as ThreatLevel, message, opts),
     searchType,
+    pagination: pageCounter?.report,
   };
 };
 
@@ -295,7 +315,7 @@ export const searchSingleEngine = async (
       timing: { name: engineName, time: 0, resultCount: 0, status: THREAT_LEVEL.BLOCKED },
     };
   }
-  const p = Math.max(1, Math.min(MAX_PAGE, Math.floor(page) || 1));
+  const p = sanePage(page);
   const t0 = performance.now();
   const engineSettingsId = getEngineIdByInstance(engine);
   const cacheId = engineSettingsId ?? engine.name;
@@ -328,15 +348,16 @@ export const searchSingleEngine = async (
     if (signal.aborted) ac.abort();
     else signal.addEventListener("abort", () => ac.abort(), { once: true });
   }
-  const engineContext = createSearchEngineContext(
-    engineSettingsId,
+  const pageCounter = makePageCounter();
+  const engineContext = createSearchEngineContext(engineSettingsId, {
     lang,
     dateFrom,
     dateTo,
     imageFilter,
-    ac.signal,
+    signal: ac.signal,
     searchType,
-  );
+    pageCounter,
+  });
   try {
     const timeout = await getEngineTimeout(engineSettingsId);
     const results = await _withTimeout(
@@ -353,6 +374,7 @@ export const searchSingleEngine = async (
         resultCount: results.length,
         status: THREAT_LEVEL.OK,
       },
+      pages: pageCounter.total(),
     };
     if (cacheable) await saveRun(key, run);
     return run;
@@ -381,7 +403,7 @@ export const search = async (
   imageFilter?: ImageFilter,
 ): Promise<SearchResponse & { indexBasis: ScoredResult[] }> => {
   const start = performance.now();
-  const p = Math.max(1, Math.min(MAX_PAGE, Math.floor(page) || 1));
+  const p = sanePage(page);
 
   const rawActiveEngines = await selectActiveEngines(type, config, imageFilter);
 
@@ -434,6 +456,7 @@ export const search = async (
     type,
     engineTimings,
     relatedSearches: [],
+    totalPages: agreedPageTotal(runs.map((run) => run.pages)),
     indexBasis,
   };
 };

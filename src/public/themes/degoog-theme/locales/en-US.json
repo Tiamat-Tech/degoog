@@ -129,6 +129,12 @@
         "modal-cancel": "Cancel",
         "scored": "Scored"
       }
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}",
+      "end": "No more results."
     }
   }
 }

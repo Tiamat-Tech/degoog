@@ -261,7 +261,12 @@
       "shortcuts-desc": "Activez les raccourcis clavier personnalisables pour cette instance. Lorsqu'ils sont désactivés, la section Raccourcis est masquée et aucun raccourci n'est actif.",
       "shortcuts-enable": "Activer les raccourcis clavier",
       "shortcuts-enable-aria": "Activer les raccourcis clavier",
-      "shortcuts-enable-desc": "Raccourcis pour utilisateurs avancés permettant de cibler la recherche, de changer d'onglet et de naviguer dans les résultats. Configurez-les dans la section Raccourcis."
+      "shortcuts-enable-desc": "Raccourcis pour utilisateurs avancés permettant de cibler la recherche, de changer d'onglet et de naviguer dans les résultats. Configurez-les dans la section Raccourcis.",
+      "results-heading": "Résultats de recherche",
+      "results-desc": "Choisissez comment les pages suivantes de résultats sont chargées.",
+      "infinite-scroll-enable": "Charger plus de résultats au défilement",
+      "infinite-scroll-enable-aria": "Charger plus de résultats au défilement",
+      "infinite-scroll-enable-desc": "Remplace les liens précédent et suivant par un chargement automatique lorsque vous atteignez la fin de la page"
     },
     "proxy-test": {
       "not-enabled": "Le proxy n'est pas activé. Activez-le et enregistrez avant de tester.",

@@ -24,6 +24,7 @@ export const SETTINGS_SCHEMA = {
   languagesEnabled:             { kind: "boolean", default: false },
   languages:                    { kind: "lines",   default: "" },
   streamingEnabled:             { kind: "boolean", default: true },
+  infiniteScrollEnabled:        { kind: "boolean", default: false },
   streamingAutoRetry:           { kind: "boolean", default: true },
   streamingMaxRetries:          { kind: "number",  default: "2" },
   streamingDisabledTypes:       { kind: "lines",   default: "" },

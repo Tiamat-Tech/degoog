@@ -49,6 +49,19 @@ describe("cache", () => {
       await engineRunCache.set("google|cats", mockRun(0, "blocked"));
       expect((await engineRunCache.get("bing|cats"))?.timing.resultCount).toBe(8);
     });
+
+    test("replays a declared page total on a cache hit", async () => {
+      await engineRunCache.set("jellyfin|cats", {
+        ...mockRun(8, "ok"),
+        pages: 12,
+      });
+      expect((await engineRunCache.get("jellyfin|cats"))?.pages).toBe(12);
+    });
+
+    test("leaves the page total unknown when the engine never declared one", async () => {
+      await engineRunCache.set("bing|cats", mockRun(8, "ok"));
+      expect((await engineRunCache.get("bing|cats"))?.pages).toBeUndefined();
+    });
   });
 
   describe("engineErrored", () => {

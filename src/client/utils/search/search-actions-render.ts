@@ -17,7 +17,12 @@ import { state } from "../../state";
 import { SlotPanelPosition, type SearchResponse } from "../../types";
 import { abortAcReq, hideAcDropdown } from "../autocomplete";
 import { setActiveTab, showAllTabs } from "../navigation";
-import { setResultsMeta } from "../search-helpers";
+import { declaredPages, setResultsMeta } from "../search-helpers";
+import { infiniteScrollOn } from "../streaming-config";
+import {
+  setupInfinite,
+  teardownInfinite,
+} from "../../modules/renderer/infinite-scroll";
 import {
   abortGlancePanels,
   abortSlotPanels,
@@ -55,6 +60,7 @@ export const prepareResultsUi = (query: string, resolvedType: string): void => {
   const isImageType = isImageSearchType(resolvedType);
 
   state.currentBangQuery = "";
+  teardownInfinite();
   showAllTabs();
   setActiveTab(resolvedType);
   closeMediaPreview();
@@ -149,6 +155,7 @@ export const renderSearchResponse = (
 ): void => {
   state.currentResults = data.results;
   state.currentData = data;
+  state.lastPage = declaredPages(data.totalPages);
 
   const metaText = `About ${data.results.length} results (${(data.totalTime / 1000).toFixed(2)} seconds)`;
   setResultsMeta(metaText);
@@ -177,5 +184,7 @@ export const renderSearchResponse = (
     renderSidebar(data, navigate);
     if (glanceEl) glanceEl.innerHTML = "";
   }
-  renderResults(data.results);
+  const infinite = infiniteScrollOn() && !isImageType;
+  renderResults(data.results, { paginate: !infinite });
+  if (infinite) setupInfinite(type);
 };

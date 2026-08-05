@@ -399,6 +399,48 @@
   color: var(--text-primary);
 }
 
+.pagination-page-label {
+  @include flex-center;
+  height: 2.25rem;
+  padding: 0 $space-3;
+  font-size: $font-size-sm;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.degoog-infinite {
+  --degoog-pull: 0;
+  height: 40px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: visible;
+}
+
+.degoog-infinite__pull {
+  width: 2rem;
+  height: 3px;
+  margin-top: $space-4;
+  border-radius: $radius-full;
+  background: $primary;
+  opacity: var(--degoog-pull);
+  transform: scaleX(calc(0.4 + (var(--degoog-pull) * 0.6)))
+    translateY(calc(var(--degoog-pull) * 6px));
+  transition: transform $transition-fast;
+}
+
+.degoog-infinite--loading {
+  height: auto;
+
+  .degoog-infinite__pull {
+    display: none;
+  }
+}
+
+.degoog-infinite__skeleton {
+  width: 100%;
+}
+
 .pagination-nav {
   color: $primary;
   text-decoration: none;

@@ -19,6 +19,7 @@ export type ServerSettingsData = {
   languagesEnabled?: BoolSetting;
   languages?: string;
   streamingEnabled?: BoolSetting;
+  infiniteScrollEnabled?: BoolSetting;
   streamingAutoRetry?: BoolSetting;
   streamingMaxRetries?: string;
   streamingDisabledTypes?: string;

@@ -14,6 +14,7 @@ const TOGGLE_KEYS = [
   "rate-limit-suggest-enabled",
   "streaming-enabled",
   "streaming-auto-retry",
+  "infinite-scroll-enabled",
   "domain-block-enabled",
   "domain-block-ui-enabled",
   "domain-replace-enabled",

@@ -115,6 +115,7 @@ def describe(path):
         "categories": found,
         "types": types_of(found),
         "paging": bool(getattr(mod, "paging", False)),
+        "maxPage": int(getattr(mod, "max_page", 0) or 0),
         "timeRangeSupport": bool(getattr(mod, "time_range_support", False)),
         "languageSupport": bool(getattr(mod, "language_support", False)),
         "safesearch": bool(getattr(mod, "safesearch", False)),
