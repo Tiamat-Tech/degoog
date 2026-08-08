@@ -13,12 +13,12 @@ describe("savePluginUpload", () => {
     registerExtensionDir("acme-foo-slot", dir);
 
     const saved = await savePluginUpload("acme-foo-slot", "logo.png", bytes(8));
-    expect(saved).not.toBeNull();
+    if (!saved) throw new Error("expected upload to be saved");
     const folder = dir.split("/").pop();
-    expect(saved?.path).toBe(`/plugins/${folder}/uploads/${saved?.name}`);
+    expect(saved.path).toBe(`/plugins/${folder}/uploads/${saved.name}`);
 
     const files = await readdir(join(dir, "uploads"));
-    expect(files).toContain(saved?.name);
+    expect(files).toContain(saved.name);
   });
 
   test("sanitizes traversal filenames to a contained basename", async () => {

@@ -142,7 +142,7 @@ export interface SearchEngine {
 }
 
 export interface AutocompleteContext {
-  fetch: typeof fetch;
+  fetch: (url: string, init?: RequestInit) => Promise<Response>;
   lang?: string;
   userAgent?: () => string;
   /** @deprecated Use `useCache` (async, namespaced, Valkey-backed when enabled). */

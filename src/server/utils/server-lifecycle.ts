@@ -8,9 +8,9 @@ import { envTruthy } from "../routes/settings-auth";
 
 const RESTART_EXIT_DELAY_MS = 250;
 
-let _serverHandle: Server | undefined;
+let _serverHandle: Server<unknown> | undefined;
 
-export const registerServerHandle = (server: Server): void => {
+export const registerServerHandle = (server: Server<unknown>): void => {
   _serverHandle = server;
 };
 

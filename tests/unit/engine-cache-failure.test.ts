@@ -62,7 +62,7 @@ describe("searchSingleEngine cache isolation", () => {
     keyFails = true;
     readFails = false;
     saved = 0;
-    const run = await searchSingleEngine("flaky");
+    const run = await searchSingleEngine("flaky", "hello");
     expect(run.results).toEqual([HIT]);
     expect(run.timing.status).toBe(THREAT_LEVEL.OK);
     expect(saved).toBe(0);
@@ -72,7 +72,7 @@ describe("searchSingleEngine cache isolation", () => {
     keyFails = false;
     readFails = true;
     saved = 0;
-    const run = await searchSingleEngine("flaky");
+    const run = await searchSingleEngine("flaky", "hello");
     expect(run.results).toEqual([HIT]);
     expect(run.timing.status).toBe(THREAT_LEVEL.OK);
     expect(saved).toBe(1);

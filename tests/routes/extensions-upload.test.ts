@@ -55,7 +55,7 @@ const restoreEnv = (): void => {
   }
 };
 
-const bytes = (kb: number): Uint8Array => new Uint8Array(kb * 1024).fill(1);
+const bytes = (kb: number): Uint8Array<ArrayBuffer> => new Uint8Array(kb * 1024).fill(1);
 
 const upload = (form: FormData): Promise<Response> =>
   Promise.resolve(router.request(new Request(UPLOAD_URL, { method: "POST", body: form })));
