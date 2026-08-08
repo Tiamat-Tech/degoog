@@ -20,6 +20,7 @@ import { setActiveTab, showAllTabs } from "../navigation";
 import { declaredPages, setResultsMeta } from "../search-helpers";
 import { infiniteScrollOn } from "../streaming-config";
 import {
+  restoreInfinitePages,
   setupInfinite,
   teardownInfinite,
 } from "../../modules/renderer/infinite-scroll";
@@ -155,6 +156,8 @@ export const renderSearchResponse = (
 ): void => {
   state.currentResults = data.results;
   state.currentData = data;
+  const restorePage = state.restoreInfinitePage;
+  state.restoreInfinitePage = 1;
   state.lastPage = declaredPages(data.totalPages);
 
   const metaText = `About ${data.results.length} results (${(data.totalTime / 1000).toFixed(2)} seconds)`;
@@ -186,5 +189,8 @@ export const renderSearchResponse = (
   }
   const infinite = infiniteScrollOn() && !isImageType;
   renderResults(data.results, { paginate: !infinite });
-  if (infinite) setupInfinite(type);
+  if (infinite) {
+    setupInfinite(type);
+    if (restorePage > 1) void restoreInfinitePages(restorePage);
+  }
 };

@@ -98,6 +98,7 @@
       "from-index": "{count} dal tuo indice",
       "retry": "riprova",
       "retrying": "nuovo tentativo...",
+      "page-failed": "pagina {page} non riuscita",
       "failure-reasons": {
         "blocked": "Bloccato dal motore",
         "rate_limited": "Troppe richieste",

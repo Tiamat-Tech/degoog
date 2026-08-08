@@ -21,6 +21,11 @@ import {
 import { getInstanceSettings } from "../../../utils/server-settings";
 import { runPython, type RpcFetchReply, type RpcHandlers } from "./rpc";
 import { isSupportFile, isSupportedEngine } from "./catalog";
+import {
+  optionFields,
+  overridesFrom,
+  type SearxConfigField,
+} from "./engine-config";
 import { LIB_PACKAGES, missingPythonLibs } from "./python-deps";
 import { searxEnginesDir } from "./paths";
 
@@ -46,10 +51,28 @@ interface DiscoverPayload {
   timeRangeSupport?: boolean;
   offline?: boolean;
   error?: string;
+  config?: SearxConfigField[];
 }
 
 interface DiscoverAllPayload {
   engines: DiscoverPayload[];
+}
+
+interface DiscoverRequest {
+  path: string;
+  overrides: Record<string, string>;
+}
+
+interface SearxEngineSpec {
+  path: string;
+  displayName: string;
+  bangShortcut: string;
+  engineId: string;
+  paging: boolean;
+  maxPage: number;
+  timeRanges: boolean;
+  types: string[];
+  config: SearxConfigField[];
 }
 
 interface RequestPayload {
@@ -243,20 +266,12 @@ class SearxCompatEngine implements SearchEngine {
   bangShortcut: string;
   safeSearch: SafeSearch;
   settingsSchema: SettingField[];
+  private overrides: Record<string, string> = {};
 
-  constructor(
-    private path: string,
-    displayName: string,
-    bangShortcut: string,
-    private engineId: string,
-    private paging: boolean,
-    private maxPage: number,
-    private timeRanges: boolean,
-    types: string[],
-  ) {
-    this.name = displayName;
-    this.bangShortcut = bangShortcut;
-    this.safeSearch = _defaultSafe(types);
+  constructor(private spec: SearxEngineSpec) {
+    this.name = spec.displayName;
+    this.bangShortcut = spec.bangShortcut;
+    this.safeSearch = _defaultSafe(spec.types);
     this.settingsSchema = [
       {
         key: SAFE_SEARCH_KEY,
@@ -266,6 +281,7 @@ class SearxCompatEngine implements SearchEngine {
         default: this.safeSearch,
         description: "Filter explicit content from this engine's results.",
       },
+      ...optionFields(spec.config),
     ];
   }
 
@@ -274,6 +290,7 @@ class SearxCompatEngine implements SearchEngine {
     if (typeof stored === "string" && stored in SAFE_SEARCH_LEVELS) {
       this.safeSearch = stored as SafeSearch;
     }
+    this.overrides = overridesFrom(settings);
   }
 
   async executeSearch(
@@ -282,17 +299,17 @@ class SearxCompatEngine implements SearchEngine {
     timeFilter: TimeFilter = "any",
     context?: EngineContext,
   ): Promise<SearchResult[]> {
-    const declaredPages = !this.paging ? 1 : this.maxPage;
+    const declaredPages = !this.spec.paging ? 1 : this.spec.maxPage;
     if (declaredPages > 0) context?.pagination?.({ total: declaredPages });
-    if (page > 1 && !this.paging) return [];
+    if (page > 1 && !this.spec.paging) return [];
     const fetcher = context?.fetch ?? fetch;
-    const bridge = _bridge(this.engineId, context);
+    const bridge = _bridge(this.spec.engineId, context);
     const safesearch = _safesearch(this.safeSearch, context);
-    const timeRange = this.timeRanges ? _timeRange(timeFilter, context) : null;
+    const timeRange = this.spec.timeRanges ? _timeRange(timeFilter, context) : null;
     const req = await _runPython<RequestPayload>(
       {
         action: "request",
-        path: this.path,
+        path: this.spec.path,
         name: this.name,
         query,
         page,
@@ -300,6 +317,7 @@ class SearxCompatEngine implements SearchEngine {
         locale: context?.lang ?? "all",
         safesearch,
         headers: _browserHeaders(context),
+        overrides: this.overrides,
       },
       bridge,
     );
@@ -323,7 +341,7 @@ class SearxCompatEngine implements SearchEngine {
     const parsed = await _runPython<ResponsePayload>(
       {
         action: "response",
-        path: this.path,
+        path: this.spec.path,
         name: this.name,
         source: this.name,
         query,
@@ -332,6 +350,7 @@ class SearxCompatEngine implements SearchEngine {
         locale: context?.lang ?? "all",
         safesearch,
         headers: _browserHeaders(context),
+        overrides: this.overrides,
         request: { ...req, url: req.url, headers },
         response: {
           url: resp.url || req.url,
@@ -378,7 +397,14 @@ export const loadSearxCompatibilityEngines = async (): Promise<SearxCompatEntry[
     .filter((name) => !isSupportFile(basename(name, ".py")))
     .sort((a, b) => a.localeCompare(b));
   if (files.length === 0) return [];
-  const paths = files.map((file) => join(dir, file));
+  const stored = new Map<string, Record<string, SettingValue>>();
+  const paths: DiscoverRequest[] = [];
+  for (const file of files) {
+    const code = basename(file, ".py");
+    const settings = await getSettings(_safeId(code));
+    stored.set(code, settings);
+    paths.push({ path: join(dir, file), overrides: overridesFrom(settings) });
+  }
   let discovered: DiscoverPayload[];
   try {
     discovered = (await _runPython<DiscoverAllPayload>({ action: "discover_all", paths })).engines;
@@ -404,18 +430,19 @@ export const loadSearxCompatibilityEngines = async (): Promise<SearxCompatEntry[
     const rawId = code;
     const id = _safeId(rawId);
     const types = meta.types?.length ? meta.types : ["web"];
-    const instance = new SearxCompatEngine(
-      meta.path,
-      meta.name || file,
-      rawId,
-      id,
-      meta.paging === true,
-      meta.maxPage ?? 0,
-      meta.timeRangeSupport === true,
+    const instance = new SearxCompatEngine({
+      path: meta.path,
+      displayName: meta.name || file,
+      bangShortcut: rawId,
+      engineId: id,
+      paging: meta.paging === true,
+      maxPage: meta.maxPage ?? 0,
+      timeRanges: meta.timeRangeSupport === true,
       types,
-    );
-    const stored = await getSettings(id);
-    instance.configure(mergeDefaults(stored, instance.settingsSchema));
+      config: meta.config ?? [],
+    });
+    const settings = stored.get(file) ?? (await getSettings(id));
+    instance.configure(mergeDefaults(settings, instance.settingsSchema));
     entries.push({
       id,
       displayName: meta.name || file,

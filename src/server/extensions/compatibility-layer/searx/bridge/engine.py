@@ -3,7 +3,7 @@ import json
 import os
 import sys
 
-from . import shims
+from . import config, shims
 from .runtime import EngineCache, EngineTraits, Logger
 
 GROUPING_CATEGORY = "web"
@@ -11,6 +11,7 @@ GENERAL_CATEGORY = "general"
 FALLBACK_TYPE = "web"
 FALLBACK_CATEGORY = "other"
 TRAITS_SUFFIX = ".traits.json"
+CONFIG_ATTR = "_degoog_config"
 
 ENGINE_DEFAULTS = {
     "play_categ": "apps",
@@ -40,7 +41,7 @@ def _traits(path):
         return EngineTraits()
 
 
-def _adopt(mod, path):
+def _adopt(mod, path, overrides):
     if not hasattr(mod, "logger"):
         setattr(mod, "logger", Logger())
     if not hasattr(mod, "CACHE"):
@@ -55,6 +56,8 @@ def _adopt(mod, path):
     for key, value in ENGINE_DEFAULTS.items():
         if not hasattr(mod, key) or getattr(mod, key) is None:
             setattr(mod, key, value)
+    setattr(mod, CONFIG_ATTR, config.fields(mod, path))
+    config.apply(mod, overrides)
 
 
 def categories(mod):
@@ -91,20 +94,20 @@ def _setup(mod, name):
         pass
 
 
-def load(path):
+def load(path, overrides=None):
     shims.install(os.path.dirname(path))
     name = "searx.engines." + code_of(path)
     mod = _import(path, name)
     engines = sys.modules.get("searx.engines")
     if engines is not None:
         getattr(engines, "engines", {})[code_of(path)] = mod
-    _adopt(mod, path)
+    _adopt(mod, path, overrides)
     _setup(mod, name)
     return mod
 
 
-def describe(path):
-    mod = load(path)
+def describe(path, overrides=None):
+    mod = load(path, overrides)
     about = getattr(mod, "about", {})
     about = about if isinstance(about, dict) else {}
     found = categories(mod)
@@ -120,14 +123,22 @@ def describe(path):
         "languageSupport": bool(getattr(mod, "language_support", False)),
         "safesearch": bool(getattr(mod, "safesearch", False)),
         "offline": not callable(getattr(mod, "request", None)),
+        "config": getattr(mod, CONFIG_ATTR, []),
     }
 
 
-def describe_all(paths):
+def _requested(item):
+    if isinstance(item, dict):
+        return item.get("path"), item.get("overrides")
+    return item, None
+
+
+def describe_all(items):
     found = []
-    for path in paths:
+    for item in items:
+        path, overrides = _requested(item)
         try:
-            found.append(describe(path))
+            found.append(describe(path, overrides))
         except Exception as exc:
             found.append({"path": path, "error": str(exc)})
     return {"engines": found}

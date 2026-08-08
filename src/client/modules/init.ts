@@ -42,6 +42,7 @@ type DegoogHistoryState = {
   query: string;
   type: string;
   page: number;
+  loaded?: number;
   imageFilter?: ImageFilter;
 };
 
@@ -222,6 +223,8 @@ export async function init(): Promise<void> {
   const resolvedQ = q || postQuery;
   const type = params.get("type") || postType || "web";
   const page = parseInt(params.get("page") ?? postPage ?? "1", 10) || 1;
+  const loadedPage = parseInt(params.get("loaded") ?? "1", 10) || 1;
+  state.restoreInfinitePage = Math.max(page, loadedPage);
 
   if (isImageSearchType(type)) state.imageFilter = readImgFilter(params);
 
@@ -303,6 +306,8 @@ export async function init(): Promise<void> {
     if (popQ) {
       const popType = popParams.get("type") || "web";
       const popPage = parseInt(popParams.get("page") ?? "1", 10) || 1;
+      const popLoadedPage = parseInt(popParams.get("loaded") ?? "1", 10) || 1;
+      state.restoreInfinitePage = Math.max(popPage, popLoadedPage);
       if (isImageSearchType(popType)) state.imageFilter = readImgFilter(popParams);
       else state.imageFilter = defaultImageFilter();
       state.isInitialLoad = true;

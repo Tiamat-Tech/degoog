@@ -98,6 +98,7 @@
       "from-index": "{count} from your index",
       "retry": "retry",
       "retrying": "retrying...",
+      "page-failed": "page {page} failed",
       "failure-reasons": {
         "blocked": "Blocked by the engine",
         "rate_limited": "Rate limited",

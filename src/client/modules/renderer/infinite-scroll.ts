@@ -1,4 +1,4 @@
-import { skeletonResults } from "../../animations/skeleton";
+import { skeletonMoreResults } from "../../animations/skeleton";
 import { state } from "../../state";
 import type { ScoredResult, SearchResponse } from "../../types";
 import { getBase } from "../../utils/base-url";
@@ -7,12 +7,14 @@ import { appendSearchAuthParams, searchAuthHeaders } from "../../utils/request";
 import { declaredPages } from "../../utils/search-helpers";
 import { hasMorePages } from "../../utils/page-flow";
 import { buildSearchBody, buildSearchUrl } from "../../utils/url";
-import { appendResults } from "./render";
+import { mergeEngineTimings } from "../../utils/search/engine-stats";
+import { appendResults, renderEngineStats } from "./render";
 
 const SENTINEL_CLASS = "degoog-infinite";
 const PULL_CLASS = "degoog-infinite__pull";
 const SKELETON_CLASS = "degoog-infinite__skeleton";
 const PULL_RATIOS = [0, 0.2, 0.4, 0.6, 0.8, 1];
+const LOAD_ROOT_MARGIN = "0px 0px 320px";
 const SKELETON_COUNT = 3;
 
 let observer: IntersectionObserver | null = null;
@@ -50,7 +52,7 @@ const _showSkeleton = (): void => {
   sentinel.classList.add(`${SENTINEL_CLASS}--loading`);
   sentinel.insertAdjacentHTML(
     "beforeend",
-    `<div class="${SKELETON_CLASS}">${skeletonResults(SKELETON_COUNT)}</div>`,
+    `<div class="${SKELETON_CLASS}">${skeletonMoreResults(SKELETON_COUNT)}</div>`,
   );
 };
 
@@ -79,39 +81,90 @@ const _fetchPage = async (page: number): Promise<SearchResponse | null> => {
   return (await res.json()) as SearchResponse;
 };
 
-const _loadNext = async (): Promise<void> => {
-  if (loading || !_hasMorePages()) return;
-  loading = true;
-  const nextPage = state.currentPage + 1;
+const _syncHistory = (): void => {
+  if (state.postMethodEnabled) return;
+  const params = new URLSearchParams(window.location.search);
+  if (!params.get("q")) return;
+  if (state.currentPage > 1) params.set("loaded", String(state.currentPage));
+  else params.delete("loaded");
+  const historyState = {
+    ...(window.history.state ?? {}),
+    degoog: true,
+    query: state.currentQuery,
+    type: state.currentType,
+    page: 1,
+    loaded: state.currentPage,
+  };
+  history.replaceState(historyState, "", `${getBase()}/search?${params.toString()}`);
+};
+
+const _applyPage = async (
+  page: number,
+  showSkeleton: boolean,
+): Promise<boolean> => {
   const startIndex = state.currentResults.length;
-  _showSkeleton();
+  if (showSkeleton) _showSkeleton();
 
   try {
-    const data = await _fetchPage(nextPage);
+    const data = await _fetchPage(page);
     const results: ScoredResult[] = data?.results ?? [];
+    state.currentPage = page;
+    if (state.currentData) {
+      state.currentData.engineTimings = mergeEngineTimings(
+        state.currentData.engineTimings,
+        data?.engineTimings ?? [],
+        page,
+      );
+      renderEngineStats(state.currentData.engineTimings, () => undefined);
+    }
     if (results.length === 0) {
       exhausted = true;
       teardownInfinite();
-      return;
+      return false;
     }
-    state.currentPage = nextPage;
     state.currentResults = state.currentResults.concat(results);
     if (state.currentData) state.currentData.results = state.currentResults;
 
     const declared = declaredPages(data?.totalPages);
-    if (declared !== null) state.lastPage = Math.max(declared, nextPage);
+    if (declared !== null) state.lastPage = Math.max(declared, page);
 
     appendResults(results, startIndex);
+    _syncHistory();
     if (!_hasMorePages()) teardownInfinite();
+    return true;
   } catch (err) {
     console.warn("[infinite-scroll] next page failed", err);
     exhausted = true;
     teardownInfinite();
+    return false;
   } finally {
-    loading = false;
-    _clearSkeleton();
+    if (showSkeleton) _clearSkeleton();
     _setPull(0);
     _rearm();
+  }
+};
+
+const _loadNext = async (): Promise<void> => {
+  if (loading || !_hasMorePages()) return;
+  loading = true;
+  try {
+    await _applyPage(state.currentPage + 1, true);
+  } finally {
+    loading = false;
+  }
+};
+
+export const restoreInfinitePages = async (targetPage: number): Promise<void> => {
+  if (loading || targetPage <= state.currentPage) return;
+  loading = true;
+  try {
+    for (let page = state.currentPage + 1; page <= targetPage; page++) {
+      if (!_hasMorePages()) break;
+      const loadedPage = await _applyPage(page, false);
+      if (!loadedPage) break;
+    }
+  } finally {
+    loading = false;
   }
 };
 
@@ -132,9 +185,9 @@ export const setupInfinite = (type: string): void => {
       const entry = entries[0];
       if (!entry) return;
       _setPull(entry.intersectionRatio);
-      if (entry.intersectionRatio >= 1 && !loading) void _loadNext();
+      if (entry.isIntersecting && !loading) void _loadNext();
     },
-    { threshold: PULL_RATIOS },
+    { rootMargin: LOAD_ROOT_MARGIN, threshold: PULL_RATIOS },
   );
   observer.observe(sentinel);
 };

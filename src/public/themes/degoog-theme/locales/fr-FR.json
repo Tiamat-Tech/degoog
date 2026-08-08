@@ -98,6 +98,7 @@
       "from-index": "{count} depuis votre index",
       "retry": "réessayer",
       "retrying": "réessai en cours...",
+      "page-failed": "page {page} en échec",
       "failure-reasons": {
         "blocked": "Bloqué par le moteur",
         "rate_limited": "Trop de requêtes",

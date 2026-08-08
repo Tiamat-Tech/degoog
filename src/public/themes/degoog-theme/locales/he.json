@@ -98,6 +98,7 @@
       "from-index": "{count} מהאינדקס שלך",
       "retry": "נסה שוב",
       "retrying": "מנסה שוב...",
+      "page-failed": "עמוד {page} נכשל",
       "failure-reasons": {
         "blocked": "נחסם על ידי המנוע",
         "rate_limited": "יותר מדי בקשות",

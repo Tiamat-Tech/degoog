@@ -50,7 +50,7 @@ def _echo_params(payload):
 
 def build_request(payload):
     _agent_from(payload)
-    mod = engine.load(payload["path"])
+    mod = engine.load(payload["path"], payload.get("overrides"))
     request = getattr(mod, "request", None)
     if not callable(request):
         raise RuntimeError("engine does not export request")
@@ -94,7 +94,7 @@ def _one_result(item, source):
 
 def parse_response(payload):
     _agent_from(payload)
-    mod = engine.load(payload["path"])
+    mod = engine.load(payload["path"], payload.get("overrides"))
     response = getattr(mod, "response", None)
     if not callable(response):
         raise RuntimeError("engine does not export response")
@@ -102,7 +102,7 @@ def parse_response(payload):
     resp.search_params = _echo_params(payload)
     resp.request = RequestEcho(payload.get("request") or {})
     raw = response(resp)
-    source = payload.get("source") or engine.describe(payload["path"])["name"]
+    source = payload.get("source") or engine.describe(payload["path"], payload.get("overrides"))["name"]
     results = [_one_result(item, source) for item in list(raw or [])]
     return {"results": [item for item in results if item]}
 
@@ -112,7 +112,7 @@ def run(payload):
     if action == "discover_all":
         return engine.describe_all(payload.get("paths") or [])
     if action == "discover":
-        return engine.describe(payload["path"])
+        return engine.describe(payload["path"], payload.get("overrides"))
     if action == "request":
         return build_request(payload)
     if action == "response":

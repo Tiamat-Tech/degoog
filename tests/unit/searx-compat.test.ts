@@ -22,7 +22,8 @@ const withSearxEnv = async <T>(fn: (dir: string) => Promise<T>): Promise<T> => {
   process.env.DEGOOG_PLUGIN_SETTINGS_FILE = join(dir, "plugin-settings.json");
   process.env.DEGOOG_SERVER_SETTINGS_FILE = join(dir, "server-settings.json");
   delete process.env.DEGOOG_SEARX_ENGINES_DIR;
-  process.env.DEGOOG_SEARX_EXTRA_ENGINES = "tiny,statics,pager,traits,capped";
+  process.env.DEGOOG_SEARX_EXTRA_ENGINES =
+    "tiny,statics,pager,traits,capped,knobs,needy";
   mkdirSync(process.env.DEGOOG_ENGINES_DIR, { recursive: true });
   mkdirSync(process.env.DEGOOG_TRANSPORTS_DIR, { recursive: true });
   mkdirSync(join(dir, "searx", "engines"), { recursive: true });
@@ -169,6 +170,50 @@ const writeTraits = (dir: string, name: string, body: string): void => {
 
 const okFetch = async (): Promise<Response> =>
   new Response("<html></html>", { status: 200 });
+
+const KNOBS_ENGINE = `import typing
+
+about = {"website": "https://knobs.example"}
+base_url = "https://knobs.example"
+categories = ["general"]
+paging = False
+
+api_key = ""
+"""Token handed out by :py:obj:\`knobs\`."""
+
+region = "us"
+"""Region used for the query."""
+
+result_count = 10
+"""How many results to ask for."""
+
+strip_ads = True
+
+mode: typing.Literal["fast", "deep"] = "fast"
+"""Search depth."""
+
+def request(query, params):
+    params["url"] = (
+        base_url + "/?q=" + query + "&key=" + api_key + "&region=" + region
+        + "&n=" + str(result_count) + "&ads=" + str(strip_ads) + "&mode=" + mode
+    )
+
+def response(resp):
+    return [{"url": "https://knobs.example/a", "title": "hit", "content": "c"}]
+`;
+
+const NEEDY_ENGINE = `about = {}
+base_url = None
+"""Instance this engine talks to."""
+categories = ["general"]
+paging = False
+
+def request(query, params):
+    params["url"] = base_url + "/?q=" + query
+
+def response(resp):
+    return [{"url": "https://needy.example/a", "title": "hit", "content": "c"}]
+`;
 
 describe("SearX engine parity with native engines", () => {
   test("engines that cannot page return nothing past page one", async () => {
@@ -322,6 +367,126 @@ describe("SearX engine parity with native engines", () => {
         },
       });
       expect(seen).toContain("range=week");
+    });
+  });
+});
+
+describe("SearX engine configuration", () => {
+  test("engine knobs land in the settings schema as typed fields", async () => {
+    await withSearxEnv(async (dir) => {
+      writeEngine(dir, "knobs", KNOBS_ENGINE);
+      const { initEngines, getEngineMap } = await import(
+        "../../src/server/extensions/engines/registry"
+      );
+      await initEngines(true);
+      const schema = getEngineMap()["searx-knobs-engine"].settingsSchema ?? [];
+      const field = (key: string) => schema.find((f) => f.key === key);
+
+      expect(field("searxOpt_api_key")?.type).toBe("password");
+      expect(field("searxOpt_api_key")?.secret).toBe(true);
+      expect(field("searxOpt_api_key")?.description).toBe("Token handed out by knobs.");
+      expect(field("searxOpt_region")?.type).toBe("text");
+      expect(field("searxOpt_region")?.default).toBe("us");
+      expect(field("searxOpt_result_count")?.type).toBe("number");
+      expect(field("searxOpt_result_count")?.default).toBe("10");
+      expect(field("searxOpt_strip_ads")?.type).toBe("toggle");
+      expect(field("searxOpt_strip_ads")?.default).toBe("true");
+      expect(field("searxOpt_mode")?.type).toBe("select");
+      expect(field("searxOpt_mode")?.options).toEqual(["fast", "deep"]);
+      expect(field("searxOpt_base_url")?.label).toBe("Base URL");
+      expect(field("categories")).toBeUndefined();
+      expect(field("searxOpt_paging")).toBeUndefined();
+    });
+  });
+
+  test("stored settings reach the python engine on every search", async () => {
+    await withSearxEnv(async (dir) => {
+      writeEngine(dir, "knobs", KNOBS_ENGINE);
+      const { setSettings } = await import(
+        "../../src/server/utils/plugin-settings"
+      );
+      await setSettings("searx-knobs-engine", {
+        searxOpt_api_key: "s3cret",
+        searxOpt_region: "de",
+        searxOpt_result_count: "42",
+        searxOpt_strip_ads: "false",
+        searxOpt_mode: "deep",
+      });
+      const { initEngines, getEngineMap } = await import(
+        "../../src/server/extensions/engines/registry"
+      );
+      await initEngines(true);
+      let seen = "";
+      await getEngineMap()["searx-knobs-engine"].executeSearch("q", 1, "any", {
+        fetch: async (url: string) => {
+          seen = url;
+          return new Response("<html></html>", { status: 200 });
+        },
+      });
+      expect(seen).toBe(
+        "https://knobs.example/?q=q&key=s3cret&region=de&n=42&ads=False&mode=deep",
+      );
+    });
+  });
+
+  test("saving settings retunes the live engine without a reload", async () => {
+    await withSearxEnv(async (dir) => {
+      writeEngine(dir, "knobs", KNOBS_ENGINE);
+      const { initEngines, getEngineMap } = await import(
+        "../../src/server/extensions/engines/registry"
+      );
+      await initEngines(true);
+      const engine = getEngineMap()["searx-knobs-engine"];
+      engine.configure?.({ searxOpt_region: "fr" });
+      let seen = "";
+      await engine.executeSearch("q", 1, "any", {
+        fetch: async (url: string) => {
+          seen = url;
+          return new Response("<html></html>", { status: 200 });
+        },
+      });
+      expect(seen).toContain("region=fr");
+    });
+  });
+
+  test("an unset knob marks the engine as needing configuration", async () => {
+    await withSearxEnv(async (dir) => {
+      writeEngine(dir, "needy", NEEDY_ENGINE);
+      writeEngine(dir, "pager", PAGER_ENGINE);
+      const { initEngines, getEngineMap, getDefaultEngineConfig } = await import(
+        "../../src/server/extensions/engines/registry"
+      );
+      await initEngines(true);
+      const schema = getEngineMap()["searx-needy-engine"].settingsSchema ?? [];
+      const baseUrl = schema.find((f) => f.key === "searxOpt_base_url");
+      expect(baseUrl?.required).toBe(true);
+      expect(baseUrl?.description).toBe("Instance this engine talks to.");
+      expect(getDefaultEngineConfig()["searx-needy-engine"]).toBe(false);
+      expect(getDefaultEngineConfig()["searx-pager-engine"]).toBe(true);
+    });
+  });
+
+  test("a configured instance url brings the engine back to life", async () => {
+    await withSearxEnv(async (dir) => {
+      writeEngine(dir, "needy", NEEDY_ENGINE);
+      const { setSettings } = await import(
+        "../../src/server/utils/plugin-settings"
+      );
+      await setSettings("searx-needy-engine", {
+        searxOpt_base_url: "https://mine.example",
+      });
+      const { initEngines, getEngineMap } = await import(
+        "../../src/server/extensions/engines/registry"
+      );
+      await initEngines(true);
+      let seen = "";
+      await getEngineMap()["searx-needy-engine"].executeSearch("q", 1, "any", {
+        fetch: async (url: string) => {
+          seen = url;
+          return new Response("<html></html>", { status: 200 });
+        },
+      });
+      expect(seen).toBe("https://mine.example/?q=q");
     });
   });
 });

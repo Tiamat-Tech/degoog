@@ -6,6 +6,7 @@ export interface AppState {
   currentQuery: string;
   currentType: string;
   currentPage: number;
+  restoreInfinitePage: number;
   lastPage: number | null;
   currentResults: ScoredResult[];
   currentData: SearchResponse | null;
