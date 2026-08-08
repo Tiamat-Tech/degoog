@@ -529,4 +529,15 @@ describe("SearX compatibility layer", () => {
       ]);
     });
   });
+
+  test("scrubs control characters out of bridge log messages", async () => {
+    const { scrubLog } = await import(
+      "../../src/server/extensions/compatibility-layer/searx/index"
+    );
+    const forged = "ftp://evil.test/x\r\nWARN searx-compat forged line\u0000";
+    expect(scrubLog(forged)).toBe("ftp://evil.test/xWARN searx-compat forged line");
+    expect(scrubLog("https://example.com/search?q=hi")).toBe(
+      "https://example.com/search?q=hi",
+    );
+  });
 });

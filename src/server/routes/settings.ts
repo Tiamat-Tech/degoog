@@ -218,13 +218,18 @@ router.get("/api/settings/general", async (c) => {
   return c.json(trimBigFields({ ...settings, ...indexerLists, ...domainLists }));
 });
 
-const _reloadSearx = async (): Promise<void> => {
+const _reloadSearx = async (): Promise<boolean> => {
   try {
     await reloadEngines();
+    return true;
   } catch (err) {
     logger.warn("settings", "engine reload after a searx toggle failed", err);
+    return false;
   }
 };
+
+const _savedBody = (reloaded: boolean): { ok: true; searxReloadFailed?: true } =>
+  reloaded ? { ok: true } : { ok: true, searxReloadFailed: true };
 
 const _reconcileIndexerQueue = async (): Promise<void> => {
   const settings = await getInstanceSettings();
@@ -244,10 +249,10 @@ router.post("/api/settings/general", async (c) => {
   await _persistListFields(body);
   await syncBlocklist();
   await _reconcileIndexerQueue();
-  if ("searxCompatEnabled" in updates && asBoolean(updates.searxCompatEnabled) !== searxWasOn) {
-    await _reloadSearx();
-  }
-  return c.json({ ok: true });
+  const toggled =
+    "searxCompatEnabled" in updates &&
+    asBoolean(updates.searxCompatEnabled) !== searxWasOn;
+  return c.json(_savedBody(toggled ? await _reloadSearx() : true));
 });
 
 router.post("/api/settings/field", async (c) => {
@@ -270,8 +275,8 @@ router.post("/api/settings/field", async (c) => {
   }
   await syncBlocklist();
   if (key === "degoogIndexerEnabled") await _reconcileIndexerQueue();
-  if (key === "searxCompatEnabled") await _reloadSearx();
-  return c.json({ ok: true });
+  const reloaded = key === "searxCompatEnabled" ? await _reloadSearx() : true;
+  return c.json(_savedBody(reloaded));
 });
 
 router.post("/api/settings/domain-action", async (c) => {

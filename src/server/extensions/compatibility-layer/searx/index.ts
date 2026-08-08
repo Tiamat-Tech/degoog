@@ -176,6 +176,11 @@ const _setCookies = (headers: Headers): Record<string, string> => {
   return out;
 };
 
+const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/g;
+
+export const scrubLog = (raw: string): string =>
+  String(raw ?? "").replace(CONTROL_CHARS, "");
+
 const _isWebUrl = (raw: string): boolean => {
   try {
     const { protocol } = new URL(raw);
@@ -199,7 +204,7 @@ const _bridge = (engineId: string, context?: EngineContext): RpcHandlers => {
   return {
     onFetch: async (req) => {
       if (!_isWebUrl(req.url)) {
-        logger.warn(NS, `${engineId} blocked non-http request ${req.url}`);
+        logger.warn(NS, `${engineId} blocked non-http request ${scrubLog(req.url)}`);
         throw new Error("only http(s) requests are allowed");
       }
       const headers = { ..._browserHeaders(context), ...req.headers };
@@ -207,7 +212,7 @@ const _bridge = (engineId: string, context?: EngineContext): RpcHandlers => {
       if (cookie && !Object.keys(headers).some((k) => k.toLowerCase() === "cookie")) {
         headers.Cookie = cookie;
       }
-      logger.debug(NS, `${engineId} side request ${req.method} ${req.url}`);
+      logger.debug(NS, `${engineId} side request ${scrubLog(req.method)} ${scrubLog(req.url)}`);
       const resp = await fetcher(req.url, {
         headers,
         redirect: "follow",
@@ -215,7 +220,7 @@ const _bridge = (engineId: string, context?: EngineContext): RpcHandlers => {
         ...(req.data ? { body: req.data } : {}),
       });
       if (resp.url && !_isWebUrl(resp.url)) {
-        logger.warn(NS, `${engineId} blocked non-http redirect target ${resp.url}`);
+        logger.warn(NS, `${engineId} blocked non-http redirect target ${scrubLog(resp.url)}`);
         throw new Error("only http(s) responses are allowed");
       }
       return _toReply(resp, req.url);

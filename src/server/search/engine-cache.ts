@@ -59,8 +59,25 @@ export const runKey = async (
 export const runTtl = (timing: EngineTiming): number =>
   engineErrored(timing.status) ? SHORT_TTL_MS : TTL_MS;
 
-export const readRun = (key: string): Promise<CachedEngineRun | null> =>
-  engineRunCache.get(key);
+const _isRun = (value: unknown): value is CachedEngineRun => {
+  if (!value || typeof value !== "object") return false;
+  const { results, timing } = value as Partial<CachedEngineRun>;
+  if (!Array.isArray(results)) return false;
+  if (!timing || typeof timing !== "object") return false;
+  return (
+    typeof timing.name === "string" &&
+    typeof timing.time === "number" &&
+    typeof timing.resultCount === "number"
+  );
+};
+
+export const readRun = async (key: string): Promise<CachedEngineRun | null> => {
+  const hit = await engineRunCache.get(key);
+  if (hit === null) return null;
+  if (_isRun(hit)) return hit;
+  logger.debug(NS, "discarded a cached run that no longer matches the shape");
+  return null;
+};
 
 export interface CachedActiveRun {
   engine: ActiveEngine;

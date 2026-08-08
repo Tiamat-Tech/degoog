@@ -103,7 +103,12 @@ export function registerSearchRoutes(router: Hono): void {
         ),
       });
 
-      return respond(c, result, form.get(SEARX_FORMAT_PARAM) as string | null);
+      return respond(
+        c,
+        result,
+        (form.get(SEARX_FORMAT_PARAM) as string | null) ??
+          c.req.query(SEARX_FORMAT_PARAM),
+      );
     }
 
     let body: SearchBody;

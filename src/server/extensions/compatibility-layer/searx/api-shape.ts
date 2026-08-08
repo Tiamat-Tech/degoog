@@ -109,8 +109,8 @@ const parseUrl = (raw: string): string[] => {
       u.search.replace("?", ""),
       u.hash.replace("#", ""),
     ];
-  } catch (err) {
-    logger.debug(NS, `unparseable result url "${raw}"`, err);
+  } catch {
+    logger.debug(NS, "malformed result url, falling back to a bare path shape");
     return ["", "", raw, "", "", ""];
   }
 };

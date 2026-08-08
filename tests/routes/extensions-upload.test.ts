@@ -39,8 +39,21 @@ const FAKE_META: ExtensionMeta = {
 const enginesReal = { ...(await import(ENGINES_MOD)) };
 const uploadsReal = { ...(await import(UPLOADS_MOD)) };
 
-let savedNoPassword: string | undefined;
+const SAVED_ENV_KEYS = [
+  "DEGOOG_DANGEROUSLY_NO_PASSWORD",
+  "DEGOOG_PUBLIC_INSTANCE",
+  "DEGOOG_SETTINGS_PASSWORDS",
+] as const;
+
+const savedEnv = new Map<string, string | undefined>();
 let router: { request: (req: Request | string) => Response | Promise<Response> };
+
+const restoreEnv = (): void => {
+  for (const [key, value] of savedEnv) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+};
 
 const bytes = (kb: number): Uint8Array => new Uint8Array(kb * 1024).fill(1);
 
@@ -59,7 +72,7 @@ const png = (kb: number): File =>
 
 describe("POST /api/extensions/:id/upload", () => {
   beforeAll(async () => {
-    savedNoPassword = process.env.DEGOOG_DANGEROUSLY_NO_PASSWORD;
+    for (const key of SAVED_ENV_KEYS) savedEnv.set(key, process.env[key]);
     delete process.env.DEGOOG_PUBLIC_INSTANCE;
     delete process.env.DEGOOG_SETTINGS_PASSWORDS;
     process.env.DEGOOG_DANGEROUSLY_NO_PASSWORD = "true";
@@ -82,8 +95,7 @@ describe("POST /api/extensions/:id/upload", () => {
   afterAll(() => {
     mock.module(ENGINES_MOD, () => enginesReal);
     mock.module(UPLOADS_MOD, () => uploadsReal);
-    if (savedNoPassword === undefined) delete process.env.DEGOOG_DANGEROUSLY_NO_PASSWORD;
-    else process.env.DEGOOG_DANGEROUSLY_NO_PASSWORD = savedNoPassword;
+    restoreEnv();
   });
 
   test("rejects unauthenticated callers", async () => {

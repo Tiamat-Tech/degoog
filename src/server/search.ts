@@ -295,6 +295,15 @@ export const createSearchEngineContext = (
   };
 };
 
+const _keepRun = async (key: string, run: CachedEngineRun): Promise<void> => {
+  if (!key) return;
+  try {
+    await saveRun(key, run);
+  } catch (err) {
+    logger.warn("engine", `cache write failed for "${run.timing.name}"`, err);
+  }
+};
+
 export const searchSingleEngine = async (
   engineName: string,
   query: string,
@@ -329,11 +338,19 @@ export const searchSingleEngine = async (
     dateTo,
     imageFilter,
   };
-  const cacheable = isCacheable(engine.name);
-  const key = cacheable ? await runKey(cacheId, scope) : "";
+  const key = isCacheable(engine.name)
+    ? await runKey(cacheId, scope).catch((err) => {
+        logger.warn("engine", `cache key failed for "${engine.name}", running uncached`, err);
+        return "";
+      })
+    : "";
+  const cacheable = key !== "";
 
   if (cacheable && !opts?.forceFresh) {
-    const hit = await readRun(key);
+    const hit = await readRun(key).catch((err) => {
+      logger.warn("engine", `cache read failed for "${engine.name}", running fresh`, err);
+      return null;
+    });
     if (hit) {
       logger.debug(
         "engine",
@@ -376,7 +393,7 @@ export const searchSingleEngine = async (
       },
       pages: pageCounter.total(),
     };
-    if (cacheable) await saveRun(key, run);
+    await _keepRun(key, run);
     return run;
   } catch (err) {
     const elapsed = Math.round(performance.now() - t0);
@@ -386,7 +403,7 @@ export const searchSingleEngine = async (
       results: [],
       timing: { name: engine.name, time: elapsed, resultCount: 0, status: classified.status, errorReason: classified.reason, httpStatus: classified.httpStatus },
     };
-    if (cacheable) await saveRun(key, run);
+    await _keepRun(key, run);
     return run;
   }
 };
